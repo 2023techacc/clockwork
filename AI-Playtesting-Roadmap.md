@@ -4,6 +4,52 @@ Four agent tiers, each meant to be a little smarter than the last, run against t
 
 Prerequisite for all four: a rules-accurate headless simulator (trigger order, Heat curve, reshuffle curve, Mirror/Coupler restrictions, etc. — see Rules-Decisions.md for the current test-baseline ruleset). Building that is the bulk of the work; each agent tier below is cheap by comparison.
 
+
+**Simulator:** `sim/` (Python, standard library only). Rules defaults: "Simulator defaults v1" in Rules-Decisions.md. See `sim/README.md`.
+
+---
+
+## Experiment setup v1
+
+Tunable starting numbers so every tier runs the same experiment.
+
+**Test decks** (starter bag + 4 parts, roughly a deck a few fights into a run):
+
+| Deck | Contents |
+|---|---|
+| starter | 4 Striker, 3 Plate, 1 Spring |
+| spring_chain | starter + 2 Spring, 1 Coolant, 1 Hammer |
+| copy_loop | starter + 2 Coupler, 2 Mirror |
+| big_hit | starter + 2 Hammer, 2 Amplifier |
+| sustain | starter + 2 Coolant, 1 Coupler, 1 Spring |
+| utility | starter + 2 Loader, 2 Magnet |
+
+**Test enemies:**
+
+| Enemy | HP | Script | Tests |
+|---|---|---|---|
+| dummy | 60 | Attack 8 every turn (§8b baseline) | floor |
+| spiker | 70 | Attack 4, 4, 18, repeat | Block timing |
+| enrager | 75 | Attack 4, +2 every turn | burst / race |
+| saboteur | 65 | Attack 8 → Jam 1 part 2 turns + Attack 6 → Wind Back + Attack 8 → Unscrew + Attack 6, repeat | machine attacks |
+| clock_tower | 50 | Attack 6, 12 total cranks in the fight | each crank counts |
+
+**Runs:** 1000 fights per (deck, enemy, agent) for Random and Greedy, and 200 for MCTS. Fight *i* uses seed *i* for every agent, so tiers face identical queues. Report win rate with a 95% Wilson interval.
+
+**Metrics per fight:** win/loss, turns, HP left, total damage, best single-turn damage, most triggers in one turn, Overheats, Heat at each turn end, recycles, and damage taken.
+
+**Flags:**
+- **Burst:** "normal" turn damage is 18 (the best starter turn: 3 Striker triggers), so any turn of 54+ damage within the first 5 turns is a 3×-normal combo (§8b test plan).
+- **Would-hit-cap:** turns with more than 8 triggers (§8b #2) and turns where one part triggered more than twice (§8b #1). These are tracked while both rules are on hold, to show how often they would have mattered.
+- **Runaway:** a turn reaching 200 triggers is stopped by the simulator and flagged. Any runaway is an unbounded loop.
+- **Timeout:** a fight still going at turn 40 counts as a loss.
+
+**Loop finder** (before MCTS): every 6-slot layout that can be built from each test deck's parts, starting at Heat 0 and Heat 5, with 2 Crank Power. Report the top 20 layouts by triggers and by damage in a single turn.
+
+**MCTS:** 100 / 300 / 1000 / 3000 rollouts per decision, 8 sampled worlds (determinizations) per decision. If results still climb at 3000, search deeper before running Stage 3.
+
+**Random baseline (first run, 1000 fights):** win rate vs dummy is starter 22.8%, spring_chain 22.3%, copy_loop 12.1%, big_hit 54.8%, sustain 6.0%, utility 1.5%. The starter result is already a Stage 0 red flag (random play winning at a non-trivial rate). big_hit is the outlier.
+
 ---
 
 ## Stage 0 — Random
