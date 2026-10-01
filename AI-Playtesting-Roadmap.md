@@ -48,7 +48,40 @@ Tunable starting numbers so every tier runs the same experiment.
 
 **MCTS:** 100 / 300 / 1000 / 3000 rollouts per decision, 8 sampled worlds (determinizations) per decision. If results still climb at 3000, search deeper before running Stage 3.
 
-**Random baseline (first run, 1000 fights):** win rate vs dummy is starter 22.8%, spring_chain 22.3%, copy_loop 12.1%, big_hit 54.8%, sustain 6.0%, utility 1.5%. The starter result is already a Stage 0 red flag (random play winning at a non-trivial rate). big_hit is the outlier.
+**Loop finder** and **greedy** are built (`python -m clockwork.loopfinder`, `python -m clockwork.experiment`). Results below.
+
+---
+
+## Results v1 (Simulator defaults v1, Experiment setup v1)
+
+**Win rate, 1000 fights per cell** (random → greedy):
+
+| Deck | dummy | spiker | enrager | saboteur | clock_tower |
+|---|---|---|---|---|---|
+| starter | 23% → 100% | 2% → 100% | 0% → 51% | 12% → 100% | 0% → 31% |
+| spring_chain | 22% → 100% | 6% → 100% | 2% → 100% | 14% → 100% | 6% → 100% |
+| copy_loop | 12% → 100% | 2% → 100% | 0% → 80% | 5% → 100% | 2% → 91% |
+| big_hit | 55% → 100% | 30% → 100% | 9% → 100% | 42% → 100% | 26% → 100% |
+| sustain | 6% → 100% | 0% → 100% | 0% → 84% | 2% → 100% | 0% → 66% |
+| utility | 2% → 100% | 0% → 100% | 0% → 41% | 1% → 100% | 0% → 36% |
+
+**Loop finder** (every layout of each deck, best single turn, 2 Crank Power):
+
+| Deck | Most triggers (Heat 0 / 5) | Most damage (Heat 0 / 5) |
+|---|---|---|
+| starter | 6 / 4 | 18 / 18 |
+| spring_chain | 7 / 5 | 36 / 36 |
+| copy_loop | 8 / 5 | 30 / 24 |
+| big_hit | 6 / 4 | **66** / **60** |
+| sustain | **12** / **11** (0 damage) | 30 / 24 |
+| utility | 6 / 4 | 18 / 18 |
+
+**Reading:**
+- **Base difficulty is too low.** Greedy wins nearly every fight against dummy, spiker and saboteur with every deck. That is the Stage 1 red flag ("greedy trivially wins"). Only enrager and clock_tower separate the decks. Random wins 23% with the starter deck against dummy, which is the Stage 0 red flag too.
+- **No cheap infinite loops.** Heat caps every layout at about 12 triggers in a turn, and no fight hit the runaway cap. The current brakes (Heat, Spring curve, the no-copy-loop rule #4) hold for these decks without §8b #1/#2.
+- **The back-and-forth crank is the dominant technique.** Crank forward onto a part, back, forward again. A Spring between two Strikers fires on every crank, because Spring Heat resets with each chain. Greedy did this in about 6,300 of its 30,000 fights, mostly with copy_loop and sustain: some part triggered more than twice in a turn, which §8b #1 would have stopped.
+- **big_hit breaks the 3×-normal guideline.** Two Hammers, each next to an Amplifier, alternated with back-and-forth cranks do 66 damage in one turn (normal is 18). Random play wins 55% with that deck.
+- **Coolant loops trigger a lot but do nothing.** sustain's 12-trigger turns are Springs, Coupler and Coolants cycling with 0 damage.
 
 ---
 

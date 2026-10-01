@@ -208,11 +208,11 @@ class UtilityParts(unittest.TestCase):
         free_crank(s)
         self.assertEqual(s.gear[slot[3]].kind, S)
 
-    def test_loader_installs_from_queue(self):
-        s, slot = setup([None, L], queue=[S])
+    def test_loader_installs_next_part_in_queue(self):
+        s, slot = setup([None, L], queue=[H, S])
         free_crank(s)
-        self.assertEqual(s.queue, [])
-        self.assertEqual(sum(p is not None for p in s.gear), 2)
+        self.assertEqual([p.kind for p in s.queue], [S])
+        self.assertIn(H, [p.kind for p in s.gear if p is not None])
 
     def test_loader_recycles_when_queue_empty(self):
         s, _ = setup([None, L])

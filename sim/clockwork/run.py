@@ -6,12 +6,13 @@
 import argparse
 import statistics
 
+from .agents.greedy_agent import GreedyAgent
 from .agents.random_agent import RandomAgent
 from .decks import DECKS
 from .enemies import ENEMIES
 from .engine import apply, legal_actions, new_fight, summary
 
-AGENTS = {"random": RandomAgent}
+AGENTS = {"random": RandomAgent, "greedy": GreedyAgent}
 
 
 def play(deck, enemy, seed, agent, trace=False):

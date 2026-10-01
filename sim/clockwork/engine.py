@@ -478,7 +478,7 @@ def _load(s: State) -> str:
         _recycle(s)
     if not s.queue:
         return "nothing to load"
-    part = s.queue.pop(s.rng.randrange(len(s.queue)))
+    part = s.queue.pop(0)                 # the next part in the queue
     slot = s.rng.choice(empty)
     s.gear[slot] = part
     return f"loads {part} into slot {slot}"
