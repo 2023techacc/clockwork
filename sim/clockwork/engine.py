@@ -22,7 +22,6 @@ Actions are plain tuples:
     ("crank_back",)                 1 Crank Power, backward
     ("end_turn",)
 """
-import random
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -30,6 +29,7 @@ from .config import DEFAULT_RULES, RulesConfig
 from .decks import deck_list
 from .enemies import ENEMIES, EnemySpec, reveal_intent
 from .parts import AMPLIFIER_BONUS, SPECS, Kind, Part
+from .rng import Rng
 
 CW, CCW = "cw", "ccw"   # crank directions; CW = forward
 
@@ -55,7 +55,7 @@ class Stats:
 class State:
     rules: RulesConfig
     enemy: EnemySpec
-    rng: random.Random
+    rng: Rng
     gear: List[Optional[Part]]
     queue: List[Part]
     discard: List[Part] = field(default_factory=list)
@@ -92,8 +92,7 @@ class State:
     def clone(self) -> "State":
         s = State.__new__(State)
         s.__dict__.update(self.__dict__)
-        s.rng = random.Random()
-        s.rng.setstate(self.rng.getstate())
+        s.rng = self.rng.copy()
         for name in ("gear", "queue", "discard", "hand"):
             setattr(s, name, list(getattr(self, name)))
         s.jams = dict(self.jams)
@@ -120,7 +119,7 @@ class State:
 
 def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, trace=False) -> State:
     spec = ENEMIES[enemy] if isinstance(enemy, str) else enemy
-    rng = random.Random(seed)
+    rng = Rng(seed)
     parts = [Part(uid, kind) for uid, kind in enumerate(deck_list(deck))]
     rng.shuffle(parts)
     s = State(rules=rules, enemy=spec, rng=rng, gear=[None] * rules.gear_size, queue=parts,

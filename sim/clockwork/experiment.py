@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor
 from .decks import DECKS
 from .enemies import ENEMIES
 from .engine import summary
-from .run import AGENTS, play
+from .run import make_agent, play
 
 NORMAL_TURN_DAMAGE = 18    # best starter turn: 3 Striker triggers
 BURST_TURNS = 5            # "early on"
@@ -30,10 +30,10 @@ def wilson(wins, n, z=1.96):
 
 
 def run_cell(args):
-    agent_name, deck, enemy, fights = args
+    agent_name, deck, enemy, seeds = args
     rows = []
-    for seed in range(fights):
-        s = play(deck, enemy, seed, AGENTS[agent_name](seed=seed))
+    for seed in seeds:
+        s = play(deck, enemy, seed, make_agent(agent_name, seed))
         r = summary(s)
         early = s.stats.damage_by_turn[:BURST_TURNS]
         r.update(agent=agent_name, deck=deck, enemy=enemy, seed=seed,
@@ -44,15 +44,24 @@ def run_cell(args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--agents", nargs="+", default=["random", "greedy"], choices=sorted(AGENTS))
+    ap.add_argument("--agents", nargs="+", default=["random", "greedy"],
+                    help="random, greedy, mcts or mcts@<budget>")
     ap.add_argument("--decks", nargs="+", default=list(DECKS), choices=list(DECKS))
     ap.add_argument("--enemies", nargs="+", default=list(ENEMIES), choices=list(ENEMIES))
     ap.add_argument("--fights", type=int, default=1000)
+    ap.add_argument("--fights-for", nargs="*", default=[], metavar="AGENT=N",
+                    help="per-agent fight count, e.g. mcts@200=100")
     ap.add_argument("--out", default="results")
     ap.add_argument("--workers", type=int, default=os.cpu_count())
     args = ap.parse_args(argv)
 
-    cells = [(a, d, e, args.fights) for a in args.agents for d in args.decks for e in args.enemies]
+    fights = {a: args.fights for a in args.agents}
+    fights.update({k: int(v) for k, v in (x.split("=") for x in args.fights_for)})
+    # One task per (agent, deck, enemy, seed block) so slow agents spread over all workers.
+    block = 25
+    cells = [(a, d, e, range(lo, min(lo + block, fights[a])))
+             for a in args.agents for d in args.decks for e in args.enemies
+             for lo in range(0, fights[a], block)]
     with ProcessPoolExecutor(args.workers) as pool:
         results = list(pool.map(run_cell, cells))
     rows = [r for cell in results for r in cell]
@@ -64,7 +73,7 @@ def main(argv=None):
         w.writerows(rows)
 
     for agent in args.agents:
-        print(f"\n{agent}: win rate (95% CI), {args.fights} fights per cell")
+        print(f"\n{agent}: win rate (95% CI), {fights[agent]} fights per cell")
         print(f"{'deck':13s}" + "".join(f"{e:>20s}" for e in args.enemies))
         for deck in args.decks:
             line = f"{deck:13s}"

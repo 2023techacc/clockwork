@@ -50,3 +50,20 @@ class LoopFinder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MCTS(unittest.TestCase):
+    def test_mcts_finishes_fights_on_every_deck(self):
+        from clockwork.agents.mcts_agent import MCTSAgent
+        for deck in DECKS:
+            s = play(deck, "saboteur", 2, MCTSAgent(seed=2, budget=16, worlds=2))
+            self.assertIsNotNone(s.result)
+
+    def test_determinize_keeps_known_information(self):
+        from clockwork.agents.mcts_agent import MCTSAgent
+        s = new_fight(DECKS["copy_loop"], "dummy", seed=5)
+        w = MCTSAgent(seed=1).determinize(s)
+        self.assertEqual(w.hand, s.hand)
+        self.assertEqual(w.visible_queue(), s.visible_queue())
+        self.assertEqual(sorted(p.uid for p in w.queue), sorted(p.uid for p in s.queue))
+        self.assertEqual((w.gear, w.heat, w.enemy_hp), (s.gear, s.heat, s.enemy_hp))
