@@ -12,7 +12,7 @@ from ..search import turn_outcomes
 class GreedyAgent:
     name = "greedy"
 
-    def __init__(self, seed=0, w_block=1.0, w_heat=1.0, overheat_penalty=15.0, w_part=0.1):
+    def __init__(self, seed=0, w_block=1.0, w_heat=2.0, overheat_penalty=15.0, w_part=0.1):
         self.rng = random.Random(seed)
         self.w_block, self.w_heat = w_block, w_heat
         self.overheat_penalty, self.w_part = overheat_penalty, w_part
