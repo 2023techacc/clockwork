@@ -28,6 +28,17 @@ SWEEPS = [
     ("Hammer", "plus_hammer", [{"part": [("Hammer", "damage", d), ("Hammer", "extra_heat", h)]}
                                for d, h in ((9, 4), (10, 4), (11, 4), (12, 4), (10, 3), (11, 3), (12, 3))]),
 ]
+# Round 2: finer settings for parts whose first sweep jumped over the band.
+SWEEPS += [
+    ("Primer2", "plus_primer", [{"part": [("Primer", "damage", b), ("Primer", "fresh_damage", f)]}
+                                for b, f in ((4, 7), (2, 8), (2, 10), (0, 12))]),
+    ("Assembly2", "plus_assembly", [{"part": [("Assembly", "damage", b), ("Assembly", "per_part_damage", pp),
+                                              ("Assembly", "per_install_damage", pi)]}
+                                    for b, pp, pi in ((0, 0, 3), (0, 0, 4), (2, 0, 3), (3, 0, 2))]),
+    ("Slider", "plus_clamp_magnet_slider", [{"part": [("Slider", "moved_bonus", v)]} for v in (0, 2, 4)]),
+    ("Coil2", "coil_starter", [{"coil_damage": v} for v in (3, 4)]),
+]
+
 CHECKS = ["plus_loader_primer", "plus_feeder_loader_primer", "plus_loader_assembly", "plus_magnet",
           "plus_slider", "plus_magnet_slider", "plus_clamp_magnet_slider"]
 
