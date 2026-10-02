@@ -25,25 +25,25 @@ class EnemySpec:
     crank_limit: Optional[int] = None         # Clock Tower: total cranks in the fight
 
 
-# Tuned v3: HP and attacks scaled (clockwork.tune) until MCTS with 50 simulations per decision
+# Tuned v4 (after the Hammer nerf and the greedy Heat-weight fix): HP and attacks scaled (clockwork.tune) until MCTS with 50 simulations per decision
 # (a stand-in for a casual player) wins ~60-67% on average across the six test decks, with the
 # crank direction locked per turn. v1 values (before any tuning) in the comments.
 ENEMIES = {
     # Rules.md §8b paper-prototype baseline. v1: 60 HP, Attack 8.
-    "dummy": EnemySpec("dummy", 82, ((("attack", 11),),)),
+    "dummy": EnemySpec("dummy", 85, ((("attack", 11),),)),
     # Telegraphed big hit every 3rd turn: tests Block timing. v1: 70 HP, 4/4/18.
-    "spiker": EnemySpec("spiker", 90, ((("attack", 5),), (("attack", 5),), (("attack", 23),))),
+    "spiker": EnemySpec("spiker", 91, ((("attack", 5),), (("attack", 5),), (("attack", 23),))),
     # Enrage timer: 4, 6, 8, 10 ... tests burst. v1: 75 HP.
-    "enrager": EnemySpec("enrager", 85, ((("attack", 4),),), attack_growth=2),
+    "enrager": EnemySpec("enrager", 87, ((("attack", 4),),), attack_growth=2),
     # Attacks the machine. v1: 65 HP, attacks 8/6/8/6.
-    "saboteur": EnemySpec("saboteur", 91, (
-        (("attack", 11),),
+    "saboteur": EnemySpec("saboteur", 96, (
+        (("attack", 12),),
         (("jam", 2), ("attack", 8)),
-        (("wind_back",), ("attack", 11)),
+        (("wind_back",), ("attack", 12)),
         (("unscrew",), ("attack", 8)),
     )),
     # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks). v1: 50 HP.
-    "clock_tower": EnemySpec("clock_tower", 57, ((("attack", 6),),), crank_limit=12),
+    "clock_tower": EnemySpec("clock_tower", 55, ((("attack", 6),),), crank_limit=12),
 }
 
 
