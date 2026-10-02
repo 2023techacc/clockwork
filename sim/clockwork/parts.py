@@ -64,7 +64,7 @@ SPECS = {
     # Balance pass v5 values; first proposals were Primer 4/18 and Assembly 2 per part.
     Kind.PRIMER: PartSpec(damage=2, fresh_damage=8),       # pairs with Loader (Feeder) / placement
     Kind.ASSEMBLY: PartSpec(per_install_damage=3),         # pairs with Loader
-    Kind.SLIDER: PartSpec(damage=5, moved_bonus=6),        # pairs with Magnet
+    Kind.SLIDER: PartSpec(damage=5, moved_bonus=3),        # pairs with Magnet (moved bonus was 6)
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}

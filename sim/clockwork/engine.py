@@ -534,6 +534,12 @@ def _adjacent_amplifiers(s: State, slot: int) -> int:
 
 
 def _load(s: State, feeder: bool = False) -> str:
+    """Load the next parts in the queue (rules.loader_loads of them) into empty slots."""
+    notes = [_load_one(s, feeder) for _ in range(s.rules.loader_loads)]
+    return "; ".join(notes)
+
+
+def _load_one(s: State, feeder: bool) -> str:
     empty = [i for i, p in enumerate(s.gear) if p is None]
     if not empty:
         return "no empty slot"

@@ -16,7 +16,8 @@ S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMP
 
 # Mechanics tests pin the numbers they were written against, so balance passes that change
 # defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
-MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, part_overrides=(
+MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1, part_overrides=(
+    ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
     ("Coupler", "extra_heat", 0)))
@@ -420,6 +421,25 @@ class BalanceDefaults(unittest.TestCase):
         s, _ = setup([None, S, A], rules=RulesConfig())
         free_crank(s)
         self.assertEqual(999 - s.enemy_hp, 7)                    # 6 * 1.3, rounded down
+
+
+class LoaderTwoLoads(unittest.TestCase):
+    def test_loader_loads_two_by_default(self):
+        s, slot = setup([None, L, None, None, None, None], rules=RulesConfig(), queue=[S, P, S])
+        free_crank(s)
+        self.assertEqual([p.kind for p in s.queue], [S])
+        self.assertEqual(sum(p is not None for p in s.gear), 3)
+
+    def test_feeder_loads_next_two_slots(self):
+        s, slot = setup([None, None, None, None, None, None], rules=RulesConfig(), queue=[S, P])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual((s.gear[slot[2]].kind, s.gear[slot[3]].kind), (S, P))
+
+    def test_second_load_stops_when_gear_full(self):
+        s, slot = setup([S, L, S, S, S, None], rules=RulesConfig(), queue=[P, P])
+        free_crank(s)
+        self.assertEqual(len(s.queue), 1)
 
 
 class EnemiesAndCaps(unittest.TestCase):
