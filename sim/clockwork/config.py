@@ -46,6 +46,9 @@ class RulesConfig:
     # --- Part stat overrides, for balance sweeps: (("Hammer", "damage", 10), ...) ---
     part_overrides: tuple = ()
 
+    # --- Enemies ---
+    enemy_hp_jitter: int = 3         # each fight's enemy HP is base +/- this (uniform)
+
     # --- Simulator safety (not game rules) ---
     safety_triggers_per_turn: int = 200   # stop a runaway turn and flag it
     max_turns: int = 40                   # fight counts as a timeout loss after this

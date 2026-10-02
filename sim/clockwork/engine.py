@@ -81,6 +81,7 @@ class State:
     overheat_pending: bool = False  # next turn will be dead
     locked: bool = False            # no more cranks this turn
     enemy_hp: int = 0
+    enemy_max_hp: int = 0
     intent: tuple = ()
     cranks_used: int = 0            # whole fight, all cranks (for Clock Tower)
     tower_strikes: bool = False
@@ -136,6 +137,9 @@ def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, t
     rng.shuffle(parts)
     s = State(rules=rules, enemy=spec, rng=rng, gear=[None] * rules.gear_size, queue=parts,
               hp=rules.player_hp, enemy_hp=spec.hp, log=[] if trace else None)
+    if rules.enemy_hp_jitter:   # HP range per fight, so results don't hinge on exact damage breakpoints
+        s.enemy_hp += rng.randrange(2 * rules.enemy_hp_jitter + 1) - rules.enemy_hp_jitter
+    s.enemy_max_hp = s.enemy_hp
     _start_turn(s)
     return s
 

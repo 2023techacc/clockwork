@@ -25,7 +25,7 @@ _SCORER = GreedyAgent()
 def reward(s) -> float:
     if s.result == "win":
         return 0.7 + 0.3 * max(0, s.hp) / s.rules.player_hp
-    return 0.5 * (1 - max(0, s.enemy_hp) / s.enemy.hp)
+    return 0.5 * (1 - max(0, s.enemy_hp) / s.enemy_max_hp)
 
 
 def end_key(s) -> tuple:
