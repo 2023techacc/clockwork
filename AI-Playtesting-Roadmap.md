@@ -282,3 +282,51 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
 - **Magnet is still a trap.** It only pulls into empty slots, so Slider and Clamp rarely get to fire. Even the full Clamp Magnet + Slider set is only +9.
 - **With the better agent, Coupler (+41) and Amplifier (+38) are now above Hammer (+16).** The Hammer value chosen in v3b was measured with the weaker agent and is now too low.
 - **Next step:** a balance pass that sweeps each outlier (Primer, Assembly, Polish, Coil, Coupler, Amplifier, Hammer) into a band of about +10 to +25. Then design changes so the payoffs need their enabler, and so Magnet can pull into occupied slots.
+
+---
+
+## Results v5 (balance pass)
+
+**Design changes:**
+- Primer's bonus only lands if it triggers on the turn it was installed.
+- Assembly counts parts installed this turn.
+- Magnet pulls into occupied slots by swapping.
+
+**Values chosen by the sweep** (`clockwork/balance.py`, MCTS@50, 100 fights per enemy, target about +18, band +10 to +25):
+
+| Part | Was | Now |
+|---|---|---|
+| Primer | 4, 18 when fresh | 2, 8 when it triggers on its install turn |
+| Assembly | 2 per occupied slot | 3 per part installed this turn |
+| Coupler | +0 Heat | +2 Heat |
+| Amplifier | +50% | +30% |
+| Polish | +50% | +20% |
+| Clamp | triggers every pulled part | triggers 1 pulled part |
+| Hammer | 9 damage, +4 Heat | unchanged |
+| Coil | 4 damage | unchanged (with MCTS@200, 3 → +6 and 4 → +14) |
+
+**Validation** (all probes, final values; starter 50%):
+
+| Deck | vs starter | | Deck | vs starter |
+|---|---|---|---|---|
+| Clamp Magnet + Slider | **+39** | | + Slider | +7 |
+| starter with its Spring Coiled | **+34** | | + Assembly | +6 |
+| + Primer | **+27** | | + Clamp Magnet | +5 |
+| + Polish Mirror | +20 | | + Coolant | +3 |
+| + Feeder Loader + Primer | +18 | | + Loader + Assembly | 0 |
+| + Coupler | +17 | | + Mirror | −1 |
+| + Coil Spring | +16 | | + Magnet + Slider | −2 |
+| + Hammer | +15 | | + Loader | −11 |
+| + Loader + Primer | +13 | | + Spring | −13 |
+| + Amplifier | +13 | | + Magnet | −17 |
+
+**Reading:**
+- **Seven picks now sit in the band:** Polish, Coupler, Coil Spring, Hammer, Amplifier, and Loader + Primer with or without Feeder. The old +40–55 outliers are gone.
+- **The win-rate scale is steep.** A part is either barely used (about +5) or, once it beats a plain Striker, built around (+30 or more). A one-point change often jumps over the whole band. At this difficulty, "+10 to +25" means "a little better than a Striker".
+- **Payoffs still don't need their enablers.** Primer alone (+27) beats Loader + Primer (+13). Assembly alone (+6) beats Loader + Assembly (0). The enablers themselves are the problem: Loader (−11), Magnet (−17) and Spring (−13) cost a gear slot and a trigger without doing anything on their own, so pairing them drags the payoff down.
+- **Clamp Magnet + Slider (+39) is the one remaining combo outlier.** The swap made Magnet reliable, and Slider's moved bonus then applies to almost every Clamp trigger.
+- **Next:**
+  - give the enablers some value of their own: for example, a Loader that loads two parts, a Magnet that deals a little damage, or a Spring with less Heat;
+  - lower Slider's moved bonus, or have Clamp skip the moved bonus;
+  - retune the enemies, since the main decks' strength changed;
+  - re-run the tier comparison after the Heat rework.

@@ -138,3 +138,16 @@ Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and o
 | **Feeder** | Loader | Loads into the next empty slot to come up in the turn's direction, not a random one |
 
 Numbers are first guesses; the probe results are in the roadmap ("Results v4").
+
+### Balance pass v5 (current simulator values)
+- **Primer:** 2 damage; 8 if it triggers on the turn it was installed.
+- **Assembly:** 3 damage per part installed this turn (by hand or by Loader).
+- **Coupler:** +2 Heat.
+- **Amplifier:** +30%.
+- **Polish:** +20%.
+- **Clamp:** triggers only the first pulled part.
+- **Hammer:** 9 damage, +4 Heat.
+- **Coil:** 4 damage.
+- **Magnet:** pulls into occupied slots by swapping.
+
+All numbers are settings in `sim/clockwork/config.py` and `sim/clockwork/parts.py`. See "Results v5" in the roadmap.
