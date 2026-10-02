@@ -24,15 +24,15 @@ Tunable starting numbers so every tier runs the same experiment.
 | sustain | starter + 2 Coolant, 1 Coupler, 1 Spring |
 | utility | starter + 2 Loader, 2 Magnet |
 
-**Test enemies:**
+**Test enemies** (v2: retuned by `clockwork.tune` until greedy wins about 60–70% averaged over the six decks; v1 values in brackets):
 
 | Enemy | HP | Script | Tests |
 |---|---|---|---|
-| dummy | 60 | Attack 8 every turn (§8b baseline) | floor |
-| spiker | 70 | Attack 4, 4, 18, repeat | Block timing |
-| enrager | 75 | Attack 4, +2 every turn | burst / race |
-| saboteur | 65 | Attack 8 → Jam 1 part 2 turns + Attack 6 → Wind Back + Attack 8 → Unscrew + Attack 6, repeat | machine attacks |
-| clock_tower | 50 | Attack 6, 12 total cranks in the fight | each crank counts |
+| dummy | 82 [60] | Attack 11 [8] every turn (§8b baseline) | floor |
+| spiker | 89 [70] | Attack 5, 5, 23 [4, 4, 18], repeat | Block timing |
+| enrager | 81 [75] | Attack 4, +2 every turn | burst / race |
+| saboteur | 91 [65] | Attack 11 → Jam 1 part 2 turns + Attack 8 → Wind Back + Attack 11 → Unscrew + Attack 8, repeat [8/6/8/6] | machine attacks |
+| clock_tower | 54 [50] | Attack 6, 12 total cranks in the fight | each crank counts |
 
 **Runs:** 1000 fights per (deck, enemy, agent) for Random and Greedy, and 200 for MCTS. Fight *i* uses seed *i* for every agent, so tiers face identical queues. Report win rate with a 95% Wilson interval.
 
@@ -52,7 +52,7 @@ Tunable starting numbers so every tier runs the same experiment.
 
 ---
 
-## Results v1 (Simulator defaults v1, Experiment setup v1)
+## Results v1 (Simulator defaults v1, v1 enemies)
 
 **Win rate, 1000 fights per cell** (random → greedy):
 
@@ -140,3 +140,46 @@ Tunable starting numbers so every tier runs the same experiment.
 ## Reading the overall curve
 
 Random → Greedy → MCTS → RL should each step up by a comparable, explainable amount. Save the specific numbers each tier produces (win rate, avg damage/turn, avg Heat at fight end, turns survived) so the *shape* of the curve is visible, not just each tier's final score — the shape is what tells you whether the game has real, learnable depth or a single dominant line that any sufficiently careful search finds immediately.
+
+---
+
+## Results v2 (v2 enemies, MCTS added)
+
+**MCTS setup:** determinized MCTS over whole-turn plans (`clockwork/agents/mcts_agent.py`). It samples 8 worlds per decision, reshuffling the unseen queue and reseeding random events. In each world it grows a tree whose moves are complete turn plans, added in greedy-heuristic order (progressive widening) and picked with UCB1. Leaves are valued by playing the fight out with a fast sampled-greedy policy, and root visit counts are summed across worlds. It never sees hidden information. 200 simulations per decision take about 1.3 s per fight.
+
+**Win rate** (random / greedy at 1000 fights per cell → MCTS@200 at 100 fights per cell):
+
+| Deck | dummy | spiker | enrager | saboteur | clock_tower |
+|---|---|---|---|---|---|
+| starter | 0 / 40 → 90% | 0 / 49 → 99% | 0 / 16 → 78% | 0 / 29 → 92% | 0 / 30 → 99% |
+| spring_chain | 0 / 97 → 100% | 0 / 96 → 100% | 0 / 100 → 100% | 0 / 98 → 100% | 4 / 98 → 100% |
+| copy_loop | 0 / 62 → 98% | 0 / 64 → 91% | 0 / 59 → 98% | 0 / 34 → 85% | 2 / 90 → 100% |
+| big_hit | 2 / 100 → 100% | 2 / 100 → 100% | 7 / 100 → 100% | 2 / 100 → 100% | 23 / 100 → 100% |
+| sustain | 0 / 80 → 98% | 0 / 75 → 97% | 0 / 73 → 100% | 0 / 73 → 96% | 0 / 64 → 97% |
+| utility | 0 / 16 → 77% | 0 / 29 → 85% | 0 / 15 → 75% | 0 / 15 → 72% | 0 / 34 → 92% |
+
+**MCTS budget sweep** (50 fights per cell):
+
+| Cell | 100 | 300 | 1000 | 3000 |
+|---|---|---|---|---|
+| starter vs enrager | 80% | 86% | 100% | 100% |
+| starter vs saboteur | 88% | 96% | 98% | 100% |
+| utility vs enrager | 58% | 62% | 84% | 90% |
+| utility vs saboteur | 50% | 70% | 82% | 94% |
+
+**Behaviour** (averages over all v2 fights):
+
+| Agent | Overheats | Heat at end | Damage taken | HP left | Fights with a part triggered >2× in a turn |
+|---|---|---|---|---|---|
+| random | 0.65 | 3.3 | 52.8 | 2.2 | 7% |
+| greedy | 1.08 | 5.3 | 40.1 | 14.9 | 24% |
+| MCTS@200 | 0.85 | 7.9 | 34.9 | 20.1 | 25% |
+
+**Reading:**
+- **The curve is healthy in shape:** random is about 0%, greedy about 60%, MCTS about 95%. Every step is a clear, explainable gain, and no tier finds a qualitatively different exploit. MCTS's edge is Heat management: it runs closer to the limit while overheating less, and it takes less damage. Turns to win are about the same, so it isn't finding a faster kill.
+- **Planning is rewarded heavily**, which is the timing-puzzle pitch working. The jump from greedy to MCTS is largest with the starter deck (40% → 90% against dummy, 30% → 99% against clock_tower), where careful placement is the only lever.
+- **Difficulty depends on who it's calibrated against.** Tuned to greedy, the enemies are close to trivial for a strong planner. Calibrate against human playtests (or against MCTS at a low budget, as a stand-in for a casual player) before using these numbers for content.
+- **The MCTS ceiling isn't reached for harder cells.** utility-deck fights still climb at 3000 simulations, so by the roadmap's own rule, search deeper before trusting Stage 3 comparisons. Starter-deck fights saturate around 1000.
+- **Decks are badly unbalanced.** big_hit and spring_chain win nearly everything even for greedy. utility (Loader/Magnet) is the weakest: those parts cost triggers and Heat without dealing damage or Block.
+- **Back-and-forth cranking is used equally by greedy and MCTS** (about 25% of fights), so a planner treats it as a real technique, not a greedy artifact. Whether §8b #1 or a backward-crank cost should rein it in is still a design call.
+- **Still no loops:** no runaway turns, and at most 7 triggers in a turn for greedy and MCTS.
