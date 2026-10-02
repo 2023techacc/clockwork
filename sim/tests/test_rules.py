@@ -7,7 +7,7 @@ from clockwork.search import turn_outcomes
 from clockwork.agents.random_agent import RandomAgent
 from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
-from clockwork.parts import Kind as K, Part
+from clockwork.parts import Kind as K, Mod, Part
 
 S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMPLIFIER,
                                     K.COUPLER, K.LOADER, K.COOLANT, K.HAMMER, K.MAGNET)
@@ -277,6 +277,97 @@ class UtilityParts(unittest.TestCase):
             s.discard = [Part(70, S)]
             engine._recycle(s)
             self.assertEqual(s.heat, expected)
+
+
+class PayoffParts(unittest.TestCase):
+    def test_primer_fresh_then_weak(self):
+        s, slot = setup([None, None, K.STRIKER])
+        s.hand = [Part(1, K.PRIMER)]
+        apply(s, ("install", 0, slot[1]))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 18)
+        apply(s, ("end_turn",))
+        s.top = slot[0]
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 22)          # 18 + 4
+
+    def test_primer_loaded_is_fresh(self):
+        s, slot = setup([None, L, None], queue=[K.PRIMER])
+        free_crank(s)
+        self.assertEqual(s.queue, [])
+        loaded = next(p for p in s.gear if p is not None and p.kind == K.PRIMER)
+        self.assertIn(loaded.uid, s.fresh)
+
+    def test_assembly_counts_parts(self):
+        s, _ = setup([P, K.ASSEMBLY, S, None, P, None])
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 8)           # 4 parts on the gear x 2
+
+    def test_slider_moved_bonus(self):
+        # Magnet comes up first and pulls the Slider (2 slots away) next to it; the next crank hits it.
+        s, slot = setup([None, MG, None, K.SLIDER, None, None])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, K.SLIDER)
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 11)          # 5 + 6
+
+
+class Attachments(unittest.TestCase):
+    def test_deck_rejects_wrong_attachment(self):
+        with self.assertRaises(ValueError):
+            new_fight({(K.STRIKER, Mod.COIL): 1})
+
+    def test_coil_adds_damage_to_triggered_part(self):
+        s, slot = setup([None, None, P])
+        s.gear[slot[1]] = Part(50, SP, Mod.COIL)
+        free_crank(s)
+        self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))   # the Plate also deals 4
+
+    def test_coil_bonus_lost_on_empty(self):
+        s, slot = setup([None, None, None])
+        s.gear[slot[1]] = Part(50, SP, Mod.COIL)
+        free_crank(s)
+        self.assertEqual(s.enemy_hp, 999)
+
+    def test_polish_mirror(self):
+        s, slot = setup([None, None, None, None, S, None])
+        s.gear[slot[1]] = Part(50, M, Mod.POLISH)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 9)           # 6 * 1.5
+
+    def test_clamp_triggers_pulled_parts(self):
+        s, slot = setup([None, None, None, S, None, P])
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        # Pulls the Striker (left side) and the Plate (right side), then triggers both.
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 6))
+        self.assertEqual(s.triggers_turn, 3)
+
+    def test_clamp_with_slider(self):
+        s, slot = setup([None, None, None, K.SLIDER, None, None])
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 11)
+
+    def test_feeder_loads_next_slot_to_come_up(self):
+        s, slot = setup([None, None, None, P, None, None], queue=[S])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, S)       # next to arrive on a clockwise turn
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_feeder_follows_counter_clockwise_turn(self):
+        s, slot = setup([None, None, P, None, None, None], queue=[S])
+        s.gear[slot[5]] = Part(50, L, Mod.FEEDER)
+        free_crank(s, engine.CCW)                       # the Loader (arrival 5) comes up going back
+        self.assertEqual(s.gear[slot[4]].kind, S)
+
+    def test_mirror_copies_attachment(self):
+        s, slot = setup([None, M, P, None, None, None])
+        s.gear[slot[4]] = Part(50, SP, Mod.COIL)        # opposite the Mirror
+        free_crank(s)
+        self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))
 
 
 class EnemiesAndCaps(unittest.TestCase):

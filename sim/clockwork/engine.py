@@ -30,7 +30,7 @@ from typing import Dict, List, Optional
 from .config import DEFAULT_RULES, RulesConfig
 from .decks import deck_list
 from .enemies import ENEMIES, EnemySpec, reveal_intent
-from .parts import AMPLIFIER_BONUS, Kind, Part, specs_for
+from .parts import AMPLIFIER_BONUS, COIL_DAMAGE, POLISH_BONUS, Kind, Mod, Part, specs_for
 from .rng import Rng
 
 CW, CCW = "cw", "ccw"   # crank directions; CW = forward
@@ -66,6 +66,8 @@ class State:
     hand: List[Part] = field(default_factory=list)
     top: int = 0
     jams: Dict[int, int] = field(default_factory=dict)   # slot -> player turns left
+    fresh: set = field(default_factory=set)   # uids installed and not triggered since (Primer)
+    moved: set = field(default_factory=set)   # uids a Magnet moved this turn (Slider)
     turn: int = 0
     phase: str = "install"          # install | crank | over
     hp: int = 0
@@ -101,6 +103,8 @@ class State:
         for name in ("gear", "queue", "discard", "hand"):
             setattr(s, name, list(getattr(self, name)))
         s.jams = dict(self.jams)
+        s.fresh = set(self.fresh)
+        s.moved = set(self.moved)
         s.part_triggers = dict(self.part_triggers)
         st = Stats(**self.stats.__dict__)
         st.overheats_by = dict(st.overheats_by)
@@ -126,7 +130,7 @@ class State:
 def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, trace=False) -> State:
     spec = ENEMIES[enemy] if isinstance(enemy, str) else enemy
     rng = Rng(seed)
-    parts = [Part(uid, kind) for uid, kind in enumerate(deck_list(deck))]
+    parts = [Part(uid, kind, mod) for uid, (kind, mod) in enumerate(deck_list(deck))]
     rng.shuffle(parts)
     s = State(rules=rules, enemy=spec, rng=rng, gear=[None] * rules.gear_size, queue=parts,
               hp=rules.player_hp, enemy_hp=spec.hp, log=[] if trace else None)
@@ -145,9 +149,9 @@ def legal_actions(s: State) -> List[tuple]:
         if s.installs_left > 0:
             seen = set()
             for i, part in enumerate(s.hand):
-                if part.kind in seen:          # identical parts give identical results
+                if (part.kind, part.mod) in seen:      # identical parts give identical results
                     continue
-                seen.add(part.kind)
+                seen.add((part.kind, part.mod))
                 acts.extend(("install", i, slot) for slot in range(len(s.gear)))
         if s.rules.crank_direction_lock and not s.dead_turn:
             acts += [("end_install", CW), ("end_install", CCW)]
@@ -240,6 +244,7 @@ def _start_turn(s: State) -> None:
     s.installs_left = s.rules.installs_per_turn
     s.triggers_turn = s.damage_turn = s.reshuffles_turn = 0
     s.part_triggers = {}
+    s.moved = set()
     s.turn_runaway = False
     s.dead_turn, s.overheat_pending = s.overheat_pending, False
     s.locked = False
@@ -280,6 +285,7 @@ def _install(s: State, hand_index: int, slot: int) -> None:
     if old is not None:
         s.discard.append(old)
     s.gear[slot] = part
+    s.fresh.add(part.uid)
     s.installs_left -= 1
     pos = (s.top - slot) % len(s.gear)
     _log(s, f"install {part} at slot {slot} (+{pos})" + (f", replacing {old}" if old else ""))
@@ -349,7 +355,7 @@ def _player_crank(s: State, direction: str, free: bool) -> None:
     """A crank started by the player begins a new chain."""
     s.chain_springs = 0
     _log(s, f"{'free ' if free else ''}crank {direction}")
-    _resolve(s, [("crank", direction)])
+    _resolve(s, [("crank", direction, 0)])
 
 
 def _resolve(s: State, stack: list) -> None:
@@ -366,35 +372,42 @@ def _resolve(s: State, stack: list) -> None:
                 s.tower_strikes = True
                 s.locked = True
             s.top = (s.top - 1) % n if task[1] == CW else (s.top + 1) % n
-            stack.append(("trigger", s.top, task[1], False, None))
+            stack.append(("trigger", s.top, task[1], False, None, task[2]))
         else:
-            _, slot, direction, from_coupler, uid = task
+            _, slot, direction, from_coupler, uid, bonus = task
             if uid is not None:     # Coupler targets are bound to the part, not the slot
                 slot = next((i for i, p in enumerate(s.gear) if p is not None and p.uid == uid), None)
                 if slot is None:
                     continue
-            if not _trigger(s, slot, direction, from_coupler, stack):
+            if not _trigger(s, slot, direction, from_coupler, stack, bonus):
                 stack.clear()
 
 
-def _effective_kind(s: State, slot: int) -> Optional[Kind]:
-    """What the part in `slot` does when triggered. A Mirror acts as the part opposite it."""
+def _effective_part(s: State, slot: int) -> Optional[Part]:
+    """The part whose effect fires when `slot` triggers. A Mirror acts as the part opposite it,
+    attachment included."""
     part = s.gear[slot]
     if part is None:
         return None
     if part.kind != Kind.MIRROR:
-        return part.kind
+        return part
     n = len(s.gear)
     if n % 2:
         return None
     opp = s.gear[(slot + n // 2) % n]
     if opp is None or opp.kind == Kind.MIRROR:
         return None
-    return opp.kind
+    return opp
 
 
-def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: list) -> bool:
-    """Trigger the part in `slot`. Returns False if resolution must stop."""
+def _effective_kind(s: State, slot: int) -> Optional[Kind]:
+    eff = _effective_part(s, slot)
+    return eff.kind if eff is not None else None
+
+
+def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: list, bonus: int = 0) -> bool:
+    """Trigger the part in `slot`. `bonus` is extra flat damage (a Coil Spring's crank).
+    Returns False if resolution must stop."""
     r = s.rules
     n = len(s.gear)
     part = s.gear[slot]
@@ -404,7 +417,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if slot in s.jams:
         _log(s, f"  {part}: jammed")
         return True
-    kind = _effective_kind(s, slot)
+    eff = _effective_part(s, slot)
+    kind = eff.kind if eff is not None else None
     specs = specs_for(r.part_overrides)
     if kind is None or not specs[kind].triggers:
         _log(s, f"  {part}: does not trigger")
@@ -435,10 +449,20 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     label = str(part) if part.kind == kind else f"{part} as {kind}"
     notes = [f"+{heat} Heat"]
 
-    if spec.damage or spec.block:
+    base = spec.damage
+    if spec.fresh_damage and part.uid in s.fresh:
+        base = spec.fresh_damage
+    if spec.per_part_damage:
+        base += spec.per_part_damage * sum(p is not None for p in s.gear)
+    if spec.moved_bonus and part.uid in s.moved:
+        base += spec.moved_bonus
+    s.fresh.discard(part.uid)
+    if base or spec.block:
         mult = 1 + AMPLIFIER_BONUS * _adjacent_amplifiers(s, slot)
-        if spec.damage:
-            dmg = int(spec.damage * mult)
+        if part.kind == Kind.MIRROR and part.mod == Mod.POLISH:
+            mult += POLISH_BONUS
+        if base:
+            dmg = int(base * mult)
             s.enemy_hp -= dmg
             s.damage_turn += dmg
             notes.append(f"{dmg} damage")
@@ -449,10 +473,16 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if spec.cooling:
         s.heat = max(0, s.heat - spec.cooling)
         notes.append(f"-{spec.cooling} Heat")
+    if bonus:
+        s.enemy_hp -= bonus
+        s.damage_turn += bonus
+        notes.append(f"+{bonus} damage (Coil)")
     if kind == Kind.LOADER:
-        notes.append(_load(s))
+        notes.append(_load(s, feeder=eff.mod == Mod.FEEDER))
+    pulled = []
     if kind == Kind.MAGNET:
-        notes.append(_magnet(s, slot))
+        note, pulled = _magnet(s, slot)
+        notes.append(note)
     _log(s, f"  {label} triggers ({direction}): {', '.join(notes)} -> Heat {s.heat}")
 
     if s.enemy_hp <= 0:
@@ -464,13 +494,17 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         return False
 
     if kind == Kind.SPRING:
-        stack.append(("crank", direction))
+        stack.append(("crank", direction, COIL_DAMAGE if eff.mod == Mod.COIL else 0))
     elif kind == Kind.COUPLER:
         left, right = (slot - 1) % n, (slot + 1) % n
         # Depth-first, left then right: push right first so left resolves (fully) first.
         for nb, d in ((right, CCW), (left, CW)):
             if s.gear[nb] is not None:
-                stack.append(("trigger", nb, d, True, s.gear[nb].uid))
+                stack.append(("trigger", nb, d, True, s.gear[nb].uid, 0))
+    elif kind == Kind.MAGNET and eff.mod == Mod.CLAMP:
+        # Clamp: each pulled part triggers, left side first (pushed last).
+        for near, uid, d in reversed(pulled):
+            stack.append(("trigger", near, d, False, uid, 0))
     return True
 
 
@@ -492,7 +526,7 @@ def _adjacent_amplifiers(s: State, slot: int) -> int:
                if s.gear[nb] is not None and s.gear[nb].kind == Kind.AMPLIFIER)
 
 
-def _load(s: State) -> str:
+def _load(s: State, feeder: bool = False) -> str:
     empty = [i for i, p in enumerate(s.gear) if p is None]
     if not empty:
         return "no empty slot"
@@ -501,20 +535,31 @@ def _load(s: State) -> str:
     if not s.queue:
         return "nothing to load"
     part = s.queue.pop(0)                 # the next part in the queue
-    slot = s.rng.choice(empty)
+    if feeder:      # the next empty slot to come up in this turn's direction
+        n = len(s.gear)
+        step = -1 if s.turn_direction == CW else 1
+        slot = next(((s.top + step * k) % n for k in range(1, n) if s.gear[(s.top + step * k) % n] is None),
+                    s.top)  # only the Trigger Point itself is empty
+    else:
+        slot = s.rng.choice(empty)
     s.gear[slot] = part
+    s.fresh.add(part.uid)
     return f"loads {part} into slot {slot}"
 
 
-def _magnet(s: State, slot: int) -> str:
+def _magnet(s: State, slot: int):
+    """Pull both parts 2 slots away into empty neighbouring slots. Returns (note, pulled) where
+    pulled lists (new slot, uid, direction towards the Magnet's side) in left-then-right order."""
     n = len(s.gear)
-    moved = []
-    for step in (-1, 1):    # left side first, then right
+    moved, pulled = [], []
+    for step, d in ((-1, CW), (1, CCW)):    # left side first, then right
         near, far = (slot + step) % n, (slot + 2 * step) % n
         if far != slot and s.gear[near] is None and s.gear[far] is not None:
             s.gear[near], s.gear[far] = s.gear[far], None
+            s.moved.add(s.gear[near].uid)
             moved.append(f"{s.gear[near]} {far}->{near}")
-    return "pulls " + ", ".join(moved) if moved else "pulls nothing"
+            pulled.append((near, s.gear[near].uid, d))
+    return ("pulls " + ", ".join(moved) if moved else "pulls nothing"), pulled
 
 
 # ---------------------------------------------------------------------------
