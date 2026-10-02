@@ -25,22 +25,24 @@ class EnemySpec:
     crank_limit: Optional[int] = None         # Clock Tower: total cranks in the fight
 
 
+# Tuned v2: HP and attacks scaled (clockwork.tune) until the greedy agent wins ~60-70% on average
+# across the six test decks. v1 values (before tuning) in the comments.
 ENEMIES = {
-    # Rules.md §8b paper-prototype baseline.
-    "dummy": EnemySpec("dummy", 60, ((("attack", 8),),)),
-    # Telegraphed big hit every 3rd turn: tests Block timing.
-    "spiker": EnemySpec("spiker", 70, ((("attack", 4),), (("attack", 4),), (("attack", 18),))),
-    # Enrage timer: 4, 6, 8, 10 ... tests burst.
-    "enrager": EnemySpec("enrager", 75, ((("attack", 4),),), attack_growth=2),
-    # Attacks the machine.
-    "saboteur": EnemySpec("saboteur", 65, (
-        (("attack", 8),),
-        (("jam", 2), ("attack", 6)),
-        (("wind_back",), ("attack", 8)),
-        (("unscrew",), ("attack", 6)),
+    # Rules.md §8b paper-prototype baseline. v1: 60 HP, Attack 8.
+    "dummy": EnemySpec("dummy", 82, ((("attack", 11),),)),
+    # Telegraphed big hit every 3rd turn: tests Block timing. v1: 70 HP, 4/4/18.
+    "spiker": EnemySpec("spiker", 89, ((("attack", 5),), (("attack", 5),), (("attack", 23),))),
+    # Enrage timer: 4, 6, 8, 10 ... tests burst. v1: 75 HP.
+    "enrager": EnemySpec("enrager", 81, ((("attack", 4),),), attack_growth=2),
+    # Attacks the machine. v1: 65 HP, attacks 8/6/8/6.
+    "saboteur": EnemySpec("saboteur", 91, (
+        (("attack", 11),),
+        (("jam", 2), ("attack", 8)),
+        (("wind_back",), ("attack", 11)),
+        (("unscrew",), ("attack", 8)),
     )),
-    # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks).
-    "clock_tower": EnemySpec("clock_tower", 50, ((("attack", 6),),), crank_limit=12),
+    # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks). v1: 50 HP.
+    "clock_tower": EnemySpec("clock_tower", 54, ((("attack", 6),),), crank_limit=12),
 }
 
 
