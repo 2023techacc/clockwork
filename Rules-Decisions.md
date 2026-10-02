@@ -115,3 +115,26 @@ Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and o
 - **Clock Tower:** every crank counts, including Springs (confirmed for now; the boss is due for a rework). When the 12th crank happens, the tower strikes at the end of that turn unless the enemy is already dead.
 - **Not simulated yet:** Rust (its stat is undefined), Blueprints, Second Gear, Bigger Gear (gear size is a setting), part upgrades, and §8b #6 (enemies scaling with machine size).
 - **Win/loss:** the fight is won the moment enemy HP reaches 0, even partway through a chain.
+
+---
+
+## New parts and attachments (sim v4, proposals under test)
+
+**Payoff parts** for the enablers that underperform:
+
+| Part | Effect | Pairs with |
+|---|---|---|
+| **Primer** | 18 damage on its first trigger after being installed, 4 after that. Installing it again (from the queue, or via Loader) re-arms it. | Loader, replacing parts |
+| **Assembly** | 2 damage per occupied gear slot, itself included (12 on a full 6-slot gear) | Loader filling the gear |
+| **Slider** | 5 damage, +6 if a Magnet moved it this turn | Magnet |
+
+**Attachments:** a per-part upgrade, like bolting something onto a part. A part takes at most one, and each attachment fits one part type. How players get them in a run is not designed yet; for now they're fixed in the test decks. A Mirror copying a part copies its attachment too, consistent with "the copied part sits in the Mirror's place".
+
+| Attachment | Fits | Effect |
+|---|---|---|
+| **Coil** | Spring | The part this Spring's crank triggers also deals 4 damage (flat, not amplified). Lost if the crank lands on an empty slot. |
+| **Polish** | Mirror | The copy's damage and Block get +50%, added to any Amplifier bonus |
+| **Clamp** | Magnet | Every part this Magnet pulls is triggered (left side first) |
+| **Feeder** | Loader | Loads into the next empty slot to come up in the turn's direction, not a random one |
+
+Numbers are first guesses; the probe results are in the roadmap ("Results v4").
