@@ -11,7 +11,7 @@ import math
 import os
 from concurrent.futures import ProcessPoolExecutor
 
-from .decks import DECKS
+from .decks import ALL_DECKS, DECKS
 from .enemies import ENEMIES
 from .engine import summary
 from .run import make_agent, play
@@ -46,7 +46,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--agents", nargs="+", default=["random", "greedy"],
                     help="random, greedy, mcts or mcts@<budget>")
-    ap.add_argument("--decks", nargs="+", default=list(DECKS), choices=list(DECKS))
+    ap.add_argument("--decks", nargs="+", default=list(DECKS), choices=list(ALL_DECKS))
     ap.add_argument("--enemies", nargs="+", default=list(ENEMIES), choices=list(ENEMIES))
     ap.add_argument("--fights", type=int, default=1000)
     ap.add_argument("--fights-for", nargs="*", default=[], metavar="AGENT=N",

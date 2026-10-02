@@ -9,7 +9,7 @@ import statistics
 from .agents.greedy_agent import GreedyAgent
 from .agents.mcts_agent import MCTSAgent
 from .agents.random_agent import RandomAgent
-from .decks import DECKS
+from .decks import ALL_DECKS, DECKS
 from .enemies import ENEMIES
 from .engine import apply, legal_actions, new_fight, summary
 
@@ -25,7 +25,7 @@ def make_agent(spec, seed):
 
 
 def play(deck, enemy, seed, agent, trace=False):
-    s = new_fight(DECKS[deck], enemy, seed=seed, trace=trace)
+    s = new_fight(ALL_DECKS[deck], enemy, seed=seed, trace=trace)
     while s.result is None:
         apply(s, agent.act(s, legal_actions(s)))
     return s
@@ -33,7 +33,7 @@ def play(deck, enemy, seed, agent, trace=False):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--deck", default="starter", choices=sorted(DECKS))
+    ap.add_argument("--deck", default="starter", choices=sorted(ALL_DECKS))
     ap.add_argument("--enemy", default="dummy", choices=sorted(ENEMIES))
     ap.add_argument("--agent", default="random", help="random, greedy, mcts or mcts@<budget>")
     ap.add_argument("--fights", type=int, default=1)

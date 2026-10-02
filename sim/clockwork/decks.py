@@ -24,3 +24,22 @@ DECKS = {
 def deck_list(deck):
     """Expand {Kind: count} into a list of kinds in a stable order."""
     return [kind for kind, n in deck.items() for _ in range(n)]
+
+
+# Probe decks: the starter plus one or two parts, to measure what a single pick is worth.
+# Kept out of DECKS so tuning and the main experiment matrix are unaffected.
+PROBE_DECKS = {
+    "plus_hammer": _plus({K.HAMMER: 1}),
+    "plus_amplifier": _plus({K.AMPLIFIER: 1}),
+    "plus_coolant": _plus({K.COOLANT: 1}),
+    "plus_coupler": _plus({K.COUPLER: 1}),
+    "plus_mirror": _plus({K.MIRROR: 1}),
+    "plus_loader": _plus({K.LOADER: 1}),
+    "plus_magnet": _plus({K.MAGNET: 1}),
+    "plus_spring": _plus({K.SPRING: 1}),
+    "plus_hammer_amp": _plus({K.HAMMER: 1, K.AMPLIFIER: 1}),
+    "plus_2hammer": _plus({K.HAMMER: 2}),
+    "plus_hammer_coolant": _plus({K.HAMMER: 1, K.COOLANT: 1}),
+}
+
+ALL_DECKS = {**DECKS, **PROBE_DECKS}
