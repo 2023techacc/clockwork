@@ -151,3 +151,6 @@ Numbers are first guesses; the probe results are in the roadmap ("Results v4").
 - **Magnet:** pulls into occupied slots by swapping.
 
 All numbers are settings in `sim/clockwork/config.py` and `sim/clockwork/parts.py`. See "Results v5" in the roadmap.
+- **Loader:** installs the next **two** parts in the queue per trigger.
+- **Slider:** moved bonus +3 (was +6).
+- **Enemy HP:** each fight rolls base ±3.

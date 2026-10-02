@@ -330,3 +330,30 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
   - lower Slider's moved bonus, or have Clamp skip the moved bonus;
   - retune the enemies, since the main decks' strength changed;
   - re-run the tier comparison after the Heat rework.
+
+---
+
+## Results v6 (two-part Loader, Slider moved bonus 3, enemy HP ±3, enemies v6)
+
+**Enemy HP jitter.** Without it, win rate falls in steps at multiples of 6 HP, because starter damage comes in chunks of 6. One HP (84 vs 85) decided whether the starter deck won 78% or 38% against dummy. Each fight now rolls enemy HP within ±3 of the base, like Slay the Spire's HP ranges, and greedy's win-rate curve becomes smooth (59/48/37/33/29/20/14% from 78 to 90 HP). This probably also caused much of the jumpiness in the v5 part sweeps. Enemies v6: dummy 82 HP, spiker 89 (5/5/22), enrager 82, saboteur 92, clock_tower 52.
+
+**Validation** (MCTS@50, 100 fights per enemy across all 5 enemies; starter 71%):
+
+| Deck | vs starter | | Deck | vs starter |
+|---|---|---|---|---|
+| starter with its Spring Coiled | +21 | | + Loader + Primer | +5 |
+| + Primer | +17 | | + Assembly | +2 |
+| + Polish Mirror | +15 | | + Slider | +2 |
+| + Clamp Magnet + Slider | +13 | | + Coolant | −1 |
+| + Coil Spring | +11 | | + Loader + Assembly | −6 |
+| + Hammer | +9 | | + Mirror | −7 |
+| + Feeder Loader + Primer | +8 | | + Magnet + Slider | −8 |
+| + Coupler | +8 | | + Loader (two loads) | −9 |
+| + Amplifier | +6 | | + Spring | −14 |
+| + Clamp Magnet | +6 | | + Magnet | −15 |
+
+**Reading:**
+- **The scale is compressed.** The six main decks got weaker, so the retuned enemies are easier and the starter deck now wins 71%. Only 29 points of headroom remain, so these numbers aren't comparable to v5's; read the order, not the size. No pick is an outlier any more: the top is +21.
+- **Clamp Magnet + Slider came down from +39 to +13.**
+- **The second load barely helps the Loader** (−11 → −9), and payoffs still do better alone than with it. The Loader's problem isn't how much it loads: the gear fills by itself within about 3 turns of normal installs, so filling empty slots only matters early in a fight. Loader decks deal more damage per turn (10.1 vs 9.5 with Assembly) but lose more, because the Loader and the parts it loads crowd out Plates.
+- **The plain starter (71%) now beats spring_chain (about 57%) and utility (about 42%) in the tuning run.** Those decks carry the parts that test negative (Spring, Loader, Magnet).
