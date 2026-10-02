@@ -226,3 +226,21 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
 - **Four parts make the deck worse than taking nothing:** Mirror, Loader, Magnet and Spring all score at or below the starter deck. A pick-1-of-3 reward should never be a trap, so they need buffs or a skip option. Spring is negative because its extra Heat costs more than the free crank gains now that cranks can't go back and forth.
 - **Full archetypes add almost nothing over their core:** big_hit and spring_chain are no better than "starter + Hammer". The archetype identity isn't doing work yet.
 - **Next balance step:** sweep Hammer's damage and Heat (and/or give it a real set-up cost), then re-run these probes until no single part is worth more than about +20–25 points.
+
+### Results v3b: Hammer sweep
+
+"Starter + 1 Hammer" against the starter deck, MCTS@50, 100 fights per enemy across all 5 enemies (starter: 43%, 8.8 damage/turn). Win-rate points gained:
+
+| Hammer damage | +2 Heat | +3 Heat | +4 Heat |
+|---|---|---|---|
+| 7 | +14 | +12 | +14 |
+| 8 | +18 | +20 | +18 |
+| 9 | +16 | +22 | **+26** |
+| 10 | +31 | +12 | +38 |
+| 11 | +48 | +23 | +40 |
+| 12 | +49 | +31 | +46 |
+| 15 (original) | +56 | | |
+
+**Chosen: 9 damage, +4 Heat (+26).**
+
+**Heat isn't monotonic.** A Hammer that costs more Heat can be stronger. Greedy shows the same thing at damage 10: 3 / 4 / 5 / 6 total Heat give 89% / 44% / 25% / 56% / 61% win against dummy (2–6 total Heat in order). The cause is the Overheat reset discarding Heat above 10. With a 6-Heat Hammer, the Hammer is the trigger that tips the machine over in 71% of Overheats, with 3.6 Heat discarded each time on average (0.4 for a 2-Heat Hammer). High-Heat parts get a hidden discount, so this sweep should be redone after the Heat rework.

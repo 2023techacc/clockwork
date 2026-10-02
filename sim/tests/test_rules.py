@@ -33,6 +33,8 @@ def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
 
 
 UNLOCKED = RulesConfig(crank_direction_lock=False)
+# Rules.md's original Hammer (15 damage, +2 Heat), for tests written against the rules text.
+RULES_MD = RulesConfig(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
 
 
 def free_crank(s, direction=None):
@@ -42,7 +44,7 @@ def free_crank(s, direction=None):
 class HeatAndExample(unittest.TestCase):
     def test_rules_section_8_example(self):
         # Rules.md §8. The listed order is the order parts reach the top.
-        s, _ = setup([CO, SP, SP, H, A, P])
+        s, _ = setup([CO, SP, SP, H, A, P], rules=RULES_MD)
         free_crank(s)
         self.assertEqual(999 - s.enemy_hp, 22)          # 15 * 1.5, rounded down
         self.assertEqual(s.heat, 8)                     # Spring 2 + Spring 3 + Hammer 3
@@ -55,7 +57,7 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual((999 - s.enemy_hp, s.heat), (10, 5))
 
     def test_every_trigger_adds_one_plus_extras(self):
-        s, _ = setup([None, S, H])
+        s, _ = setup([None, S, H], rules=RULES_MD)
         free_crank(s)
         self.assertEqual(s.heat, 1)
         apply(s, ("crank",))
@@ -150,7 +152,7 @@ class CouplerAndMirror(unittest.TestCase):
         self.assertEqual(s.heat, 1)
 
     def test_mirror_copying_hammer_costs_hammer_heat(self):
-        s, _ = setup([None, M, None, None, H, None])
+        s, _ = setup([None, M, None, None, H, None], rules=RULES_MD)
         free_crank(s)
         self.assertEqual((999 - s.enemy_hp, s.heat), (15, 3))
 

@@ -38,7 +38,7 @@ SPECS = {
     Kind.COUPLER: PartSpec(),
     Kind.LOADER: PartSpec(),
     Kind.COOLANT: PartSpec(cooling=3),
-    Kind.HAMMER: PartSpec(damage=15, extra_heat=2),
+    Kind.HAMMER: PartSpec(damage=9, extra_heat=4),     # Rules.md: 15 damage, +2 Heat (swept down, v3)
     Kind.MAGNET: PartSpec(),
 }
 

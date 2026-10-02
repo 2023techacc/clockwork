@@ -4,7 +4,7 @@ from clockwork.agents.greedy_agent import GreedyAgent
 from clockwork.agents.random_agent import RandomAgent
 from clockwork.engine import summary
 from clockwork.loopfinder import _template, evaluate, layouts
-from clockwork.config import DEFAULT_RULES
+from clockwork.config import DEFAULT_RULES, RulesConfig
 from clockwork.parts import Kind as K
 from clockwork.run import play
 from clockwork.search import turn_outcomes
@@ -38,7 +38,8 @@ class Agents(unittest.TestCase):
 class LoopFinder(unittest.TestCase):
     def test_rules_example_layout(self):
         layout = (K.COOLANT, K.SPRING, K.SPRING, K.HAMMER, K.AMPLIFIER, K.PLATE)
-        best_t, best_d = evaluate(layout, 0, _template(DEFAULT_RULES))
+        rules = RulesConfig(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
+        best_t, best_d = evaluate(layout, 0, _template(rules))
         self.assertGreaterEqual(best_d[1], 22)
 
     def test_layouts_respect_deck_counts(self):

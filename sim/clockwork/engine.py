@@ -46,6 +46,8 @@ class Stats:
     triggers_by_turn: List[int] = field(default_factory=list)
     heat_by_turn: List[int] = field(default_factory=list)   # Heat at end of each player turn
     overheats: int = 0
+    heat_overflow: int = 0          # Heat above the Overheat threshold, discarded by the reset
+    overheats_by: Dict[str, int] = field(default_factory=dict)   # part kind that tipped it over
     runaway_turns: int = 0          # turns stopped by the simulator safety cap
     reshuffles: int = 0
     turns_over_turn_cap: int = 0    # turns with > REF_TURN_CAP triggers
@@ -101,6 +103,7 @@ class State:
         s.jams = dict(self.jams)
         s.part_triggers = dict(self.part_triggers)
         st = Stats(**self.stats.__dict__)
+        st.overheats_by = dict(st.overheats_by)
         for name in ("damage_by_turn", "triggers_by_turn", "heat_by_turn"):
             setattr(st, name, list(getattr(st, name)))
         s.stats = st
@@ -202,7 +205,8 @@ def summary(s: State) -> dict:
         "total_damage": sum(st.damage_by_turn),
         "max_damage_turn": max(st.damage_by_turn, default=0),
         "max_triggers_turn": max(st.triggers_by_turn, default=0),
-        "overheats": st.overheats, "runaway_turns": st.runaway_turns,
+        "overheats": st.overheats, "heat_overflow": st.heat_overflow,
+        "runaway_turns": st.runaway_turns,
         "reshuffles": st.reshuffles, "final_heat": s.heat,
         "turns_over_turn_cap": st.turns_over_turn_cap,
         "turns_over_part_cap": st.turns_over_part_cap,
@@ -456,6 +460,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         _finish(s, "win", "enemy hp")
         return False
     if _check_overheat(s):
+        s.stats.overheats_by[kind.value] = s.stats.overheats_by.get(kind.value, 0) + 1
         return False
 
     if kind == Kind.SPRING:
@@ -473,6 +478,7 @@ def _check_overheat(s: State) -> bool:
     if s.heat < s.rules.overheat_at:
         return False
     s.stats.overheats += 1
+    s.stats.heat_overflow += s.heat - s.rules.overheat_at
     s.heat = 0
     s.locked = True
     s.overheat_pending = True
