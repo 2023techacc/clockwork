@@ -183,3 +183,46 @@ Random → Greedy → MCTS → RL should each step up by a comparable, explainab
 - **Decks are badly unbalanced.** big_hit and spring_chain win nearly everything even for greedy. utility (Loader/Magnet) is the weakest: those parts cost triggers and Heat without dealing damage or Block.
 - **Back-and-forth cranking is used equally by greedy and MCTS** (about 25% of fights), so a planner treats it as a real technique, not a greedy artifact. Whether §8b #1 or a backward-crank cost should rein it in is still a design call.
 - **Still no loops:** no runaway turns, and at most 7 triggers in a turn for greedy and MCTS.
+
+---
+
+## Results v3 (crank direction locked per turn, enemies tuned to MCTS@50)
+
+**Changes since v2:** the crank direction is locked per turn (no back-and-forth cranking). Enemies are retuned so that MCTS with 50 simulations per decision, a stand-in for a casual player, wins about 60–67% averaged over the six test decks: dummy 82 HP / attack 11, spiker 90 HP / 5-5-23, enrager 85 HP / 4 +2 per turn, saboteur 91 HP, clock_tower 57 HP. The lock alone dropped greedy's starter-deck win rate against dummy from 40% to 10%. It also cut big_hit's best single turn from 66 to 52 damage, under the 3×-normal line of 54.
+
+**Can the strong decks be drafted?** A player forcing a deck from "pick 1 of 3 random parts" rewards (all 10 part types in the pool) completes it with these odds:
+
+| Target | 4 picks | 6 | 8 | 12 |
+|---|---|---|---|---|
+| big_hit (2 Hammer, 2 Amp) | 4% | 23% | 46% | 80% |
+| spring_chain (2 Spring, Coolant, Hammer) | 6% | 32% | 57% | 87% |
+| copy_loop (2 Coupler, 2 Mirror) | 4% | 23% | 47% | 80% |
+| 1 Hammer + 1 Amp | 51% | 74% | 87% | 97% |
+
+Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Parts stay on the gear once installed, so a bigger deck barely dilutes a key part. These decks will be common by mid-run.
+
+**What one pick is worth** (win rate averaged over the 5 enemies; MCTS@50 at 100 fights per cell, greedy at 300):
+
+| Deck | MCTS@50 | vs starter | greedy | Best turn (damage) |
+|---|---|---|---|---|
+| starter | 43% | — | 15% | 18 |
+| + Hammer | **100%** | +56 | 92% | 27 |
+| + Amplifier | 85% | +42 | 60% | 21 |
+| + Coolant | 56% | +13 | 38% | 18 |
+| + Coupler | 56% | +13 | 28% | 24 |
+| + Mirror | 41% | −2 | 13% | 18 |
+| + Loader | 36% | −7 | 14% | 18 |
+| + Spring | 33% | −10 | 14% | 18 |
+| + Magnet | 30% | −13 | 13% | 18 |
+| + Hammer + Amp | 100% | +57 | 97% | 34 |
+| + 2 Hammer | 100% | +57 | 99% | 36 |
+| + Hammer + Coolant | 98% | +55 | 90% | 27 |
+| big_hit | 100% | +57 | 99% | 52 |
+| spring_chain | 96% | +52 | 83% | 27 |
+
+**Reading:**
+- **A single Hammer decides the fight.** One Hammer takes the casual stand-in from 43% to 100% against every enemy, and greedy from 15% to 92%. It is not a combo problem: the limit that binds is triggers per turn (about 3 from Crank Power), not Heat, so damage per trigger is what counts. 15 damage for 3 Heat beats a Striker's 6 for 1. The "big numbers on slow parts" guideline (§8b #5) isn't met, because Hammer isn't slow.
+- **Amplifier is the second strongest single pick** (+42), even with nothing big to amplify.
+- **Four parts make the deck worse than taking nothing:** Mirror, Loader, Magnet and Spring all score at or below the starter deck. A pick-1-of-3 reward should never be a trap, so they need buffs or a skip option. Spring is negative because its extra Heat costs more than the free crank gains now that cranks can't go back and forth.
+- **Full archetypes add almost nothing over their core:** big_hit and spring_chain are no better than "starter + Hammer". The archetype identity isn't doing work yet.
+- **Next balance step:** sweep Hammer's damage and Heat (and/or give it a real set-up cost), then re-run these probes until no single part is worth more than about +20–25 points.
