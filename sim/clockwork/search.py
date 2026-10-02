@@ -47,8 +47,15 @@ def turn_outcomes(s: State) -> Iterator[Tuple[list, State]]:
     """Every distinct way to play out the rest of this turn. States are clones; `s` is untouched."""
     if s.phase == "install":
         for acts, cur in install_plans(s.clone()):
-            nxt = cur.clone()
-            apply(nxt, ("end_install",))
-            yield from crank_outcomes(nxt, acts + [("end_install",)])
+            yield from after_installs(cur, acts)
     elif s.phase == "crank":
         yield from crank_outcomes(s.clone(), [])
+
+
+def after_installs(cur: State, acts: list) -> Iterator[Tuple[list, State]]:
+    """From the end of the install phase: each end_install choice (turn direction), then cranks."""
+    for end in [a for a in legal_actions(cur) if a[0] == "end_install"]:
+        nxt = cur.clone()
+        apply(nxt, end)
+        yield from crank_outcomes(nxt, acts + [end])
+

@@ -17,9 +17,11 @@ Trigger resolution is depth-first on an explicit stack (no recursion limit).
 
 Actions are plain tuples:
     ("install", hand_index, slot)   slot = gear slot index
-    ("end_install",)                then the free crank happens automatically
-    ("crank",)                      1 Crank Power, forward
-    ("crank_back",)                 1 Crank Power, backward
+    ("end_install", "cw"|"ccw")     then the free crank happens automatically, in that direction.
+                                    With the direction lock (default) this picks the turn's
+                                    direction; ("end_install",) alone means clockwise.
+    ("crank",)                      1 Crank Power, in the turn's direction (forward if unlocked)
+    ("crank_back",)                 1 Crank Power, backward (only without the direction lock)
     ("end_turn",)
 """
 from dataclasses import dataclass, field
@@ -68,6 +70,7 @@ class State:
     block: int = 0
     heat: int = 0
     crank_power: int = 0
+    turn_direction: str = "cw"      # direction of this turn's player cranks
     installs_left: int = 0
     dead_turn: bool = False         # this turn follows an Overheat: no cranks at all
     overheat_pending: bool = False  # next turn will be dead
@@ -143,11 +146,16 @@ def legal_actions(s: State) -> List[tuple]:
                     continue
                 seen.add(part.kind)
                 acts.extend(("install", i, slot) for slot in range(len(s.gear)))
-        acts.append(("end_install",))
+        if s.rules.crank_direction_lock and not s.dead_turn:
+            acts += [("end_install", CW), ("end_install", CCW)]
+        else:
+            acts.append(("end_install",))
         return acts
     acts = []
     if _can_crank(s):
-        acts += [("crank",), ("crank_back",)]
+        acts.append(("crank",))
+        if not s.rules.crank_direction_lock:
+            acts.append(("crank_back",))
     acts.append(("end_turn",))
     return acts
 
@@ -162,15 +170,23 @@ def apply(s: State, action: tuple) -> None:
     elif kind == "end_install":
         _require(s.phase == "install", action)
         s.phase = "crank"
+        s.turn_direction = action[1] if len(action) > 1 else CW
+        _require(s.turn_direction in (CW, CCW), action)
+        _require(s.turn_direction == CW or s.rules.crank_direction_lock, action)
         if s.dead_turn:
             s.locked = True
             _log(s, "overheated: no cranks this turn")
         else:
-            _player_crank(s, CW, free=True)
+            _player_crank(s, s.turn_direction, free=True)
     elif kind in ("crank", "crank_back"):
         _require(s.phase == "crank" and _can_crank(s), action)
+        _require(kind == "crank" or not s.rules.crank_direction_lock, action)
         s.crank_power -= 1
-        _player_crank(s, CW if kind == "crank" else CCW, free=False)
+        if kind == "crank_back":
+            direction = CCW
+        else:
+            direction = s.turn_direction if s.rules.crank_direction_lock else CW
+        _player_crank(s, direction, free=False)
     elif kind == "end_turn":
         _require(s.phase == "crank", action)
         _end_turn(s)

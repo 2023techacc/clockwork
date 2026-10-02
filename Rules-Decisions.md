@@ -96,7 +96,8 @@ Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and o
 - **Amplifiers add up:** +50% each, applied to damage and Block only, rounded down.
 
 ### Cranking and installing
-- **Backward crank:** 1 Crank Power each, no limit, and it triggers the new top part.
+- **Crank direction is locked per turn:** when installing ends, the player picks clockwise or counter-clockwise for the whole turn. The free crank and every paid crank (1 Crank Power each, no limit) go that way, and each triggers the new top part. Cranking back and forth in one turn is no longer possible. (The setting `crank_direction_lock` turns it off for comparison: free crank clockwise, paid cranks either way.)
+- Springs still crank the way their trigger was travelling, so a Coupler's right-hand Spring can still turn the gear against the turn's direction. **(sim default: the lock covers player cranks only.)**
 - **Gear starts empty.** Installing into the top slot is allowed but does not trigger anything. Replacing a part sends the old one to the discard pile.
 - **Empty Trigger Point:** nothing happens and the chain ends.
 

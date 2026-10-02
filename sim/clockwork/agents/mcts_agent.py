@@ -16,7 +16,7 @@ import math
 import random
 
 from ..engine import apply, legal_actions
-from ..search import crank_outcomes, gear_key, turn_outcomes
+from ..search import after_installs, gear_key, turn_outcomes
 from .greedy_agent import GreedyAgent
 
 _SCORER = GreedyAgent()
@@ -30,7 +30,7 @@ def reward(s) -> float:
 
 def end_key(s) -> tuple:
     return (gear_key(s), s.top, s.heat, s.block, s.enemy_hp, s.overheat_pending, s.result,
-            tuple(sorted(str(p.kind) for p in s.discard)), tuple(sorted(s.jams.items())))
+            tuple(sorted(p.kind.value for p in s.discard)), tuple(sorted(s.jams.items())))
 
 
 def ranked_outcomes(s, outcomes):
@@ -64,8 +64,7 @@ def sampled_outcomes(s, rng, samples):
         seen.add(k)
         seqs.append((acts, cur))
     for acts, cur in seqs:
-        apply(cur, ("end_install",))
-        yield from crank_outcomes(cur, acts + [("end_install",)])
+        yield from after_installs(cur, acts)
 
 
 def fast_turn(s, rng, samples):
@@ -143,13 +142,14 @@ class MCTSAgent:
                 value = reward(s)
                 break
             if node.cands is None:
-                if node is root:
-                    node.cands = ranked_outcomes(s, turn_outcomes(s))
-                else:
-                    node.cands = ranked_outcomes(s, sampled_outcomes(s, self.rng, 2 * self.rollout_samples))
+                node.cands = ranked_outcomes(s, sampled_outcomes(s, self.rng, 2 * self.rollout_samples))
             allowed = min(len(node.cands), math.ceil(self.pw_c * node.n ** self.pw_alpha))
             if len(node.children) < allowed:
                 plan, end = node.cands[len(node.children)]
+                if end is None:     # root plans are shared across worlds; replay in this one
+                    end = s.clone()
+                    for a in plan:
+                        apply(end, a)
                 edge = _Edge(plan, _Node(end_turn(end)))
                 node.children.append(edge)
                 path.append(edge)
@@ -168,8 +168,12 @@ class MCTSAgent:
     def search(self, state):
         totals = {}
         per_world = max(1, self.budget // self.worlds)
-        for _ in range(self.worlds):
-            root = _Node(self.determinize(state))
+        # Every world shares the same root plans (the hand and machine are known); rank them once.
+        first = self.determinize(state)
+        plans = [plan for plan, _ in ranked_outcomes(first, turn_outcomes(first))]
+        for w in range(self.worlds):
+            root = _Node(first if w == 0 else self.determinize(state))
+            root.cands = [(plan, None) for plan in plans]
             for _ in range(per_world):
                 self.simulate(root)
             for e in root.children:

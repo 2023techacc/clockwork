@@ -3,6 +3,7 @@ import unittest
 
 from clockwork import RulesConfig, apply, legal_actions, new_fight
 from clockwork import engine
+from clockwork.search import turn_outcomes
 from clockwork.agents.random_agent import RandomAgent
 from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
@@ -31,8 +32,11 @@ def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
     return s, slot_of
 
 
-def free_crank(s):
-    apply(s, ("end_install",))
+UNLOCKED = RulesConfig(crank_direction_lock=False)
+
+
+def free_crank(s, direction=None):
+    apply(s, ("end_install",) if direction is None else ("end_install", direction))
 
 
 class HeatAndExample(unittest.TestCase):
@@ -82,7 +86,7 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual(s.heat, 4)
 
     def test_coolant(self):
-        s, _ = setup([None, S, CO])
+        s, _ = setup([None, S, CO], rules=UNLOCKED)
         s.heat = 5
         free_crank(s)
         apply(s, ("crank",))
@@ -167,7 +171,7 @@ class CouplerAndMirror(unittest.TestCase):
 
 class Cranking(unittest.TestCase):
     def test_backward_crank_triggers_and_costs_power(self):
-        s, _ = setup([S, None, None, None, None, P])
+        s, _ = setup([S, None, None, None, None, P], rules=UNLOCKED)
         free_crank(s)                                   # onto empty
         apply(s, ("crank_back",))                       # back to the Striker
         self.assertEqual((s.crank_power, 999 - s.enemy_hp), (1, 6))
@@ -177,10 +181,47 @@ class Cranking(unittest.TestCase):
 
     def test_spring_follows_backward_crank(self):
         # Going backward from the top: Spring, then Striker. The Spring keeps cranking backward.
-        s, _ = setup([None, None, None, None, S, SP])
+        s, _ = setup([None, None, None, None, S, SP], rules=UNLOCKED)
         s.phase, s.crank_power = "crank", 1
         apply(s, ("crank_back",))
         self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_direction_lock_offers_both_directions_then_one(self):
+        s, _ = setup([None, S])
+        self.assertIn(("end_install", engine.CW), legal_actions(s))
+        self.assertIn(("end_install", engine.CCW), legal_actions(s))
+        free_crank(s, engine.CW)
+        self.assertEqual(legal_actions(s), [("crank",), ("end_turn",)])
+        self.assertRaises(ValueError, apply, s, ("crank_back",))
+
+    def test_counter_clockwise_turn(self):
+        # Going backward from the top: Plate, then Striker. Free and paid cranks both go that way.
+        s, _ = setup([None, None, None, None, S, P])
+        free_crank(s, engine.CCW)
+        self.assertEqual(s.block, 6)
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_spring_follows_counter_clockwise_turn(self):
+        s, _ = setup([None, None, None, None, S, SP])
+        free_crank(s, engine.CCW)
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_no_back_and_forth_pendulum(self):
+        # Striker > Spring > Striker: unlocked, the Spring fires on every crank; locked, it can't repeat.
+        s, _ = setup([None, SP, S, None, None, S], rules=UNLOCKED)
+        free_crank(s)
+        apply(s, ("crank_back",))
+        apply(s, ("crank",))
+        self.assertGreater(max(s.part_triggers.values()), 2)
+        best = max(max(e.part_triggers.values(), default=0)
+                   for _, e in turn_outcomes(setup([None, SP, S, None, None, S])[0]))
+        self.assertLessEqual(best, 2)
+
+    def test_dead_turn_has_single_end_install(self):
+        s, _ = setup([None])
+        s.dead_turn = True
+        self.assertEqual([a for a in legal_actions(s) if a[0] == "end_install"], [("end_install",)])
 
     def test_install_into_top_does_not_trigger_and_replace_discards(self):
         s, slot = setup([S])

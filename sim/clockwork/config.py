@@ -17,6 +17,9 @@ class RulesConfig:
     queue_visible: int = 5           # front-of-queue window, including the offered parts
     installs_per_turn: int = 2       # a replace counts as an install
     crank_power: int = 2             # fresh every turn, never carries over
+    # All of a turn's player cranks (free and paid) go one way, chosen when installing ends.
+    # False = old rule: free crank clockwise, paid cranks either way.
+    crank_direction_lock: bool = True
 
     # --- Heat (Rules.md §3, §8b #3) ---
     overheat_at: int = 10            # reaching this stops the turn, resets Heat to 0, next turn is dead

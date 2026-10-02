@@ -19,8 +19,7 @@ from .config import DEFAULT_RULES
 from .decks import DECKS
 from .engine import new_fight
 from .parts import Kind, Part
-from .search import crank_outcomes
-from .engine import apply
+from .search import after_installs
 
 
 def layouts(deck, n):
@@ -39,9 +38,8 @@ def evaluate(layout, heat, template):
         if kind is not None:
             s.gear[(-k) % n] = Part(k, kind)
     s.heat = heat
-    apply(s, ("end_install",))
     best_t = best_d = None
-    for acts, end in crank_outcomes(s, ["free"]):
+    for acts, end in after_installs(s, []):
         t, d = end.triggers_turn, end.damage_turn
         if best_t is None or (t, d) > best_t[:2]:
             best_t = (t, d, end.heat, end.overheat_pending, acts)
@@ -76,7 +74,7 @@ def _chunk(args):
 def fmt(layout, r):
     t, d, heat, over, acts = r
     names = " > ".join(k.value if k else "--" for k in layout)
-    cranks = " ".join(a if isinstance(a, str) else a[0] for a in acts)
+    cranks = " ".join("free " + a[1] if a[0] == "end_install" and len(a) > 1 else a[0] for a in acts)
     return f"{t:3d} triggers {d:4d} dmg  end Heat {heat}{' OVERHEAT' if over else ''}  [{names}]  ({cranks})"
 
 
