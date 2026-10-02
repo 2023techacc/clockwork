@@ -44,6 +44,7 @@ class PartSpec:
     triggers: bool = True      # False = passive, never triggers (no effect, no Heat)
     fresh_damage: int = 0      # replaces `damage` on the first trigger after being installed
     per_part_damage: int = 0   # extra damage per occupied gear slot (itself included)
+    per_install_damage: int = 0  # extra damage per part installed this turn (by hand or Loader)
     moved_bonus: int = 0       # extra damage if a Magnet moved it this turn
 
 
@@ -59,16 +60,15 @@ SPECS = {
     Kind.HAMMER: PartSpec(damage=9, extra_heat=4),     # Rules.md: 15 damage, +2 Heat (swept down, v3)
     Kind.MAGNET: PartSpec(),
     # Payoff parts (sim v4 proposals)
-    Kind.PRIMER: PartSpec(damage=4, fresh_damage=18),      # pairs with Loader / reinstalling
-    Kind.ASSEMBLY: PartSpec(per_part_damage=2),            # pairs with Loader filling the gear
+    # Primer: fresh_damage only if it triggers on the turn it was installed.
+    Kind.PRIMER: PartSpec(damage=4, fresh_damage=18),      # pairs with Loader (Feeder) / placement
+    Kind.ASSEMBLY: PartSpec(per_part_damage=1, per_install_damage=2),   # pairs with Loader
     Kind.SLIDER: PartSpec(damage=5, moved_bonus=6),        # pairs with Magnet
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}
-COIL_DAMAGE = 4
-POLISH_BONUS = 0.5
+# Coil damage, Polish bonus and the Amplifier bonus live in RulesConfig (sweepable).
 
-AMPLIFIER_BONUS = 0.5   # per adjacent Amplifier, additive; damage and Block only; rounded down
 
 
 @dataclass(frozen=True)

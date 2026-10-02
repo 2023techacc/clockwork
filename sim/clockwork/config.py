@@ -35,6 +35,12 @@ class RulesConfig:
     coupler_can_trigger_coupler: bool = False     # §8b #4 (active)
     # Mirror copying a Mirror is always "nothing": on an even gear it can only point back at itself.
 
+    # --- Part-effect numbers that aren't per-part stats ---
+    amplifier_bonus: float = 0.5     # per adjacent Amplifier, additive
+    coil_damage: int = 4             # Coil attachment
+    polish_bonus: float = 0.5        # Polish attachment, added to the Amplifier bonus
+    magnet_swaps: bool = True        # Magnet pulls into an occupied slot by swapping the two parts
+
     # --- Part stat overrides, for balance sweeps: (("Hammer", "damage", 10), ...) ---
     part_overrides: tuple = ()
 

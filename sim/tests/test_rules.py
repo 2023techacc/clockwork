@@ -252,10 +252,16 @@ class UtilityParts(unittest.TestCase):
         self.assertIsNone(s.gear[slot[3]])
         self.assertIsNone(s.gear[slot[5]])
 
-    def test_magnet_does_not_pull_into_occupied(self):
-        s, slot = setup([P, MG, P, S, None, None])
+    def test_magnet_does_not_pull_into_occupied_without_swaps(self):
+        s, slot = setup([P, MG, P, S, None, None], rules=RulesConfig(magnet_swaps=False))
         free_crank(s)
         self.assertEqual(s.gear[slot[3]].kind, S)
+
+    def test_magnet_swaps_into_occupied(self):
+        s, slot = setup([None, MG, P, S, None, None])
+        free_crank(s)
+        self.assertEqual((s.gear[slot[2]].kind, s.gear[slot[3]].kind), (S, P))
+        self.assertEqual(len(s.moved), 2)
 
     def test_loader_installs_next_part_in_queue(self):
         s, slot = setup([None, L], queue=[H, S])
@@ -301,7 +307,25 @@ class PayoffParts(unittest.TestCase):
     def test_assembly_counts_parts(self):
         s, _ = setup([P, K.ASSEMBLY, S, None, P, None])
         free_crank(s)
-        self.assertEqual(999 - s.enemy_hp, 8)           # 4 parts on the gear x 2
+        self.assertEqual(999 - s.enemy_hp, 4)           # 4 parts on the gear x 1
+
+    def test_assembly_counts_installs_this_turn(self):
+        s, slot = setup([P, K.ASSEMBLY, None, None, None, None])
+        s.hand = [Part(1, S), Part(2, S)]
+        apply(s, ("install", 0, slot[2]))
+        apply(s, ("install", 0, slot[3]))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4 + 2 * 2)   # 4 parts, 2 of them installed this turn
+
+    def test_primer_bonus_only_on_install_turn(self):
+        s, slot = setup([None, None, None])
+        s.hand = [Part(1, K.PRIMER)]
+        apply(s, ("install", 0, slot[2]))               # comes up on the 2nd crank; no crank this turn
+        free_crank(s)
+        apply(s, ("end_turn",))
+        s.top = slot[1]
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4)           # next turn it is no longer armed
 
     def test_slider_moved_bonus(self):
         # Magnet comes up first and pulls the Slider (2 slots away) next to it; the next crank hits it.
