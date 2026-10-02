@@ -510,7 +510,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
                 stack.append(("trigger", nb, d, True, s.gear[nb].uid, 0))
     elif kind == Kind.MAGNET and eff.mod == Mod.CLAMP:
         # Clamp: each pulled part triggers, left side first (pushed last).
-        for near, uid, d in reversed(pulled):
+        for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
             stack.append(("trigger", near, d, False, uid, 0))
     return True
 

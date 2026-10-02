@@ -1,5 +1,6 @@
 import itertools
 import unittest
+from dataclasses import replace as dc_replace
 
 from clockwork import RulesConfig, apply, legal_actions, new_fight
 from clockwork import engine
@@ -13,7 +14,21 @@ S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMP
                                     K.COUPLER, K.LOADER, K.COOLANT, K.HAMMER, K.MAGNET)
 
 
-def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
+# Mechanics tests pin the numbers they were written against, so balance passes that change
+# defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
+MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, part_overrides=(
+    ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
+    ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
+    ("Coupler", "extra_heat", 0)))
+
+
+def mech(**kw):
+    """MECH with some fields changed; part_overrides are appended."""
+    extra = kw.pop("part_overrides", ())
+    return dc_replace(MECH, part_overrides=MECH.part_overrides + tuple(extra), **kw)
+
+
+def setup(arrival, enemy="dummy", rules=MECH, queue=()):
     """Gear given in arrival order: arrival[0] is at the Trigger Point now, arrival[1] comes up
     on the next forward crank, and so on. Returns (state, slot_of) where slot_of[k] is the gear
     slot of arrival[k]."""
@@ -32,9 +47,9 @@ def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
     return s, slot_of
 
 
-UNLOCKED = RulesConfig(crank_direction_lock=False)
+UNLOCKED = mech(crank_direction_lock=False)
 # Rules.md's original Hammer (15 damage, +2 Heat), for tests written against the rules text.
-RULES_MD = RulesConfig(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
+RULES_MD = mech(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
 
 
 def free_crank(s, direction=None):
@@ -51,7 +66,7 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual(s.triggers_turn, 3)
 
     def test_part_overrides(self):
-        rules = RulesConfig(part_overrides=(("Hammer", "damage", 10), ("Hammer", "extra_heat", 4)))
+        rules = mech(part_overrides=(("Hammer", "damage", 10), ("Hammer", "extra_heat", 4)))
         s, _ = setup([None, H], rules=rules)
         free_crank(s)
         self.assertEqual((999 - s.enemy_hp, s.heat), (10, 5))
@@ -140,7 +155,7 @@ class CouplerAndMirror(unittest.TestCase):
         self.assertEqual(s.triggers_turn, 1)
 
     def test_coupler_can_trigger_coupler_when_allowed(self):
-        s, _ = setup([None, C, C, S], rules=RulesConfig(coupler_can_trigger_coupler=True))
+        s, _ = setup([None, C, C, S], rules=mech(coupler_can_trigger_coupler=True))
         free_crank(s)
         self.assertGreater(s.triggers_turn, 1)
 
@@ -253,7 +268,7 @@ class UtilityParts(unittest.TestCase):
         self.assertIsNone(s.gear[slot[5]])
 
     def test_magnet_does_not_pull_into_occupied_without_swaps(self):
-        s, slot = setup([P, MG, P, S, None, None], rules=RulesConfig(magnet_swaps=False))
+        s, slot = setup([P, MG, P, S, None, None], rules=mech(magnet_swaps=False))
         free_crank(s)
         self.assertEqual(s.gear[slot[3]].kind, S)
 
@@ -394,6 +409,19 @@ class Attachments(unittest.TestCase):
         self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))
 
 
+class BalanceDefaults(unittest.TestCase):
+    def test_clamp_triggers_one_pulled_part_by_default(self):
+        s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 0))   # only the left-side Striker
+
+    def test_default_numbers(self):
+        s, _ = setup([None, S, A], rules=RulesConfig())
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 7)                    # 6 * 1.3, rounded down
+
+
 class EnemiesAndCaps(unittest.TestCase):
     def test_jam_lasts_two_turns(self):
         s, slot = setup([None, S, None, None, None, None])
@@ -427,14 +455,14 @@ class EnemiesAndCaps(unittest.TestCase):
         self.assertEqual((s.result, s.reason), ("loss", "clock tower struck"))
 
     def test_turn_cap_option(self):
-        rules = RulesConfig(max_triggers_per_turn=2)
+        rules = mech(max_triggers_per_turn=2)
         s, _ = setup([None, SP, SP, SP, S], rules=rules)
         free_crank(s)
         self.assertEqual(s.triggers_turn, 2)
 
     def test_safety_cap_flags_runaway(self):
         # Couplers allowed to chain, with Coolants keeping Heat down: an unbounded loop.
-        rules = RulesConfig(coupler_can_trigger_coupler=True, safety_triggers_per_turn=50)
+        rules = mech(coupler_can_trigger_coupler=True, safety_triggers_per_turn=50)
         s, _ = setup([None, C, C, CO, CO, CO], rules=rules)
         free_crank(s)
         apply(s, ("end_turn",))

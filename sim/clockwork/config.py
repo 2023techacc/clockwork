@@ -36,9 +36,10 @@ class RulesConfig:
     # Mirror copying a Mirror is always "nothing": on an even gear it can only point back at itself.
 
     # --- Part-effect numbers that aren't per-part stats ---
-    amplifier_bonus: float = 0.5     # per adjacent Amplifier, additive
+    amplifier_bonus: float = 0.3     # per adjacent Amplifier, additive (Rules.md: 0.5; balance pass v5)
     coil_damage: int = 4             # Coil attachment
-    polish_bonus: float = 0.5        # Polish attachment, added to the Amplifier bonus
+    polish_bonus: float = 0.2        # Polish attachment, added to the Amplifier bonus (was 0.5)
+    clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     magnet_swaps: bool = True        # Magnet pulls into an occupied slot by swapping the two parts
 
     # --- Part stat overrides, for balance sweeps: (("Hammer", "damage", 10), ...) ---

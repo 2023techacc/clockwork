@@ -38,7 +38,8 @@ class Agents(unittest.TestCase):
 class LoopFinder(unittest.TestCase):
     def test_rules_example_layout(self):
         layout = (K.COOLANT, K.SPRING, K.SPRING, K.HAMMER, K.AMPLIFIER, K.PLATE)
-        rules = RulesConfig(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
+        rules = RulesConfig(amplifier_bonus=0.5,
+                            part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
         best_t, best_d = evaluate(layout, 0, _template(rules))
         self.assertGreaterEqual(best_d[1], 22)
 
