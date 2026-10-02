@@ -1,5 +1,6 @@
 """Part definitions (Rules.md §4, Rules-Decisions.md)."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from functools import lru_cache
 from enum import Enum
 
 
@@ -51,3 +52,13 @@ class Part:
 
     def __str__(self) -> str:
         return f"{self.kind}#{self.uid}"
+
+
+@lru_cache(maxsize=None)
+def specs_for(overrides: tuple) -> dict:
+    """SPECS with overrides applied, e.g. (("Hammer", "damage", 10), ("Hammer", "extra_heat", 3))."""
+    specs = dict(SPECS)
+    for kind_name, field_name, value in overrides:
+        kind = Kind(kind_name)
+        specs[kind] = replace(specs[kind], **{field_name: value})
+    return specs

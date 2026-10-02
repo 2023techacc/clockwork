@@ -35,6 +35,9 @@ class RulesConfig:
     coupler_can_trigger_coupler: bool = False     # §8b #4 (active)
     # Mirror copying a Mirror is always "nothing": on an even gear it can only point back at itself.
 
+    # --- Part stat overrides, for balance sweeps: (("Hammer", "damage", 10), ...) ---
+    part_overrides: tuple = ()
+
     # --- Simulator safety (not game rules) ---
     safety_triggers_per_turn: int = 200   # stop a runaway turn and flag it
     max_turns: int = 40                   # fight counts as a timeout loss after this

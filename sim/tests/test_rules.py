@@ -48,6 +48,12 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual(s.heat, 8)                     # Spring 2 + Spring 3 + Hammer 3
         self.assertEqual(s.triggers_turn, 3)
 
+    def test_part_overrides(self):
+        rules = RulesConfig(part_overrides=(("Hammer", "damage", 10), ("Hammer", "extra_heat", 4)))
+        s, _ = setup([None, H], rules=rules)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.heat), (10, 5))
+
     def test_every_trigger_adds_one_plus_extras(self):
         s, _ = setup([None, S, H])
         free_crank(s)

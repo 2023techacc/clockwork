@@ -30,7 +30,7 @@ from typing import Dict, List, Optional
 from .config import DEFAULT_RULES, RulesConfig
 from .decks import deck_list
 from .enemies import ENEMIES, EnemySpec, reveal_intent
-from .parts import AMPLIFIER_BONUS, SPECS, Kind, Part
+from .parts import AMPLIFIER_BONUS, Kind, Part, specs_for
 from .rng import Rng
 
 CW, CCW = "cw", "ccw"   # crank directions; CW = forward
@@ -401,7 +401,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         _log(s, f"  {part}: jammed")
         return True
     kind = _effective_kind(s, slot)
-    if kind is None or not SPECS[kind].triggers:
+    specs = specs_for(r.part_overrides)
+    if kind is None or not specs[kind].triggers:
         _log(s, f"  {part}: does not trigger")
         return True
     if from_coupler and kind == Kind.COUPLER and not r.coupler_can_trigger_coupler:
@@ -419,7 +420,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         _log(s, "  SAFETY CAP: runaway turn stopped")
         return False
 
-    spec = SPECS[kind]
+    spec = specs[kind]
     s.triggers_turn += 1
     s.part_triggers[part.uid] = s.part_triggers.get(part.uid, 0) + 1
     heat = r.heat_per_trigger + spec.extra_heat

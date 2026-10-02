@@ -24,8 +24,9 @@ def make_agent(spec, seed):
     return AGENTS[name](seed=seed)
 
 
-def play(deck, enemy, seed, agent, trace=False):
-    s = new_fight(ALL_DECKS[deck], enemy, seed=seed, trace=trace)
+def play(deck, enemy, seed, agent, trace=False, rules=None):
+    kwargs = {} if rules is None else {"rules": rules}
+    s = new_fight(ALL_DECKS[deck], enemy, seed=seed, trace=trace, **kwargs)
     while s.result is None:
         apply(s, agent.act(s, legal_actions(s)))
     return s
