@@ -244,3 +244,41 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
 **Chosen: 9 damage, +4 Heat (+26).**
 
 **Heat isn't monotonic.** A Hammer that costs more Heat can be stronger. Greedy shows the same thing at damage 10: 3 / 4 / 5 / 6 total Heat give 89% / 44% / 25% / 56% / 61% win against dummy (2–6 total Heat in order). The cause is the Overheat reset discarding Heat above 10. With a 6-Heat Hammer, the Hammer is the trigger that tips the machine over in 71% of Overheats, with 3.6 Heat discarded each time on average (0.4 for a 2-Heat Hammer). High-Heat parts get a hidden discount, so this sweep should be redone after the Heat rework.
+
+---
+
+## Results v4 (new parts and attachments; greedy heuristic fix; enemies v4)
+
+**Agent fix first.** In the first v4 run, the Coil attachment (pure upside) made decks *lose more*, for greedy and MCTS alike. The greedy heuristic, which MCTS also uses to order moves and play rollouts, charged 1 point per Heat. That underpriced Heat, so the agents chased immediate damage into Overheats. Raising the weight to 2 fixed it: Coil became an upgrade, and MCTS@50 with the starter deck went from 30% to 85% against dummy. Every v3 number was measured with the weaker agent and is shifted. Enemies were retuned (v4): dummy 85 HP, spiker 91, enrager 87, saboteur 96 (attacks 12/8), clock_tower 55.
+
+**What one pick is worth** (MCTS@50, 100 fights per enemy across all 5 enemies; starter 49%, 9.4 damage/turn):
+
+| Deck | Win | vs starter | Damage/turn |
+|---|---|---|---|
+| + Primer | 98% | **+49** | 13.2 |
+| + Assembly | 97% | **+48** | 12.4 |
+| + Loader + Primer / + Loader + Assembly | 97% | +48 | 12.8 / 12.4 |
+| + Feeder Loader + Primer | 97% | +48 | 12.9 |
+| + Coupler | 90% | +41 | 11.1 |
+| + Polish Mirror | 88% | +39 | 10.9 |
+| + Amplifier | 87% | +38 | 10.5 |
+| starter with its Spring Coiled | 83% | +34 | 10.2 |
+| + Coil Spring | 66% | +17 | 9.7 |
+| + Hammer (9 dmg, +4 Heat) | 65% | +16 | 9.8 |
+| + Clamp Magnet + Slider | 58% | +9 | 10.0 |
+| + Slider | 57% | +8 | 9.7 |
+| + Coolant | 52% | +3 | 9.3 |
+| + Mirror | 48% | −1 | 9.4 |
+| + Magnet + Slider | 45% | −4 | 9.5 |
+| + Clamp Magnet | 40% | −9 | 9.3 |
+| + Loader | 39% | −10 | 9.1 |
+| + Magnet | 37% | −12 | 9.1 |
+| + Spring | 36% | −13 | 9.0 |
+
+**Reading:**
+- **Primer and Assembly are too strong and don't need their enabler.** A Loader adds nothing on top of them. Primer's 18 always lands, because every part is freshly installed on an empty gear. Assembly is about 10–12 damage for 1 Heat on a normal gear.
+- **Coil works as an attachment should:** it turns the weakest part (Spring, −13) into one of the best (+34 when it upgrades the starter's own Spring).
+- **Polish turns Mirror from −1 into +39.** Like Coil, it's a strong fix, probably too strong.
+- **Magnet is still a trap.** It only pulls into empty slots, so Slider and Clamp rarely get to fire. Even the full Clamp Magnet + Slider set is only +9.
+- **With the better agent, Coupler (+41) and Amplifier (+38) are now above Hammer (+16).** The Hammer value chosen in v3b was measured with the weaker agent and is now too low.
+- **Next step:** a balance pass that sweeps each outlier (Primer, Assembly, Polish, Coil, Coupler, Amplifier, Hammer) into a band of about +10 to +25. Then design changes so the payoffs need their enabler, and so Magnet can pull into occupied slots.
