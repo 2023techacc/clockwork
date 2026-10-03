@@ -357,3 +357,56 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
 - **Clamp Magnet + Slider came down from +39 to +13.**
 - **The second load barely helps the Loader** (−11 → −9), and payoffs still do better alone than with it. The Loader's problem isn't how much it loads: the gear fills by itself within about 3 turns of normal installs, so filling empty slots only matters early in a fight. Loader decks deal more damage per turn (10.1 vs 9.5 with Assembly) but lose more, because the Loader and the parts it loads crowd out Plates.
 - **The plain starter (71%) now beats spring_chain (about 57%) and utility (about 42%) in the tuning run.** Those decks carry the parts that test negative (Spring, Loader, Magnet).
+
+---
+
+## Results v7 (full tier comparison on the current rules)
+
+**Rules since v2:**
+- crank direction locked per turn;
+- Hammer 9 damage, +4 Heat;
+- balance pass v5;
+- Loader: two loads, and with the gear full one load replaces the part opposite it;
+- Magnet: swaps, and gains 6 Block per pulled part;
+- enemy HP ±3 per fight; enemies v6;
+- greedy heuristic Heat weight 2.
+
+**Win rate** (random / greedy at 1000 fights per cell → MCTS@200 at 100 fights per cell):
+
+| Deck | dummy | spiker | enrager | saboteur | clock_tower |
+|---|---|---|---|---|---|
+| starter | 0 / 35 → 93% | 0 / 36 → 99% | 0 / 22 → 93% | 0 / 26 → 93% | 0 / 25 → 97% |
+| spring_chain | 0 / 33 → 85% | 0 / 32 → 85% | 0 / 30 → 79% | 0 / 20 → 82% | 0 / 26 → 86% |
+| copy_loop | 0 / 41 → 89% | 0 / 49 → 92% | 0 / 40 → 91% | 0 / 34 → 85% | 0 / 56 → 99% |
+| big_hit | 0 / 56 → 100% | 0 / 57 → 96% | 0 / 63 → 97% | 0 / 43 → 95% | 4 / 70 → 100% |
+| sustain | 0 / 40 → 89% | 0 / 44 → 88% | 0 / 30 → 85% | 0 / 29 → 85% | 0 / 22 → 72% |
+| utility | 0 / 98 → 100% | 0 / 79 → 99% | 0 / 28 → 79% | 0 / 98 → 100% | 0 / 9 → 64% |
+
+**Overall:**
+
+| Agent | Win | Overheats per fight | Damage taken | HP left |
+|---|---|---|---|---|
+| random | 0.1% | 0.61 | 54.6 | 0.4 |
+| greedy | 42.4% | 1.60 | 46.6 | 8.4 |
+| MCTS@200 | 89.9% | 1.43 | 41.2 | 13.8 |
+
+**MCTS budget sweep** (50 fights per cell; v2 values in brackets):
+
+| Cell | 100 | 300 | 1000 | 3000 |
+|---|---|---|---|---|
+| starter vs enrager | 76% | 88% | 98% | 100% [100%] |
+| starter vs saboteur | 80% | 92% | 96% | 100% [100%] |
+| utility vs enrager | 70% | 90% | 94% | 96% [90%] |
+| utility vs saboteur | 100% | 100% | 100% | 100% [94%] |
+
+**Reading:**
+- **The tier curve is healthy:** 0% → 42% → 90%. Both steps are large and comparable, and none comes from a new exploit: no burst turns, no runaways, at most 8 triggers in a turn. The direction lock removed back-and-forth cranking; only 27 greedy fights had a part trigger more than twice in a turn, against about 7,300 in v2.
+- **The MCTS ceiling is reached now.** Every cell saturates by 1000–3000 simulations, while in v2 the utility deck was still climbing at 3000. By the roadmap's rule, Stage 3 (RL) would have a stable ceiling to compare against, though it is still best left until the rules settle.
+- **Planning is worth more than ever.** The greedy → MCTS step (+48 points) is now larger than random → greedy (+42). The puzzle is real, but a casual player will find it hard: the enemies are tuned so MCTS@50 wins about 65%, and greedy only manages 42%.
+- **The utility deck is now polarized.** Greedy wins 98% against dummy and saboteur but 9% against clock_tower. Two Magnets that always swap and gain 6 Block per pull make a defensive engine that trivializes enemies with steady attacks, but it spends cranks the clock_tower doesn't allow. One Magnet probed at +10; two together are much stronger than that suggests.
+- **spring_chain is now the weakest deck** for MCTS (79–86%). It carries three uncoiled Springs, and Spring is still the most negative single pick (−14).
+- **Still open:**
+  - the Heat rework: overflow is still forgiven, about 0.85 Heat per fight;
+  - Spring and Mirror on their own;
+  - whether two Magnets need a cap on their Block;
+  - calibrating difficulty against human playtests.
