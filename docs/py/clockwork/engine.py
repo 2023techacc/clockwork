@@ -47,6 +47,8 @@ class Stats:
     heat_by_turn: List[int] = field(default_factory=list)   # Heat at end of each player turn
     overheats: int = 0
     heat_overflow: int = 0          # Heat above the Overheat threshold, discarded by the reset
+    chimes: int = 0                 # Clock Tower strikes taken
+    chime_blocked: int = 0          # chime damage absorbed by Block
     overheats_by: Dict[str, int] = field(default_factory=dict)   # part kind that tipped it over
     runaway_turns: int = 0          # turns stopped by the simulator safety cap
     reshuffles: int = 0
@@ -221,6 +223,7 @@ def summary(s: State) -> dict:
         "turns_over_turn_cap": st.turns_over_turn_cap,
         "turns_over_part_cap": st.turns_over_part_cap,
         "damage_taken": st.damage_taken, "cranks_used": s.cranks_used,
+        "chimes": st.chimes, "chime_blocked": st.chime_blocked,
     }
 
 
@@ -381,7 +384,12 @@ def _resolve(s: State, stack: list) -> None:
                 s.tower_strikes = True
                 s.locked = True
             s.top = (s.top - 1) % n if task[1] == CW else (s.top + 1) % n
+            every = s.enemy.chime_every
+            if every and s.cranks_used % every == 0:
+                stack.append(("chime",))    # resolves after the arriving part's whole chain
             stack.append(("trigger", s.top, task[1], False, None, task[2]))
+        elif task[0] == "chime":
+            _chime(s)
         else:
             _, slot, direction, from_coupler, uid, bonus = task
             if uid is not None:     # Coupler targets are bound to the part, not the slot
@@ -389,7 +397,27 @@ def _resolve(s: State, stack: list) -> None:
                 if slot is None:
                     continue
             if not _trigger(s, slot, direction, from_coupler, stack, bonus):
+                # Resolution stops (Overheat, caps), but a chime already earned still strikes.
+                chimes = [t for t in stack if t[0] == "chime"]
                 stack.clear()
+                for _ in chimes:
+                    if s.phase != "over":
+                        _chime(s)
+
+
+def _chime(s: State) -> None:
+    """Clock Tower strike: immediate damage, absorbed by the Block you have right now."""
+    dmg = s.enemy.chime_damage
+    absorbed = min(s.block, dmg)
+    s.block -= absorbed
+    s.hp -= dmg - absorbed
+    s.stats.damage_taken += dmg - absorbed
+    s.stats.chimes += 1
+    s.stats.chime_blocked += absorbed
+    _log(s, f"  CHIME: the Clock Tower strikes for {dmg} ({absorbed} blocked) -> HP {s.hp}")
+    if s.hp <= 0:
+        _close_turn_stats(s)
+        _finish(s, "loss", "hp")
 
 
 def _effective_part(s: State, slot: int) -> Optional[Part]:

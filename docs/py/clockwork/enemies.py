@@ -22,7 +22,9 @@ class EnemySpec:
     hp: int
     pattern: Tuple[Tuple[tuple, ...], ...]   # cycled; ("jam", turns) / ("unscrew",) get a slot when revealed
     attack_growth: int = 0                    # added to every attack per turn elapsed
-    crank_limit: Optional[int] = None         # Clock Tower: total cranks in the fight
+    crank_limit: Optional[int] = None         # total cranks in the fight (old Clock Tower rule)
+    chime_every: Optional[int] = None         # Clock Tower: strikes on every Nth crank of the fight
+    chime_damage: int = 0                     # ... for this much damage, hitting your current Block
 
 
 # Tuned v6 (balance pass v5, two-part Loader, enemy HP +/-3 per fight): HP and attacks scaled (clockwork.tune) until MCTS with 50 simulations per decision
@@ -43,7 +45,9 @@ ENEMIES = {
         (("unscrew",), ("attack", 8)),
     )),
     # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks). v1: 50 HP.
-    "clock_tower": EnemySpec("clock_tower", 52, ((("attack", 6),),), crank_limit=12),
+    # v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
+    # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
+    "clock_tower": EnemySpec("clock_tower", 115, ((),), chime_every=4, chime_damage=15),
 }
 
 
@@ -72,4 +76,5 @@ def scaled(spec: EnemySpec, f: float) -> EnemySpec:
         return ("attack", max(1, round(act[1] * f))) if act[0] == "attack" else act
     pattern = tuple(tuple(scale_act(a) for a in intent) for intent in spec.pattern)
     return EnemySpec(spec.name, max(1, round(spec.hp * f)), pattern,
-                     attack_growth=round(spec.attack_growth * f), crank_limit=spec.crank_limit)
+                     attack_growth=round(spec.attack_growth * f), crank_limit=spec.crank_limit,
+                     chime_every=spec.chime_every, chime_damage=round(spec.chime_damage * f))

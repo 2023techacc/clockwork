@@ -51,7 +51,8 @@ def _describe_parts():
 def options():
     decks = {name: [f"{k.value}{'+' + m.value if m else ''}" for k, m in deck_list(d)]
              for name, d in DECKS.items()}
-    enemies = {name: {"hp": e.hp, "crank_limit": e.crank_limit} for name, e in ENEMIES.items()}
+    enemies = {name: {"hp": e.hp, "crank_limit": e.crank_limit, "chime_every": e.chime_every,
+                      "chime_damage": e.chime_damage} for name, e in ENEMIES.items()}
     return json.dumps({"decks": decks, "enemies": enemies, "parts": _describe_parts(),
                        "rules": {"overheat_at": R.overheat_at, "crank_power": R.crank_power,
                                  "installs": R.installs_per_turn, "player_hp": R.player_hp,
@@ -133,7 +134,8 @@ def view():
         "dead_turn": s.dead_turn, "locked": s.locked, "turn_direction": s.turn_direction,
         "enemy": {"name": s.enemy.name, "hp": max(0, s.enemy_hp), "max_hp": s.enemy_max_hp,
                   "intent": [_intent_text(a) for a in s.intent],
-                  "crank_limit": s.enemy.crank_limit, "cranks_used": s.cranks_used},
+                  "crank_limit": s.enemy.crank_limit, "cranks_used": s.cranks_used,
+                  "chime_every": s.enemy.chime_every, "chime_damage": s.enemy.chime_damage},
         "gear": [_part(p, i) for i, p in enumerate(s.gear)],
         "top": s.top,
         "arrival": [(s.top - k) % n for k in range(n)],

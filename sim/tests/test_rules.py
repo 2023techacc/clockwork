@@ -9,6 +9,7 @@ from clockwork.agents.random_agent import RandomAgent
 from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
 from clockwork.parts import Kind as K, Mod, Part
+from clockwork.enemies import EnemySpec
 
 S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMPLIFIER,
                                     K.COUPLER, K.LOADER, K.COOLANT, K.HAMMER, K.MAGNET)
@@ -471,6 +472,38 @@ class LoaderReplacesAndMagnetBlock(unittest.TestCase):
         self.assertEqual(s.block, 12)                    # 2 parts pulled x 6
 
 
+class ClockTowerChime(unittest.TestCase):
+    def tower(self, arrival, cranks_used):
+        s, slot = setup(arrival, enemy="clock_tower", rules=MECH)
+        s.cranks_used = cranks_used
+        return s, slot
+
+    def test_chime_on_every_4th_crank_after_the_arriving_part(self):
+        s, _ = self.tower([None, P, S], cranks_used=3)
+        free_crank(s)                                    # crank 4: the Plate triggers, then the chime
+        self.assertEqual((s.stats.chimes, s.stats.chime_blocked), (1, 6))
+        self.assertEqual(s.hp, 55 - 9)
+        apply(s, ("crank",))                             # crank 5: no chime
+        self.assertEqual(s.stats.chimes, 1)
+
+    def test_chime_still_strikes_after_overheat(self):
+        s, _ = self.tower([None, H], cranks_used=3)
+        s.heat = 8
+        free_crank(s)
+        self.assertEqual((s.stats.overheats, s.stats.chimes), (1, 1))
+
+    def test_chime_can_kill(self):
+        s, _ = self.tower([None, S], cranks_used=3)
+        s.hp = 10
+        free_crank(s)
+        self.assertEqual((s.result, s.reason), ("loss", "hp"))
+
+    def test_spring_cranks_count(self):
+        s, _ = self.tower([None, SP, S], cranks_used=2)
+        free_crank(s)                                    # cranks 3 (Spring) and 4 (Striker) -> chime
+        self.assertEqual(s.stats.chimes, 1)
+
+
 class EnemiesAndCaps(unittest.TestCase):
     def test_jam_lasts_two_turns(self):
         s, slot = setup([None, S, None, None, None, None])
@@ -495,8 +528,10 @@ class EnemiesAndCaps(unittest.TestCase):
         apply(s, ("end_turn",))
         self.assertEqual(s.top, slot[0])
 
-    def test_clock_tower_limit(self):
-        s, _ = setup([None, SP, SP, SP, SP, SP], enemy="clock_tower")
+    def test_crank_limit_rule(self):
+        # The old Clock Tower rule (12 cranks, then instant loss) is still available as an option.
+        old_tower = EnemySpec("old_tower", 50, ((("attack", 6),),), crank_limit=12)
+        s, _ = setup([None, SP, SP, SP, SP, SP], enemy=old_tower)
         s.cranks_used = 10
         free_crank(s)
         self.assertEqual(s.cranks_used, 12)
