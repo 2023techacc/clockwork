@@ -27,27 +27,27 @@ class EnemySpec:
     chime_damage: int = 0                     # ... for this much damage, hitting your current Block
 
 
-# Tuned v6 (balance pass v5, two-part Loader, enemy HP +/-3 per fight): HP and attacks scaled (clockwork.tune) until MCTS with 50 simulations per decision
-# (a stand-in for a casual player) wins ~60-67% on average across the six test decks, with the
-# crank direction locked per turn. v1 values (before any tuning) in the comments.
+# Tuned v7 for runs where HP carries over (clockwork.tune; MCTS@50 = casual player stand-in):
+# normal enemies cost ~15 HP per win; the boss is tuned for a player arriving with 35 HP.
+# v1 values (before any tuning) in the comments.
 ENEMIES = {
+    # Normal fights (v7, HP carries over in a run): tuned so MCTS@50 loses ~15 HP per win.
     # Rules.md §8b paper-prototype baseline. v1: 60 HP, Attack 8.
-    "dummy": EnemySpec("dummy", 82, ((("attack", 11),),)),
+    "dummy": EnemySpec("dummy", 55, ((("attack", 7),),)),
     # Telegraphed big hit every 3rd turn: tests Block timing. v1: 70 HP, 4/4/18.
-    "spiker": EnemySpec("spiker", 89, ((("attack", 5),), (("attack", 5),), (("attack", 22),))),
-    # Enrage timer: 4, 6, 8, 10 ... tests burst. v1: 75 HP.
-    "enrager": EnemySpec("enrager", 82, ((("attack", 4),),), attack_growth=2),
+    "spiker": EnemySpec("spiker", 58, ((("attack", 3),), (("attack", 3),), (("attack", 14),))),
+    # Enrage timer: 3, 4, 5, 6 ... tests burst. v1: 75 HP, 4 +2 per turn.
+    "enrager": EnemySpec("enrager", 60, ((("attack", 3),),), attack_growth=1),
     # Attacks the machine. v1: 65 HP, attacks 8/6/8/6.
-    "saboteur": EnemySpec("saboteur", 92, (
-        (("attack", 12),),
-        (("jam", 2), ("attack", 8)),
-        (("wind_back",), ("attack", 12)),
-        (("unscrew",), ("attack", 8)),
+    "saboteur": EnemySpec("saboteur", 56, (
+        (("attack", 7),),
+        (("jam", 2), ("attack", 5)),
+        (("wind_back",), ("attack", 7)),
+        (("unscrew",), ("attack", 5)),
     )),
-    # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks). v1: 50 HP.
-    # v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
+    # Boss. v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
-    "clock_tower": EnemySpec("clock_tower", 115, ((),), chime_every=4, chime_damage=15),
+    "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12),
 }
 
 
@@ -70,11 +70,14 @@ def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
     return tuple(out)
 
 
-def scaled(spec: EnemySpec, f: float) -> EnemySpec:
-    """The same enemy with HP and every attack (and attack growth) multiplied by f, rounded."""
+def scaled(spec: EnemySpec, f: float, attack_f: Optional[float] = None) -> EnemySpec:
+    """The same enemy with HP multiplied by f and every attack (attack growth, chime damage)
+    by attack_f (default: f), rounded."""
+    a = f if attack_f is None else attack_f
     def scale_act(act):
-        return ("attack", max(1, round(act[1] * f))) if act[0] == "attack" else act
-    pattern = tuple(tuple(scale_act(a) for a in intent) for intent in spec.pattern)
+        return ("attack", max(1, round(act[1] * a))) if act[0] == "attack" else act
+    pattern = tuple(tuple(scale_act(x) for x in intent) for intent in spec.pattern)
     return EnemySpec(spec.name, max(1, round(spec.hp * f)), pattern,
-                     attack_growth=round(spec.attack_growth * f), crank_limit=spec.crank_limit,
-                     chime_every=spec.chime_every, chime_damage=round(spec.chime_damage * f))
+                     attack_growth=round(spec.attack_growth * a), crank_limit=spec.crank_limit,
+                     chime_every=spec.chime_every, chime_damage=max(1, round(spec.chime_damage * a))
+                     if spec.chime_damage else 0)

@@ -482,7 +482,7 @@ class ClockTowerChime(unittest.TestCase):
         s, _ = self.tower([None, P, S], cranks_used=3)
         free_crank(s)                                    # crank 4: the Plate triggers, then the chime
         self.assertEqual((s.stats.chimes, s.stats.chime_blocked), (1, 6))
-        self.assertEqual(s.hp, 55 - 9)
+        self.assertEqual(s.hp, 55 - (s.enemy.chime_damage - 6))   # the Plate's 6 Block absorbs part
         apply(s, ("crank",))                             # crank 5: no chime
         self.assertEqual(s.stats.chimes, 1)
 
