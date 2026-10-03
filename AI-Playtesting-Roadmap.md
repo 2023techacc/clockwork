@@ -436,3 +436,41 @@ At 52 HP, better agents block more of the strike damage (greedy 22%, MCTS@50 25%
 | MCTS@200 | 8.7 (1) | 8.4 (1) | 10.5 (1) | 8.8 (1) |
 
 64% of MCTS@200's wins end under 15 HP. The enemies were tuned for win rate only, so every fight became a close race. If HP carries over between fights, as in Slay the Spire, a run is unwinnable. Normal fights should cost something like 10–20 HP for a decent player. Fix: tune two numbers per enemy, win rate and HP lost on a win, by lowering attacks and raising enemy HP (longer fights that hurt less). The tuner currently scales both together; it needs separate knobs.
+
+---
+
+## Results v9 (HP carries over between fights)
+
+**Rule:** HP carries over between fights, and a small heal follows each win (placeholder: 10 HP, `heal_between_fights`). The previous enemies were tuned on win rate only. Every fight was a close race, wins ended at about 9/55 HP, and a casual player (MCTS@50) cleared the mini-run below 0% of the time with every deck, mostly dying by fight 3.
+
+**Retune** (`clockwork.tune` now has `--knob attack/hp/both`, `--metric win/hp_lost` and `--start-hp`):
+- **Normal enemies:** HP and attacks are scaled down together until a casual player loses about 15 HP per win. Scaling attacks alone also reached the target, but left enemies attacking for 1–2 across 8–9-turn fights. Shorter fights with real attacks play better.
+- **Boss:** tuned so a casual player arriving with 35 HP wins about 70%. Strike damage 12 vs 13 is a cliff (79% → 62%), so the strike stayed at 12 and HP was set between the measured points.
+
+| Enemy | Before | Now | Casual: HP lost on a win |
+|---|---|---|---|
+| dummy | 82 HP, attack 11 | 55 HP, attack 7 | 13 |
+| spiker | 89 HP, 5/5/22 | 58 HP, 3/3/14 | 15 |
+| enrager | 82 HP, 4 +2/turn | 60 HP, 3 +1/turn | 12 |
+| saboteur | 92 HP, 12/8 | 56 HP, 7/5 | 14 |
+| clock_tower | 115 HP, strike 15 | 98 HP, strike 12 every 4 cranks | 24 (arriving with 35) |
+
+At the boss setting, players block about 46% of strike damage.
+
+**Mini-run** (`clockwork.campaign`: dummy → spiker → saboteur → enrager → clock_tower, 10 HP healed after each win). Run cleared, and HP on reaching the boss in brackets:
+
+| Deck | greedy (100 runs) | MCTS@50 (60 runs) | MCTS@200 (20 runs) |
+|---|---|---|---|
+| starter | 13% (28) | 95% (45) | 100% (52) |
+| spring_chain | 3% (25) | 50% (35) | 95% (43) |
+| copy_loop | 26% (27) | 67% (34) | 85% (40) |
+| big_hit | 33% (29) | 87% (39) | 100% (46) |
+| sustain | 2% (25) | 45% (36) | 100% (47) |
+| utility | 97% (41) | 100% (49) | 100% (53) |
+| **average** | **29%** | **74%** | **97%** |
+
+**Reading:**
+- **Runs are survivable now, with a clear skill curve:** careless 29%, casual 74%, near-perfect 97%. Normal fights drain HP without killing, and the boss is the real test. Greedy reaches the boss about 90% of the time but arrives with about 27 HP and usually loses.
+- **Casual players arrive at the boss with more HP than the 35 tuned for** (34–49), since 10 healed per win offsets most of the 12–15 lost. If the boss should be harder in practice, lower the heal or raise normal-fight damage slightly.
+- **The utility deck trivializes the boss:** greedy clears 97%. Its Magnet Block engine blocks most strikes. Worth watching if Magnet decks become common in real runs.
+- **Normal fights almost never kill now** (casual reaches the boss 98–100% of the time). That suits a first district, but later districts or elites will need real risk.

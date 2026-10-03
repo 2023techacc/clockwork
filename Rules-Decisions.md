@@ -154,3 +154,9 @@ All numbers are settings in `sim/clockwork/config.py` and `sim/clockwork/parts.p
 - **Loader:** installs the next **two** parts in the queue per trigger.
 - **Slider:** moved bonus +3 (was +6).
 - **Enemy HP:** each fight rolls base ±3.
+
+### Runs: HP carry-over (decided)
+- **HP carries over between fights; a small heal follows each win.** Sim placeholder: 10 HP (`heal_between_fights`).
+- **Normal enemies** are tuned to cost a casual player about 15 HP per win.
+- **The boss** is tuned for a casual player arriving with about 35 HP to win roughly 70%.
+- **Current enemies (v7):** dummy 55 HP / attack 7; spiker 58 / 3-3-14; enrager 60 / 3 +1 per turn; saboteur 56 / 7-5; Clock Tower 98 HP, strikes every 4 cranks for 12.
