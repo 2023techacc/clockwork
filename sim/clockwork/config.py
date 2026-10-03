@@ -41,6 +41,10 @@ class RulesConfig:
     polish_bonus: float = 0.2        # Polish attachment, added to the Amplifier bonus (was 0.5)
     clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     loader_loads: int = 2            # parts a Loader installs per trigger (was 1)
+    loader_replaces: bool = True     # with the gear full, one load replaces the part opposite the Loader
+                                     # (with Feeder: the next part to come up); the replaced part is discarded
+    magnet_block_per_pull: int = 4   # Magnet gains this much Block per part it pulls (amplifiable)
+    magnet_damage_per_pull: int = 0  # ... and deals this much damage per part pulled
     magnet_swaps: bool = True        # Magnet pulls into an occupied slot by swapping the two parts
 
     # --- Part stat overrides, for balance sweeps: (("Hammer", "damage", 10), ...) ---

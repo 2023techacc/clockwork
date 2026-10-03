@@ -468,10 +468,10 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if spec.moved_bonus and part.uid in s.moved:
         base += spec.moved_bonus
     s.fresh.discard(part.uid)
+    mult = 1 + r.amplifier_bonus * _adjacent_amplifiers(s, slot)
+    if part.kind == Kind.MIRROR and part.mod == Mod.POLISH:
+        mult += r.polish_bonus
     if base or spec.block:
-        mult = 1 + r.amplifier_bonus * _adjacent_amplifiers(s, slot)
-        if part.kind == Kind.MIRROR and part.mod == Mod.POLISH:
-            mult += r.polish_bonus
         if base:
             dmg = int(base * mult)
             s.enemy_hp -= dmg
@@ -489,11 +489,20 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         s.damage_turn += bonus
         notes.append(f"+{bonus} damage (Coil)")
     if kind == Kind.LOADER:
-        notes.append(_load(s, feeder=eff.mod == Mod.FEEDER))
+        notes.append(_load(s, slot, feeder=eff.mod == Mod.FEEDER))
     pulled = []
     if kind == Kind.MAGNET:
         note, pulled = _magnet(s, slot)
         notes.append(note)
+        if pulled and r.magnet_block_per_pull:
+            blk = int(r.magnet_block_per_pull * len(pulled) * mult)
+            s.block += blk
+            notes.append(f"{blk} Block")
+        if pulled and r.magnet_damage_per_pull:
+            dmg = int(r.magnet_damage_per_pull * len(pulled) * mult)
+            s.enemy_hp -= dmg
+            s.damage_turn += dmg
+            notes.append(f"{dmg} damage")
     _log(s, f"  {label} triggers ({direction}): {', '.join(notes)} -> Heat {s.heat}")
 
     if s.enemy_hp <= 0:
@@ -537,32 +546,48 @@ def _adjacent_amplifiers(s: State, slot: int) -> int:
                if s.gear[nb] is not None and s.gear[nb].kind == Kind.AMPLIFIER)
 
 
-def _load(s: State, feeder: bool = False) -> str:
-    """Load the next parts in the queue (rules.loader_loads of them) into empty slots."""
-    notes = [_load_one(s, feeder) for _ in range(s.rules.loader_loads)]
+def _load(s: State, slot: int, feeder: bool = False) -> str:
+    """Install the next parts in the queue (rules.loader_loads of them). Each goes into an empty
+    slot; once the gear is full, one load per trigger replaces a part (the part opposite the Loader,
+    or with Feeder the next part to come up), sending the old part to the discard pile."""
+    n = len(s.gear)
+    step = -1 if s.turn_direction == CW else 1
+    notes, replaced, loaded = [], False, set()
+    for _ in range(s.rules.loader_loads):
+        empty = [i for i, p in enumerate(s.gear) if p is None]
+        if empty:
+            if feeder:      # the next empty slot to come up in this turn's direction
+                target = next(((s.top + step * k) % n for k in range(1, n)
+                               if s.gear[(s.top + step * k) % n] is None), s.top)
+            else:
+                target = s.rng.choice(empty)
+        elif s.rules.loader_replaces and not replaced:
+            target = (s.top + step) % n if feeder else ((slot + n // 2) % n if n % 2 == 0 else None)
+            if target is None or target == slot or (s.gear[target] and s.gear[target].uid in loaded):
+                break       # never replace the Loader itself or a part this trigger just loaded
+            replaced = True
+        else:
+            notes.append("gear full")
+            break
+        notes.append(_load_into(s, target))
+        if s.gear[target] is not None:
+            loaded.add(s.gear[target].uid)
     return "; ".join(notes)
 
 
-def _load_one(s: State, feeder: bool) -> str:
-    empty = [i for i, p in enumerate(s.gear) if p is None]
-    if not empty:
-        return "no empty slot"
+def _load_into(s: State, target: int) -> str:
     if not s.queue:
         _recycle(s)
     if not s.queue:
         return "nothing to load"
     part = s.queue.pop(0)                 # the next part in the queue
-    if feeder:      # the next empty slot to come up in this turn's direction
-        n = len(s.gear)
-        step = -1 if s.turn_direction == CW else 1
-        slot = next(((s.top + step * k) % n for k in range(1, n) if s.gear[(s.top + step * k) % n] is None),
-                    s.top)  # only the Trigger Point itself is empty
-    else:
-        slot = s.rng.choice(empty)
-    s.gear[slot] = part
+    old = s.gear[target]
+    if old is not None:
+        s.discard.append(old)
+    s.gear[target] = part
     s.fresh.add(part.uid)
     s.installed.add(part.uid)
-    return f"loads {part} into slot {slot}"
+    return f"loads {part} into slot {target}" + (f", replacing {old}" if old else "")
 
 
 def _magnet(s: State, slot: int):

@@ -16,7 +16,8 @@ S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMP
 
 # Mechanics tests pin the numbers they were written against, so balance passes that change
 # defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
-MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1, part_overrides=(
+MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1,
+                  loader_replaces=False, magnet_block_per_pull=0, part_overrides=(
     ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
@@ -415,7 +416,7 @@ class BalanceDefaults(unittest.TestCase):
         s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
         s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
         free_crank(s)
-        self.assertEqual((999 - s.enemy_hp, s.block), (6, 0))   # only the left-side Striker
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 8))   # only the Striker triggers; 8 Block from 2 pulls
 
     def test_default_numbers(self):
         s, _ = setup([None, S, A], rules=RulesConfig())
@@ -437,9 +438,37 @@ class LoaderTwoLoads(unittest.TestCase):
         self.assertEqual((s.gear[slot[2]].kind, s.gear[slot[3]].kind), (S, P))
 
     def test_second_load_stops_when_gear_full(self):
-        s, slot = setup([S, L, S, S, S, None], rules=RulesConfig(), queue=[P, P])
+        s, slot = setup([S, L, S, S, S, None], rules=RulesConfig(loader_replaces=False), queue=[P, P])
         free_crank(s)
         self.assertEqual(len(s.queue), 1)
+
+
+class LoaderReplacesAndMagnetBlock(unittest.TestCase):
+    def test_full_gear_loader_replaces_opposite(self):
+        s, slot = setup([S, L, S, P, S, S], rules=RulesConfig(), queue=[H, H])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[4]].kind, H)        # opposite the Loader (arrival 1 -> 4)
+        self.assertEqual([p.kind for p in s.discard], [S])
+        self.assertEqual(len(s.queue), 1)                # only one replacement per trigger
+
+    def test_feeder_replaces_next_to_come_up(self):
+        s, slot = setup([S, None, S, P, S, S], rules=RulesConfig(), queue=[H])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, H)
+        self.assertEqual([p.kind for p in s.discard], [S])
+
+    def test_loader_fills_empty_before_replacing(self):
+        s, slot = setup([S, L, S, P, None, S], rules=RulesConfig(), queue=[H, H, H])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[4]].kind, H)        # empty slot first (it is also the opposite slot)
+        self.assertEqual(s.discard, [])                  # the 2nd load won't replace what the 1st just loaded
+        self.assertEqual(len(s.queue), 2)
+
+    def test_magnet_block_per_pull(self):
+        s, slot = setup([None, MG, None, S, None, P], rules=RulesConfig())
+        free_crank(s)
+        self.assertEqual(s.block, 8)                     # 2 parts pulled x 4
 
 
 class EnemiesAndCaps(unittest.TestCase):

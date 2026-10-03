@@ -39,6 +39,16 @@ SWEEPS += [
     ("Coil2", "coil_starter", [{"coil_damage": v} for v in (3, 4)]),
 ]
 
+# Round 3: Magnet Block per pull, replacing Loader.
+SWEEPS += [
+    ("MagnetBlock", "plus_magnet", [{"magnet_block_per_pull": v} for v in (2, 3, 4, 6)]),
+    ("LoaderReplace", "plus_loader", [{"loader_replaces": v} for v in (False, True)]),
+    ("LoaderPrimer", "plus_loader_primer", [{}]),
+    ("FeederPrimer", "plus_feeder_loader_primer", [{}]),
+    ("LoaderAssembly", "plus_loader_assembly", [{}]),
+    ("MagnetSlider", "plus_magnet_slider", [{}]),
+]
+
 CHECKS = ["plus_loader_primer", "plus_feeder_loader_primer", "plus_loader_assembly", "plus_magnet",
           "plus_slider", "plus_magnet_slider", "plus_clamp_magnet_slider"]
 
