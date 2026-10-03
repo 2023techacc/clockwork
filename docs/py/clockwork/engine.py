@@ -132,13 +132,16 @@ class State:
 # ---------------------------------------------------------------------------
 # Setup
 
-def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, trace=False) -> State:
+def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, trace=False,
+              start_hp: Optional[int] = None) -> State:
+    """start_hp: HP carried over from earlier fights (default: full)."""
     spec = ENEMIES[enemy] if isinstance(enemy, str) else enemy
     rng = Rng(seed)
     parts = [Part(uid, kind, mod) for uid, (kind, mod) in enumerate(deck_list(deck))]
     rng.shuffle(parts)
     s = State(rules=rules, enemy=spec, rng=rng, gear=[None] * rules.gear_size, queue=parts,
-              hp=rules.player_hp, enemy_hp=spec.hp, log=[] if trace else None)
+              hp=rules.player_hp if start_hp is None else start_hp, enemy_hp=spec.hp,
+              log=[] if trace else None)
     if rules.enemy_hp_jitter:   # HP range per fight, so results don't hinge on exact damage breakpoints
         s.enemy_hp += rng.randrange(2 * rules.enemy_hp_jitter + 1) - rules.enemy_hp_jitter
     s.enemy_max_hp = s.enemy_hp

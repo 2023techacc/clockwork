@@ -70,11 +70,14 @@ def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
     return tuple(out)
 
 
-def scaled(spec: EnemySpec, f: float) -> EnemySpec:
-    """The same enemy with HP and every attack (and attack growth) multiplied by f, rounded."""
+def scaled(spec: EnemySpec, f: float, attack_f: Optional[float] = None) -> EnemySpec:
+    """The same enemy with HP multiplied by f and every attack (attack growth, chime damage)
+    by attack_f (default: f), rounded."""
+    a = f if attack_f is None else attack_f
     def scale_act(act):
-        return ("attack", max(1, round(act[1] * f))) if act[0] == "attack" else act
-    pattern = tuple(tuple(scale_act(a) for a in intent) for intent in spec.pattern)
+        return ("attack", max(1, round(act[1] * a))) if act[0] == "attack" else act
+    pattern = tuple(tuple(scale_act(x) for x in intent) for intent in spec.pattern)
     return EnemySpec(spec.name, max(1, round(spec.hp * f)), pattern,
-                     attack_growth=round(spec.attack_growth * f), crank_limit=spec.crank_limit,
-                     chime_every=spec.chime_every, chime_damage=round(spec.chime_damage * f))
+                     attack_growth=round(spec.attack_growth * a), crank_limit=spec.crank_limit,
+                     chime_every=spec.chime_every, chime_damage=max(1, round(spec.chime_damage * a))
+                     if spec.chime_damage else 0)
