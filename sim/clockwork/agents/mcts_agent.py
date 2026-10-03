@@ -78,6 +78,20 @@ def fast_turn(s, rng, samples):
     return best
 
 
+def replay(s, plan):
+    """Play `plan` on a copy of `s`, stopping at the first action that isn't legal here: worlds
+    can diverge mid-turn (a random Loader slot, a shuffle), ending the fight or locking cranks
+    earlier than in the world the plan came from."""
+    end = s.clone()
+    for a in plan:
+        if end.result is not None or a not in legal_actions(end):
+            break
+        apply(end, a)
+    if end.result is None and end.phase == "install":
+        apply(end, next(a for a in legal_actions(end) if a[0] == "end_install"))
+    return end
+
+
 def end_turn(end):
     nxt = end.clone()
     if nxt.result is None:
@@ -148,9 +162,7 @@ class MCTSAgent:
             if len(node.children) < allowed:
                 plan, end = node.cands[len(node.children)]
                 if end is None:     # root plans are shared across worlds; replay in this one
-                    end = s.clone()
-                    for a in plan:
-                        apply(end, a)
+                    end = replay(s, plan)
                 edge = _Edge(plan, _Node(end_turn(end)))
                 node.children.append(edge)
                 path.append(edge)

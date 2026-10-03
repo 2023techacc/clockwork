@@ -69,3 +69,15 @@ class MCTS(unittest.TestCase):
         self.assertEqual(w.visible_queue(), s.visible_queue())
         self.assertEqual(sorted(p.uid for p in w.queue), sorted(p.uid for p in s.queue))
         self.assertEqual((w.gear, w.heat, w.enemy_hp), (s.gear, s.heat, s.enemy_hp))
+
+
+class MCTSReplay(unittest.TestCase):
+    def test_root_plan_that_turns_illegal_is_cut_short(self):
+        from clockwork.agents.mcts_agent import MCTSAgent, _Node
+        s = new_fight(DECKS["starter"], "dummy", seed=1)
+        too_many = [("end_install", "cw")] + [("crank",)] * 5      # only 2 Crank Power
+        agent = MCTSAgent(seed=0, budget=4, worlds=1)
+        root = _Node(s.clone())
+        root.cands = [(too_many, None)]
+        agent.simulate(root)                                       # must not raise
+        self.assertEqual(root.children[0].node.state.turn, 2)
