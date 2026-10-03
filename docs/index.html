@@ -19,15 +19,21 @@
   </div>
 
   <section id="setup" class="panel" hidden>
-    <h2>New fight</h2>
+    <h2>New game</h2>
+    <div class="row mode">
+      <label class="inline"><input type="radio" name="mode" value="run" checked> Run (5 fights, HP carries over)</label>
+      <label class="inline"><input type="radio" name="mode" value="fight"> Single fight</label>
+    </div>
     <div class="row">
       <label>Deck <select id="deck"></select></label>
-      <label>Enemy <select id="enemy"></select></label>
+      <label id="enemy-label">Enemy <select id="enemy"></select></label>
+      <label id="rewards-label" class="inline"><input id="rewards" type="checkbox" checked> Part rewards after fights</label>
       <label>Seed <input id="seed" type="number" min="0" step="1"></label>
       <button id="random-seed" type="button" class="secondary">Random seed</button>
-      <button id="start" type="button">Start fight</button>
+      <button id="start" type="button">Start</button>
     </div>
     <p id="deck-list" class="muted"></p>
+    <p id="route" class="muted"></p>
     <details>
       <summary>How to play</summary>
       <ol class="howto">
@@ -39,6 +45,8 @@
       </ol>
     </details>
   </section>
+
+  <div id="run-banner" class="panel banner" hidden></div>
 
   <main id="game" hidden>
     <section class="panel board">
@@ -88,14 +96,21 @@
   <section id="result" class="panel" hidden>
     <h2 id="result-title"></h2>
     <p id="result-text"></p>
+    <div id="reward" hidden>
+      <h3>Add a part to your deck</h3>
+      <div id="reward-cards" class="cards"></div>
+      <div class="row"><button id="skip-reward" type="button" class="secondary">Skip</button></div>
+    </div>
+    <div id="continue-row" class="row" hidden><button id="continue" type="button">Next fight</button></div>
+    <div id="run-history" class="muted"></div>
     <label class="block">Notes for the designer (what felt good, confusing, broken?)
       <textarea id="notes" rows="4"></textarea>
     </label>
     <div class="row">
-      <button id="copy-report" type="button">Copy fight report</button>
+      <button id="copy-report" type="button">Copy report</button>
       <a id="issue-link" class="button secondary" target="_blank" rel="noopener">Send as GitHub issue</a>
       <button id="again" type="button" class="secondary">Replay same fight</button>
-      <button id="new-fight" type="button" class="secondary">New fight</button>
+      <button id="new-fight" type="button" class="secondary">New game</button>
     </div>
     <p id="copied" class="muted" hidden>Copied.</p>
   </section>

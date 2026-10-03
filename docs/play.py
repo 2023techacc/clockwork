@@ -4,6 +4,7 @@ Every call returns a JSON string describing the whole screen, so the page never 
 state of its own and always follows the simulator's rules exactly.
 """
 import json
+import random
 
 from clockwork import engine
 from clockwork.config import DEFAULT_RULES as R
@@ -11,6 +12,12 @@ from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
 from clockwork.engine import CCW, CW, apply, legal_actions, new_fight
 from clockwork.parts import SPECS, Kind, Mod
+
+# Run mode: same route as clockwork.campaign. HP carries over; heal after each win.
+ROUTE = ["dummy", "spiker", "saboteur", "enrager", "clock_tower"]
+REWARD_POOL = [Kind.SPRING, Kind.MIRROR, Kind.AMPLIFIER, Kind.COUPLER, Kind.LOADER, Kind.COOLANT,
+               Kind.HAMMER, Kind.MAGNET, Kind.PRIMER, Kind.ASSEMBLY, Kind.SLIDER]
+RUN = None
 
 STATE = None
 SETUP = {}
@@ -56,15 +63,85 @@ def options():
     return json.dumps({"decks": decks, "enemies": enemies, "parts": _describe_parts(),
                        "rules": {"overheat_at": R.overheat_at, "crank_power": R.crank_power,
                                  "installs": R.installs_per_turn, "player_hp": R.player_hp,
-                                 "hp_jitter": R.enemy_hp_jitter}})
+                                 "hp_jitter": R.enemy_hp_jitter, "heal": R.heal_between_fights},
+                       "route": ROUTE})
 
 
 def start(deck, enemy, seed):
-    global STATE, ACTIONS, LOG_SEEN, SETUP
-    SETUP = {"deck": deck, "enemy": enemy, "seed": int(seed)}
+    global STATE, ACTIONS, LOG_SEEN, SETUP, RUN
+    RUN = None
+    SETUP = {"mode": "fight", "deck": deck, "enemy": enemy, "seed": int(seed)}
     STATE = new_fight(DECKS[deck], enemy, seed=int(seed), trace=True)
     ACTIONS, LOG_SEEN = [], 0
     return view()
+
+
+def start_run(deck, seed, rewards):
+    global RUN
+    RUN = {"deck_name": deck, "deck": dict(DECKS[deck]), "seed": int(seed), "rewards": bool(rewards),
+           "index": 0, "hp": R.player_hp, "history": [], "status": "fighting", "offer": []}
+    return _run_fight()
+
+
+def _run_fight():
+    global STATE, ACTIONS, LOG_SEEN, SETUP
+    i = RUN["index"]
+    SETUP = {"mode": "run", "deck": RUN["deck_name"], "enemy": ROUTE[i], "seed": RUN["seed"], "fight": i + 1,
+             "rewards": RUN["rewards"]}
+    STATE = new_fight(RUN["deck"], ROUTE[i], seed=RUN["seed"] * 100 + i, trace=True, start_hp=RUN["hp"])
+    RUN["hp_start"] = RUN["hp"]
+    RUN["status"] = "fighting"
+    ACTIONS, LOG_SEEN = [], 0
+    return view()
+
+
+def _finish_run_fight():
+    """Called once when a run fight ends: record it, heal, and offer a reward."""
+    i = RUN["index"]
+    won = STATE.result == "win"
+    RUN["history"].append({"enemy": ROUTE[i], "result": STATE.result, "hp_start": RUN["hp_start"],
+                           "hp_end": max(0, STATE.hp), "turns": STATE.turn, "actions": list(ACTIONS)})
+    if not won:
+        RUN["status"] = "lost"
+    elif i == len(ROUTE) - 1:
+        RUN["status"] = "cleared"
+    else:
+        RUN["hp"] = min(R.player_hp, STATE.hp + R.heal_between_fights)
+        if RUN["rewards"]:
+            rng = random.Random(RUN["seed"] * 1000 + i)
+            RUN["offer"] = [k.value for k in rng.sample(REWARD_POOL, 3)]
+            RUN["status"] = "reward"
+        else:
+            RUN["status"] = "next"
+
+
+def next_fight(choice=""):
+    """Add the chosen reward part (empty = skip) and start the next fight of the run."""
+    if RUN is None or RUN["status"] not in ("reward", "next"):
+        raise ValueError("no fight to continue to")
+    if choice:
+        if choice not in RUN["offer"]:
+            raise ValueError(f"{choice} was not offered")
+        kind = Kind(choice)
+        RUN["deck"][kind] = RUN["deck"].get(kind, 0) + 1
+        RUN["history"][-1]["reward"] = choice
+    RUN["offer"] = []
+    RUN["index"] += 1
+    return _run_fight()
+
+
+def _run_view():
+    if RUN is None:
+        return None
+    if STATE.result and RUN["status"] == "fighting":
+        _finish_run_fight()
+    counts = {}
+    for k, m in deck_list(RUN["deck"]):
+        name = k.value + ("+" + m.value if m else "")
+        counts[name] = counts.get(name, 0) + 1
+    return {"route": ROUTE, "index": RUN["index"], "status": RUN["status"], "hp": RUN["hp"],
+            "heal": R.heal_between_fights, "offer": RUN["offer"], "rewards": RUN["rewards"],
+            "deck": counts, "history": RUN["history"]}
 
 
 def _act(action):
@@ -125,8 +202,9 @@ def view():
     new_log = s.log[LOG_SEEN:]
     LOG_SEEN = len(s.log)
     n = len(s.gear)
+    run = _run_view()
     return json.dumps({
-        "setup": SETUP,
+        "setup": SETUP, "run": run,
         "turn": s.turn, "phase": s.phase, "result": s.result, "reason": s.reason,
         "hp": s.hp, "max_hp": s.rules.player_hp, "block": s.block,
         "heat": s.heat, "overheat_at": s.rules.overheat_at,
