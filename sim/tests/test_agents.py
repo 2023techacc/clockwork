@@ -1,0 +1,83 @@
+import unittest
+
+from clockwork.agents.greedy_agent import GreedyAgent
+from clockwork.agents.random_agent import RandomAgent
+from clockwork.engine import summary
+from clockwork.loopfinder import _template, evaluate, layouts
+from clockwork.config import DEFAULT_RULES, RulesConfig
+from clockwork.parts import Kind as K
+from clockwork.run import play
+from clockwork.search import turn_outcomes
+from clockwork.decks import DECKS
+from clockwork.engine import new_fight
+
+
+class Search(unittest.TestCase):
+    def test_turn_outcomes_leave_state_untouched_and_dedupe(self):
+        s = new_fight(DECKS["starter"], "dummy", seed=1)
+        before = summary(s), list(s.gear), list(s.hand)
+        outs = list(turn_outcomes(s))
+        self.assertEqual((summary(s), list(s.gear), list(s.hand)), before)
+        gears = {tuple(p.kind if p else None for p in end.gear) for acts, end in outs if acts[-1] == ("end_install",)}
+        self.assertEqual(len(gears), len([a for a, e in outs if a[-1] == ("end_install",)]))
+
+
+class Agents(unittest.TestCase):
+    def test_greedy_beats_random(self):
+        def wins(agent_cls):
+            return sum(summary(play("starter", "spiker", i, agent_cls(seed=i)))["result"] == "win"
+                       for i in range(20))
+        self.assertGreater(wins(GreedyAgent), wins(RandomAgent) + 5)
+
+    def test_greedy_plays_legal_moves_on_every_deck(self):
+        for deck in DECKS:
+            s = play(deck, "saboteur", 3, GreedyAgent(seed=3))
+            self.assertIsNotNone(s.result)
+
+
+class LoopFinder(unittest.TestCase):
+    def test_rules_example_layout(self):
+        layout = (K.COOLANT, K.SPRING, K.SPRING, K.HAMMER, K.AMPLIFIER, K.PLATE)
+        rules = RulesConfig(amplifier_bonus=0.5,
+                            part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
+        best_t, best_d = evaluate(layout, 0, _template(rules))
+        self.assertGreaterEqual(best_d[1], 22)
+
+    def test_layouts_respect_deck_counts(self):
+        deck = {K.SPRING: 1, K.STRIKER: 2}
+        for lay in layouts(deck, 4):
+            self.assertLessEqual(lay.count(K.SPRING), 1)
+            self.assertLessEqual(lay.count(K.STRIKER), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class MCTS(unittest.TestCase):
+    def test_mcts_finishes_fights_on_every_deck(self):
+        from clockwork.agents.mcts_agent import MCTSAgent
+        for deck in DECKS:
+            s = play(deck, "saboteur", 2, MCTSAgent(seed=2, budget=16, worlds=2))
+            self.assertIsNotNone(s.result)
+
+    def test_determinize_keeps_known_information(self):
+        from clockwork.agents.mcts_agent import MCTSAgent
+        s = new_fight(DECKS["copy_loop"], "dummy", seed=5)
+        w = MCTSAgent(seed=1).determinize(s)
+        self.assertEqual(w.hand, s.hand)
+        self.assertEqual(w.visible_queue(), s.visible_queue())
+        self.assertEqual(sorted(p.uid for p in w.queue), sorted(p.uid for p in s.queue))
+        self.assertEqual((w.gear, w.heat, w.enemy_hp), (s.gear, s.heat, s.enemy_hp))
+
+
+class MCTSReplay(unittest.TestCase):
+    def test_root_plan_that_turns_illegal_is_cut_short(self):
+        from clockwork.agents.mcts_agent import MCTSAgent, _Node
+        s = new_fight(DECKS["starter"], "dummy", seed=1)
+        too_many = [("end_install", "cw")] + [("crank",)] * 5      # only 2 Crank Power
+        agent = MCTSAgent(seed=0, budget=4, worlds=1)
+        root = _Node(s.clone())
+        root.cands = [(too_many, None)]
+        agent.simulate(root)                                       # must not raise
+        self.assertEqual(root.children[0].node.state.turn, 2)

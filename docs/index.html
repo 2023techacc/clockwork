@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clockwork Playtest</title>
+  <meta name="description" content="Playtest build of Clockwork, a deckbuilder where you install parts on a rotating gear.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='%23b5651d' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Clockwork <span class="tag">playtest</span></h1>
+    <p class="sub">Install parts on the gear. Each crank turns it; whatever reaches the top triggers.</p>
+  </header>
+
+  <div id="loading" class="panel">
+    <p id="loading-text">Loading the game engine (about 10 MB the first time)…</p>
+  </div>
+
+  <section id="setup" class="panel" hidden>
+    <h2>New fight</h2>
+    <div class="row">
+      <label>Deck <select id="deck"></select></label>
+      <label>Enemy <select id="enemy"></select></label>
+      <label>Seed <input id="seed" type="number" min="0" step="1"></label>
+      <button id="random-seed" type="button" class="secondary">Random seed</button>
+      <button id="start" type="button">Start fight</button>
+    </div>
+    <p id="deck-list" class="muted"></p>
+    <details>
+      <summary>How to play</summary>
+      <ol class="howto">
+        <li><b>Install:</b> up to <span data-rule="installs"></span> parts per turn from the 3 offered. Pick a part, then click a gear slot (occupied slots are replaced). Parts you don't install are discarded.</li>
+        <li><b>Pick a direction</b> for the whole turn. The gear turns one step for free and the part at the top (▼) triggers.</li>
+        <li><b>Crank</b> more steps in the same direction for 1 Crank Power each (<span data-rule="crank_power"></span> per turn).</li>
+        <li>Every trigger adds 1 Heat (some parts add more). At <span data-rule="overheat_at"></span> Heat the machine <b>overheats</b>: the turn stops, Heat resets to 0, and next turn nothing can crank. Heat past the limit is forgiven.</li>
+        <li>Block resets every turn. The enemy acts at the end of your turn — its intent is shown. Win by bringing its HP to 0.</li>
+      </ol>
+    </details>
+  </section>
+
+  <main id="game" hidden>
+    <section class="panel board">
+      <div class="gear-wrap">
+        <svg id="gear" viewBox="0 0 320 330" role="img" aria-label="The gear"></svg>
+      </div>
+      <div class="hand-area">
+        <h3>Offered parts <span id="installs-left" class="muted"></span></h3>
+        <div id="hand" class="cards"></div>
+        <h3>Next in queue <span id="queue-info" class="muted"></span></h3>
+        <div id="next" class="cards small"></div>
+      </div>
+    </section>
+
+    <section class="panel side">
+      <div class="stats">
+        <div><span class="label">Turn</span><b id="turn"></b></div>
+        <div><span class="label">HP</span><b id="hp"></b></div>
+        <div><span class="label">Block</span><b id="block"></b></div>
+        <div><span class="label">Crank Power</span><b id="cp"></b></div>
+      </div>
+      <div class="heat">
+        <span class="label">Heat</span>
+        <div class="meter"><div id="heat-bar"></div></div>
+        <b id="heat"></b>
+      </div>
+      <div class="enemy">
+        <div class="enemy-head"><b id="enemy-name"></b> <span id="enemy-hp"></span></div>
+        <div class="meter enemy-meter"><div id="enemy-bar"></div></div>
+        <div id="intent"></div>
+        <div id="crank-limit" class="muted"></div>
+      </div>
+      <div id="status" class="status"></div>
+      <div class="actions">
+        <button id="go-cw" type="button">↻ Crank clockwise</button>
+        <button id="go-ccw" type="button">↺ Crank counter-clockwise</button>
+        <button id="go-dead" type="button">End installing (overheated)</button>
+        <button id="crank" type="button">Crank again (1 CP)</button>
+        <button id="end-turn" type="button" class="secondary">End turn</button>
+      </div>
+      <h3>Log</h3>
+      <div id="log" class="log" aria-live="polite"></div>
+      <button id="abandon" type="button" class="link">Abandon fight</button>
+    </section>
+  </main>
+
+  <section id="result" class="panel" hidden>
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <label class="block">Notes for the designer (what felt good, confusing, broken?)
+      <textarea id="notes" rows="4"></textarea>
+    </label>
+    <div class="row">
+      <button id="copy-report" type="button">Copy fight report</button>
+      <a id="issue-link" class="button secondary" target="_blank" rel="noopener">Send as GitHub issue</a>
+      <button id="again" type="button" class="secondary">Replay same fight</button>
+      <button id="new-fight" type="button" class="secondary">New fight</button>
+    </div>
+    <p id="copied" class="muted" hidden>Copied.</p>
+  </section>
+
+  <section class="panel reference">
+    <details>
+      <summary>Part reference</summary>
+      <dl id="parts"></dl>
+    </details>
+  </section>
+
+  <footer class="muted">Rules build <span id="version"></span> · runs the same Python simulator used for AI playtesting.</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

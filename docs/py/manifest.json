@@ -1,0 +1,12 @@
+{
+  "files": [
+    "clockwork/__init__.py",
+    "clockwork/config.py",
+    "clockwork/decks.py",
+    "clockwork/enemies.py",
+    "clockwork/engine.py",
+    "clockwork/parts.py",
+    "clockwork/rng.py"
+  ],
+  "version": "ef00ca4afa37"
+}

@@ -77,14 +77,15 @@ These are fixed as working assumptions to start balance testing with — expecte
 
 ## Simulator defaults v1
 
-Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and on/off rules live in `sim/clockwork/config.py`. Items marked **(sim default)** were filled in for the simulator and still need confirming.
+Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and on/off rules live in `sim/clockwork/config.py`. Items marked **(sim default)** were filled in for the simulator and still need confirming; everything else is confirmed.
 
 ### Heat
 - **Every trigger adds 1 Heat**, and part extras are added on top: Spring +1 (first in a chain), Hammer +2 (3 Heat total). The §8 example costs **8 Heat** (Spring 2 + Spring 3 + Hammer 3).
-- **Spring chain:** a chain is everything that follows from one crank the player makes (free, extra or backward). The n-th Spring in a chain adds +n on top of the base 1. **(sim default: 3rd Spring +3, 4th +4, …)**
-- **Overheat:** reaching 10 Heat stops the turn immediately, with no further triggers or cranks. Heat goes back to 0. The next turn is dead: no free crank. **(sim default: the part that hit 10 still applies its own effect, e.g. damage or Block, before the stop. On the dead turn, no extra cranks either; installing is still allowed.)**
+- **Spring chain:** a chain is everything that follows from one crank the player makes (free, extra or backward). The n-th Spring in a chain adds +n on top of the base 1 (+1, +2, +3, +4, …).
+- **Overheat:** reaching 10 Heat stops the turn immediately, with no further triggers or cranks. Heat goes back to 0. The part that hit 10 still applies its own effect (damage, Block, …) before the stop. The next turn is dead: no free crank and no paid cranks; installing is still allowed.
 - **Coolant (sim default):** its own +1 Heat counts first, then it removes 3, so it nets −2. Heat never goes below 0.
-- Heat is expected to be reworked later.
+- **Excess Heat is forgiven (decided, intentional).** Heat above 10 is discarded by the Overheat reset, so the trigger that tips the machine over pays only part of its Heat cost. This is kept on purpose: it rewards using high-Heat parts as the last trigger before an Overheat. Side effect, as the simulator shows: Heat costs don't make parts weaker smoothly (e.g. a 6-Heat Hammer outperformed a 4-Heat one), so balance high-Heat parts by sweeping, not by intuition.
+- **Hammer (sim v3): 9 damage, +4 Heat** (Rules.md: 15 damage, +2 Heat). Swept so one Hammer adds about +25 win-rate points to the starter deck; see Results v3b in the roadmap. This value accounts for forgiven excess Heat.
 
 ### Geometry and resolution order
 - Left/right are as seen from the centre of the gear looking out at a part: left is the counter-clockwise neighbour.
@@ -96,20 +97,60 @@ Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and o
 - **Amplifiers add up:** +50% each, applied to damage and Block only, rounded down.
 
 ### Cranking and installing
-- **Backward crank:** 1 Crank Power each, no limit, and it triggers the new top part.
+- **Crank direction is locked per turn:** when installing ends, the player picks clockwise or counter-clockwise for the whole turn. The free crank and every paid crank (1 Crank Power each, no limit) go that way, and each triggers the new top part. Cranking back and forth in one turn is no longer possible. (The setting `crank_direction_lock` turns it off for comparison: free crank clockwise, paid cranks either way.)
+- Springs still crank the way their trigger was travelling, so a Coupler's right-hand Spring can still turn the gear against the turn's direction. **(sim default: the lock covers player cranks only.)**
 - **Gear starts empty.** Installing into the top slot is allowed but does not trigger anything. Replacing a part sends the old one to the discard pile.
 - **Empty Trigger Point:** nothing happens and the chain ends.
 
 ### Queue
-- 5 parts are visible, and the first 3 of them are offered each turn. **(sim default: the 5 include the 3 offered, so 2 upcoming parts can be seen beyond the hand.)**
+- 5 parts are visible, and the first 3 of them are offered each turn, so 2 upcoming parts can be seen beyond the hand.
 - Offered parts you don't install are discarded. This may change; the discard and reshuffle may go away entirely.
 - **Recycling:** when fewer than 3 parts are left to offer, the discard pile is shuffled and added behind the queue. It costs +0 Heat for the first recycle in a turn, +1 for the second, +2 for the third, and so on.
 
 ### Parts still undefined in the rules (sim defaults)
 - **Magnet:** pulls both parts that are 2 slots away (left side first), each only into an empty slot.
-- **Loader:** the rules say "from your bag", but there is no bag with a queue. Sim default: it takes a random part from the queue (visible or not) and puts it in a random empty slot. If the queue is empty, recycling happens first. If there's no empty slot, nothing happens. The loaded part doesn't trigger.
+- **Loader:** installs the next part in the queue. If the queue is empty, recycling happens first. If there's no empty slot, nothing happens. The loaded part doesn't trigger. **(sim default: it goes into a random empty slot.)**
 - **Jam:** blocks a slot (not a part) for 2 of the player's turns. Amplifiers still work in a jammed slot. Moving a part out of a jammed slot frees that part. Targets are chosen when the intent is revealed.
 - **Unscrew:** the part goes to the discard pile. **Wind Back:** the gear turns 1 step counter-clockwise and nothing triggers.
-- **Clock Tower:** every crank counts, including Springs. When the 12th crank happens, the tower strikes at the end of that turn unless the enemy is already dead.
+- **Clock Tower:** every crank counts, including Springs (confirmed for now; the boss is due for a rework). When the 12th crank happens, the tower strikes at the end of that turn unless the enemy is already dead.
 - **Not simulated yet:** Rust (its stat is undefined), Blueprints, Second Gear, Bigger Gear (gear size is a setting), part upgrades, and §8b #6 (enemies scaling with machine size).
 - **Win/loss:** the fight is won the moment enemy HP reaches 0, even partway through a chain.
+
+---
+
+## New parts and attachments (sim v4, proposals under test)
+
+**Payoff parts** for the enablers that underperform:
+
+| Part | Effect | Pairs with |
+|---|---|---|
+| **Primer** | 18 damage on its first trigger after being installed, 4 after that. Installing it again (from the queue, or via Loader) re-arms it. | Loader, replacing parts |
+| **Assembly** | 2 damage per occupied gear slot, itself included (12 on a full 6-slot gear) | Loader filling the gear |
+| **Slider** | 5 damage, +6 if a Magnet moved it this turn | Magnet |
+
+**Attachments:** a per-part upgrade, like bolting something onto a part. A part takes at most one, and each attachment fits one part type. How players get them in a run is not designed yet; for now they're fixed in the test decks. A Mirror copying a part copies its attachment too, consistent with "the copied part sits in the Mirror's place".
+
+| Attachment | Fits | Effect |
+|---|---|---|
+| **Coil** | Spring | The part this Spring's crank triggers also deals 4 damage (flat, not amplified). Lost if the crank lands on an empty slot. |
+| **Polish** | Mirror | The copy's damage and Block get +50%, added to any Amplifier bonus |
+| **Clamp** | Magnet | Every part this Magnet pulls is triggered (left side first) |
+| **Feeder** | Loader | Loads into the next empty slot to come up in the turn's direction, not a random one |
+
+Numbers are first guesses; the probe results are in the roadmap ("Results v4").
+
+### Balance pass v5 (current simulator values)
+- **Primer:** 2 damage; 8 if it triggers on the turn it was installed.
+- **Assembly:** 3 damage per part installed this turn (by hand or by Loader).
+- **Coupler:** +2 Heat.
+- **Amplifier:** +30%.
+- **Polish:** +20%.
+- **Clamp:** triggers only the first pulled part.
+- **Hammer:** 9 damage, +4 Heat.
+- **Coil:** 4 damage.
+- **Magnet:** pulls into occupied slots by swapping.
+
+All numbers are settings in `sim/clockwork/config.py` and `sim/clockwork/parts.py`. See "Results v5" in the roadmap.
+- **Loader:** installs the next **two** parts in the queue per trigger.
+- **Slider:** moved bonus +3 (was +6).
+- **Enemy HP:** each fight rolls base ±3.

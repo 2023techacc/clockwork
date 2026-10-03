@@ -1,18 +1,36 @@
 import itertools
 import unittest
+from dataclasses import replace as dc_replace
 
 from clockwork import RulesConfig, apply, legal_actions, new_fight
 from clockwork import engine
+from clockwork.search import turn_outcomes
 from clockwork.agents.random_agent import RandomAgent
 from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
-from clockwork.parts import Kind as K, Part
+from clockwork.parts import Kind as K, Mod, Part
 
 S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMPLIFIER,
                                     K.COUPLER, K.LOADER, K.COOLANT, K.HAMMER, K.MAGNET)
 
 
-def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
+# Mechanics tests pin the numbers they were written against, so balance passes that change
+# defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
+MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1,
+                  loader_replaces=False, magnet_block_per_pull=0, part_overrides=(
+    ("Slider", "moved_bonus", 6),
+    ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
+    ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
+    ("Coupler", "extra_heat", 0)))
+
+
+def mech(**kw):
+    """MECH with some fields changed; part_overrides are appended."""
+    extra = kw.pop("part_overrides", ())
+    return dc_replace(MECH, part_overrides=MECH.part_overrides + tuple(extra), **kw)
+
+
+def setup(arrival, enemy="dummy", rules=MECH, queue=()):
     """Gear given in arrival order: arrival[0] is at the Trigger Point now, arrival[1] comes up
     on the next forward crank, and so on. Returns (state, slot_of) where slot_of[k] is the gear
     slot of arrival[k]."""
@@ -31,21 +49,32 @@ def setup(arrival, enemy="dummy", rules=RulesConfig(), queue=()):
     return s, slot_of
 
 
-def free_crank(s):
-    apply(s, ("end_install",))
+UNLOCKED = mech(crank_direction_lock=False)
+# Rules.md's original Hammer (15 damage, +2 Heat), for tests written against the rules text.
+RULES_MD = mech(part_overrides=(("Hammer", "damage", 15), ("Hammer", "extra_heat", 2)))
+
+
+def free_crank(s, direction=None):
+    apply(s, ("end_install",) if direction is None else ("end_install", direction))
 
 
 class HeatAndExample(unittest.TestCase):
     def test_rules_section_8_example(self):
         # Rules.md §8. The listed order is the order parts reach the top.
-        s, _ = setup([CO, SP, SP, H, A, P])
+        s, _ = setup([CO, SP, SP, H, A, P], rules=RULES_MD)
         free_crank(s)
         self.assertEqual(999 - s.enemy_hp, 22)          # 15 * 1.5, rounded down
         self.assertEqual(s.heat, 8)                     # Spring 2 + Spring 3 + Hammer 3
         self.assertEqual(s.triggers_turn, 3)
 
+    def test_part_overrides(self):
+        rules = mech(part_overrides=(("Hammer", "damage", 10), ("Hammer", "extra_heat", 4)))
+        s, _ = setup([None, H], rules=rules)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.heat), (10, 5))
+
     def test_every_trigger_adds_one_plus_extras(self):
-        s, _ = setup([None, S, H])
+        s, _ = setup([None, S, H], rules=RULES_MD)
         free_crank(s)
         self.assertEqual(s.heat, 1)
         apply(s, ("crank",))
@@ -82,7 +111,7 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual(s.heat, 4)
 
     def test_coolant(self):
-        s, _ = setup([None, S, CO])
+        s, _ = setup([None, S, CO], rules=UNLOCKED)
         s.heat = 5
         free_crank(s)
         apply(s, ("crank",))
@@ -128,7 +157,7 @@ class CouplerAndMirror(unittest.TestCase):
         self.assertEqual(s.triggers_turn, 1)
 
     def test_coupler_can_trigger_coupler_when_allowed(self):
-        s, _ = setup([None, C, C, S], rules=RulesConfig(coupler_can_trigger_coupler=True))
+        s, _ = setup([None, C, C, S], rules=mech(coupler_can_trigger_coupler=True))
         free_crank(s)
         self.assertGreater(s.triggers_turn, 1)
 
@@ -140,7 +169,7 @@ class CouplerAndMirror(unittest.TestCase):
         self.assertEqual(s.heat, 1)
 
     def test_mirror_copying_hammer_costs_hammer_heat(self):
-        s, _ = setup([None, M, None, None, H, None])
+        s, _ = setup([None, M, None, None, H, None], rules=RULES_MD)
         free_crank(s)
         self.assertEqual((999 - s.enemy_hp, s.heat), (15, 3))
 
@@ -167,7 +196,7 @@ class CouplerAndMirror(unittest.TestCase):
 
 class Cranking(unittest.TestCase):
     def test_backward_crank_triggers_and_costs_power(self):
-        s, _ = setup([S, None, None, None, None, P])
+        s, _ = setup([S, None, None, None, None, P], rules=UNLOCKED)
         free_crank(s)                                   # onto empty
         apply(s, ("crank_back",))                       # back to the Striker
         self.assertEqual((s.crank_power, 999 - s.enemy_hp), (1, 6))
@@ -177,10 +206,47 @@ class Cranking(unittest.TestCase):
 
     def test_spring_follows_backward_crank(self):
         # Going backward from the top: Spring, then Striker. The Spring keeps cranking backward.
-        s, _ = setup([None, None, None, None, S, SP])
+        s, _ = setup([None, None, None, None, S, SP], rules=UNLOCKED)
         s.phase, s.crank_power = "crank", 1
         apply(s, ("crank_back",))
         self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_direction_lock_offers_both_directions_then_one(self):
+        s, _ = setup([None, S])
+        self.assertIn(("end_install", engine.CW), legal_actions(s))
+        self.assertIn(("end_install", engine.CCW), legal_actions(s))
+        free_crank(s, engine.CW)
+        self.assertEqual(legal_actions(s), [("crank",), ("end_turn",)])
+        self.assertRaises(ValueError, apply, s, ("crank_back",))
+
+    def test_counter_clockwise_turn(self):
+        # Going backward from the top: Plate, then Striker. Free and paid cranks both go that way.
+        s, _ = setup([None, None, None, None, S, P])
+        free_crank(s, engine.CCW)
+        self.assertEqual(s.block, 6)
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_spring_follows_counter_clockwise_turn(self):
+        s, _ = setup([None, None, None, None, S, SP])
+        free_crank(s, engine.CCW)
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_no_back_and_forth_pendulum(self):
+        # Striker > Spring > Striker: unlocked, the Spring fires on every crank; locked, it can't repeat.
+        s, _ = setup([None, SP, S, None, None, S], rules=UNLOCKED)
+        free_crank(s)
+        apply(s, ("crank_back",))
+        apply(s, ("crank",))
+        self.assertGreater(max(s.part_triggers.values()), 2)
+        best = max(max(e.part_triggers.values(), default=0)
+                   for _, e in turn_outcomes(setup([None, SP, S, None, None, S])[0]))
+        self.assertLessEqual(best, 2)
+
+    def test_dead_turn_has_single_end_install(self):
+        s, _ = setup([None])
+        s.dead_turn = True
+        self.assertEqual([a for a in legal_actions(s) if a[0] == "end_install"], [("end_install",)])
 
     def test_install_into_top_does_not_trigger_and_replace_discards(self):
         s, slot = setup([S])
@@ -203,16 +269,22 @@ class UtilityParts(unittest.TestCase):
         self.assertIsNone(s.gear[slot[3]])
         self.assertIsNone(s.gear[slot[5]])
 
-    def test_magnet_does_not_pull_into_occupied(self):
-        s, slot = setup([P, MG, P, S, None, None])
+    def test_magnet_does_not_pull_into_occupied_without_swaps(self):
+        s, slot = setup([P, MG, P, S, None, None], rules=mech(magnet_swaps=False))
         free_crank(s)
         self.assertEqual(s.gear[slot[3]].kind, S)
 
-    def test_loader_installs_from_queue(self):
-        s, slot = setup([None, L], queue=[S])
+    def test_magnet_swaps_into_occupied(self):
+        s, slot = setup([None, MG, P, S, None, None])
         free_crank(s)
-        self.assertEqual(s.queue, [])
-        self.assertEqual(sum(p is not None for p in s.gear), 2)
+        self.assertEqual((s.gear[slot[2]].kind, s.gear[slot[3]].kind), (S, P))
+        self.assertEqual(len(s.moved), 2)
+
+    def test_loader_installs_next_part_in_queue(self):
+        s, slot = setup([None, L], queue=[H, S])
+        free_crank(s)
+        self.assertEqual([p.kind for p in s.queue], [S])
+        self.assertIn(H, [p.kind for p in s.gear if p is not None])
 
     def test_loader_recycles_when_queue_empty(self):
         s, _ = setup([None, L])
@@ -228,6 +300,175 @@ class UtilityParts(unittest.TestCase):
             s.discard = [Part(70, S)]
             engine._recycle(s)
             self.assertEqual(s.heat, expected)
+
+
+class PayoffParts(unittest.TestCase):
+    def test_primer_fresh_then_weak(self):
+        s, slot = setup([None, None, K.STRIKER])
+        s.hand = [Part(1, K.PRIMER)]
+        apply(s, ("install", 0, slot[1]))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 18)
+        apply(s, ("end_turn",))
+        s.top = slot[0]
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 22)          # 18 + 4
+
+    def test_primer_loaded_is_fresh(self):
+        s, slot = setup([None, L, None], queue=[K.PRIMER])
+        free_crank(s)
+        self.assertEqual(s.queue, [])
+        loaded = next(p for p in s.gear if p is not None and p.kind == K.PRIMER)
+        self.assertIn(loaded.uid, s.fresh)
+
+    def test_assembly_counts_parts(self):
+        s, _ = setup([P, K.ASSEMBLY, S, None, P, None])
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4)           # 4 parts on the gear x 1
+
+    def test_assembly_counts_installs_this_turn(self):
+        s, slot = setup([P, K.ASSEMBLY, None, None, None, None])
+        s.hand = [Part(1, S), Part(2, S)]
+        apply(s, ("install", 0, slot[2]))
+        apply(s, ("install", 0, slot[3]))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4 + 2 * 2)   # 4 parts, 2 of them installed this turn
+
+    def test_primer_bonus_only_on_install_turn(self):
+        s, slot = setup([None, None, None])
+        s.hand = [Part(1, K.PRIMER)]
+        apply(s, ("install", 0, slot[2]))               # comes up on the 2nd crank; no crank this turn
+        free_crank(s)
+        apply(s, ("end_turn",))
+        s.top = slot[1]
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4)           # next turn it is no longer armed
+
+    def test_slider_moved_bonus(self):
+        # Magnet comes up first and pulls the Slider (2 slots away) next to it; the next crank hits it.
+        s, slot = setup([None, MG, None, K.SLIDER, None, None])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, K.SLIDER)
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 11)          # 5 + 6
+
+
+class Attachments(unittest.TestCase):
+    def test_deck_rejects_wrong_attachment(self):
+        with self.assertRaises(ValueError):
+            new_fight({(K.STRIKER, Mod.COIL): 1})
+
+    def test_coil_adds_damage_to_triggered_part(self):
+        s, slot = setup([None, None, P])
+        s.gear[slot[1]] = Part(50, SP, Mod.COIL)
+        free_crank(s)
+        self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))   # the Plate also deals 4
+
+    def test_coil_bonus_lost_on_empty(self):
+        s, slot = setup([None, None, None])
+        s.gear[slot[1]] = Part(50, SP, Mod.COIL)
+        free_crank(s)
+        self.assertEqual(s.enemy_hp, 999)
+
+    def test_polish_mirror(self):
+        s, slot = setup([None, None, None, None, S, None])
+        s.gear[slot[1]] = Part(50, M, Mod.POLISH)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 9)           # 6 * 1.5
+
+    def test_clamp_triggers_pulled_parts(self):
+        s, slot = setup([None, None, None, S, None, P])
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        # Pulls the Striker (left side) and the Plate (right side), then triggers both.
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 6))
+        self.assertEqual(s.triggers_turn, 3)
+
+    def test_clamp_with_slider(self):
+        s, slot = setup([None, None, None, K.SLIDER, None, None])
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 11)
+
+    def test_feeder_loads_next_slot_to_come_up(self):
+        s, slot = setup([None, None, None, P, None, None], queue=[S])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, S)       # next to arrive on a clockwise turn
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 6)
+
+    def test_feeder_follows_counter_clockwise_turn(self):
+        s, slot = setup([None, None, P, None, None, None], queue=[S])
+        s.gear[slot[5]] = Part(50, L, Mod.FEEDER)
+        free_crank(s, engine.CCW)                       # the Loader (arrival 5) comes up going back
+        self.assertEqual(s.gear[slot[4]].kind, S)
+
+    def test_mirror_copies_attachment(self):
+        s, slot = setup([None, M, P, None, None, None])
+        s.gear[slot[4]] = Part(50, SP, Mod.COIL)        # opposite the Mirror
+        free_crank(s)
+        self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))
+
+
+class BalanceDefaults(unittest.TestCase):
+    def test_clamp_triggers_one_pulled_part_by_default(self):
+        s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
+        s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 12))  # only the Striker triggers; 12 Block from 2 pulls
+
+    def test_default_numbers(self):
+        s, _ = setup([None, S, A], rules=RulesConfig())
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 7)                    # 6 * 1.3, rounded down
+
+
+class LoaderTwoLoads(unittest.TestCase):
+    def test_loader_loads_two_by_default(self):
+        s, slot = setup([None, L, None, None, None, None], rules=RulesConfig(), queue=[S, P, S])
+        free_crank(s)
+        self.assertEqual([p.kind for p in s.queue], [S])
+        self.assertEqual(sum(p is not None for p in s.gear), 3)
+
+    def test_feeder_loads_next_two_slots(self):
+        s, slot = setup([None, None, None, None, None, None], rules=RulesConfig(), queue=[S, P])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual((s.gear[slot[2]].kind, s.gear[slot[3]].kind), (S, P))
+
+    def test_second_load_stops_when_gear_full(self):
+        s, slot = setup([S, L, S, S, S, None], rules=RulesConfig(loader_replaces=False), queue=[P, P])
+        free_crank(s)
+        self.assertEqual(len(s.queue), 1)
+
+
+class LoaderReplacesAndMagnetBlock(unittest.TestCase):
+    def test_full_gear_loader_replaces_opposite(self):
+        s, slot = setup([S, L, S, P, S, S], rules=RulesConfig(), queue=[H, H])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[4]].kind, H)        # opposite the Loader (arrival 1 -> 4)
+        self.assertEqual([p.kind for p in s.discard], [S])
+        self.assertEqual(len(s.queue), 1)                # only one replacement per trigger
+
+    def test_feeder_replaces_next_to_come_up(self):
+        s, slot = setup([S, None, S, P, S, S], rules=RulesConfig(), queue=[H])
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        self.assertEqual(s.gear[slot[2]].kind, H)
+        self.assertEqual([p.kind for p in s.discard], [S])
+
+    def test_loader_fills_empty_before_replacing(self):
+        s, slot = setup([S, L, S, P, None, S], rules=RulesConfig(), queue=[H, H, H])
+        free_crank(s)
+        self.assertEqual(s.gear[slot[4]].kind, H)        # empty slot first (it is also the opposite slot)
+        self.assertEqual(s.discard, [])                  # the 2nd load won't replace what the 1st just loaded
+        self.assertEqual(len(s.queue), 2)
+
+    def test_magnet_block_per_pull(self):
+        s, slot = setup([None, MG, None, S, None, P], rules=RulesConfig())
+        free_crank(s)
+        self.assertEqual(s.block, 12)                    # 2 parts pulled x 6
 
 
 class EnemiesAndCaps(unittest.TestCase):
@@ -263,14 +504,14 @@ class EnemiesAndCaps(unittest.TestCase):
         self.assertEqual((s.result, s.reason), ("loss", "clock tower struck"))
 
     def test_turn_cap_option(self):
-        rules = RulesConfig(max_triggers_per_turn=2)
+        rules = mech(max_triggers_per_turn=2)
         s, _ = setup([None, SP, SP, SP, S], rules=rules)
         free_crank(s)
         self.assertEqual(s.triggers_turn, 2)
 
     def test_safety_cap_flags_runaway(self):
         # Couplers allowed to chain, with Coolants keeping Heat down: an unbounded loop.
-        rules = RulesConfig(coupler_can_trigger_coupler=True, safety_triggers_per_turn=50)
+        rules = mech(coupler_can_trigger_coupler=True, safety_triggers_per_turn=50)
         s, _ = setup([None, C, C, CO, CO, CO], rules=rules)
         free_crank(s)
         apply(s, ("end_turn",))
