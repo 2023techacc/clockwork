@@ -34,3 +34,9 @@ Agents are named `random`, `greedy`, `mcts` or `mcts@<budget>` (simulations per 
 
 Agent API: `new_fight(...)`, `legal_actions(s)`, `apply(s, action)`, `s.clone()`, `summary(s)`.
 In `render()`/traces the gear is shown from the Trigger Point onward, in the order forward cranks bring parts up.
+
+## Playtest page
+
+`../docs/` is a browser game for human playtesters that runs this simulator through Pyodide.
+After changing rules here, run `python build_web.py` so the page picks them up
+(`tests/test_web.py` fails if you forget). See `../docs/README.md`.
