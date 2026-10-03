@@ -23,6 +23,7 @@ class GreedyAgent:
             return 1e6
         incoming = sum(a[1] for a in end.intent if a[0] == "attack")
         score = (start.enemy_hp - end.enemy_hp
+                 - (start.hp - end.hp)               # damage taken during the turn (Clock Tower chimes)
                  + self.w_block * min(end.block, incoming)
                  - self.w_heat * end.heat
                  + self.w_part * sum(p is not None for p in end.gear))

@@ -55,7 +55,8 @@ async function boot() {
 function setupScreen() {
   for (const name of Object.keys(opts.decks)) $("deck").add(new Option(name, name));
   for (const [name, e] of Object.entries(opts.enemies)) {
-    const extra = e.crank_limit ? `, ${e.crank_limit} cranks max` : "";
+    const extra = e.chime_every ? `, strikes for ${e.chime_damage} every ${e.chime_every} cranks`
+      : e.crank_limit ? `, ${e.crank_limit} cranks max` : "";
     $("enemy").add(new Option(`${name} (${e.hp}±${opts.rules.hp_jitter} HP${extra})`, name));
   }
   document.querySelectorAll("[data-rule]").forEach((el) => { el.textContent = opts.rules[el.dataset.rule]; });
@@ -213,9 +214,16 @@ function render() {
   $("enemy-name").textContent = v.enemy.name;
   $("enemy-hp").textContent = `${v.enemy.hp}/${v.enemy.max_hp} HP`;
   $("enemy-bar").style.width = `${(100 * v.enemy.hp) / v.enemy.max_hp}%`;
-  $("intent").textContent = "Intent: " + (v.enemy.intent.join(", ") || "nothing");
-  $("crank-limit").textContent = v.enemy.crank_limit
-    ? `Clock Tower: ${v.enemy.cranks_used}/${v.enemy.crank_limit} cranks used (every crank counts, Springs too)` : "";
+  $("intent").textContent = "Intent: " + (v.enemy.intent.join(", ") || (v.enemy.chime_every ? "no attack (strikes on cranks)" : "nothing"));
+  const e = v.enemy;
+  if (e.chime_every) {
+    const left = e.chime_every - (e.cranks_used % e.chime_every);
+    $("crank-limit").textContent = `Clock Tower strikes for ${e.chime_damage} on every ${e.chime_every}th crank, ` +
+      `after the part that comes up. Next strike in ${left} crank${left === 1 ? "" : "s"} (Springs count).`;
+  } else {
+    $("crank-limit").textContent = e.crank_limit
+      ? `Clock Tower: ${e.cranks_used}/${e.crank_limit} cranks used (every crank counts, Springs too)` : "";
+  }
 
   let status = "";
   if (v.phase === "install") {
