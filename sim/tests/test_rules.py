@@ -416,7 +416,7 @@ class BalanceDefaults(unittest.TestCase):
         s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
         s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
         free_crank(s)
-        self.assertEqual((999 - s.enemy_hp, s.block), (6, 8))   # only the Striker triggers; 8 Block from 2 pulls
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 12))  # only the Striker triggers; 12 Block from 2 pulls
 
     def test_default_numbers(self):
         s, _ = setup([None, S, A], rules=RulesConfig())
@@ -468,7 +468,7 @@ class LoaderReplacesAndMagnetBlock(unittest.TestCase):
     def test_magnet_block_per_pull(self):
         s, slot = setup([None, MG, None, S, None, P], rules=RulesConfig())
         free_crank(s)
-        self.assertEqual(s.block, 8)                     # 2 parts pulled x 4
+        self.assertEqual(s.block, 12)                    # 2 parts pulled x 6
 
 
 class EnemiesAndCaps(unittest.TestCase):
