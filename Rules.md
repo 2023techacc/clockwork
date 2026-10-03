@@ -84,7 +84,7 @@ Enemies show intent. Some target your machine instead of your HP:
 |---|---|---|
 | **The Jammer** | Jams 2 random slots every turn. | Duplicates of key parts, Magnet to move parts out of jammed slots |
 | **Reverse Engine** | On odd turns, your gear spins **counter-clockwise**. | Symmetrical layouts, Mirrors, backward crank |
-| **Clock Tower** | You only get **12 total cranks** in the whole fight before it strikes (instant loss). | Couplers, Amplifiers, Hammer: make each crank count |
+| **Clock Tower** | No regular attack. **Every 4th crank** of the fight (Springs count) it strikes at once for heavy damage, after the part that comes up triggers; your current Block absorbs it. *(Was: 12 total cranks, then instant loss.)* | Plates timed to come up on the strike, Block engines, fewer but bigger cranks |
 
 ---
 

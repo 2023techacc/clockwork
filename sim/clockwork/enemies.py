@@ -47,7 +47,7 @@ ENEMIES = {
     # Rules.md §7 boss: every crank counts (free, extra, backward and Spring cranks). v1: 50 HP.
     # v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
-    "clock_tower": EnemySpec("clock_tower", 52, ((),), chime_every=4, chime_damage=15),
+    "clock_tower": EnemySpec("clock_tower", 115, ((),), chime_every=4, chime_damage=15),
 }
 
 

@@ -410,3 +410,29 @@ Without the three starter parts in the pool, big_hit reaches 79% by 8 picks. Par
   - Spring and Mirror on their own;
   - whether two Magnets need a cap on their Block;
   - calibrating difficulty against human playtests.
+
+---
+
+## Results v8 (Clock Tower v2, and HP left after winning)
+
+**Clock Tower v2 (chime).** Human playtesting found the 12-crank limit made Block useless: every Plate trigger spent one of the 12 cranks, so the fight was a pure damage race only a near-perfect planner could win (greedy 25% vs MCTS@200 97% with the starter deck). The new tower has no regular attack. On every 4th crank of the fight (Spring cranks count) it strikes at once, after the arriving part's chain, hitting your current Block.
+
+Settings tested (all 6 decks):
+
+| Setting | MCTS@50 | greedy | HP left on win (MCTS@50) | Strike damage blocked |
+|---|---|---|---|---|
+| 52 HP, every 4 × 15 | 100% | 100% | 32 | 25% |
+| 90 HP, every 4 × 18 | 79% | 51% | 7.3 | 21% |
+| 98 HP, every 4 × 18 | 55% | 32% | 6.6 | 20% |
+| **115 HP, every 4 × 15 (chosen)** | **66%** | **41%** | **9.5** | **30%** |
+
+At 52 HP, better agents block more of the strike damage (greedy 22%, MCTS@50 25%, MCTS@200 38%), so timing Block is now a real skill. 15-damage strikes keep the most blocking in play, because a Plate's 6 covers more of them. Strike damage near 22 sits on a survival breakpoint: three unblocked strikes kill a 55-HP player, and 22 → 23 dropped the casual win rate from 66% to 33%. The utility deck flips from worst (9% against the old tower) to best (98–100%), because its Magnet Block engine counters strikes. Per deck at the chosen setting (MCTS@50): starter 53%, spring_chain 43%, copy_loop 91%, big_hit 96%, sustain 14%, utility 100%.
+
+**HP left after winning is very low everywhere.** In the v7 run, wins ended with these averages (minimum in brackets), out of 55 HP:
+
+| Agent | dummy | spiker | enrager | saboteur |
+|---|---|---|---|---|
+| greedy | 8.5 (1) | 6.8 (1) | 7.2 (1) | 9.8 (1) |
+| MCTS@200 | 8.7 (1) | 8.4 (1) | 10.5 (1) | 8.8 (1) |
+
+64% of MCTS@200's wins end under 15 HP. The enemies were tuned for win rate only, so every fight became a close race. If HP carries over between fights, as in Slay the Spire, a run is unwinnable. Normal fights should cost something like 10–20 HP for a decent player. Fix: tune two numbers per enemy, win rate and HP lost on a win, by lowering attacks and raising enemy HP (longer fights that hurt less). The tuner currently scales both together; it needs separate knobs.

@@ -112,7 +112,7 @@ Provisional rules the headless simulator (`sim/`) runs on. Tunable numbers and o
 - **Loader:** installs the next part in the queue. If the queue is empty, recycling happens first. If there's no empty slot, nothing happens. The loaded part doesn't trigger. **(sim default: it goes into a random empty slot.)**
 - **Jam:** blocks a slot (not a part) for 2 of the player's turns. Amplifiers still work in a jammed slot. Moving a part out of a jammed slot frees that part. Targets are chosen when the intent is revealed.
 - **Unscrew:** the part goes to the discard pile. **Wind Back:** the gear turns 1 step counter-clockwise and nothing triggers.
-- **Clock Tower:** every crank counts, including Springs (confirmed for now; the boss is due for a rework). When the 12th crank happens, the tower strikes at the end of that turn unless the enemy is already dead.
+- **Clock Tower (v2, chime):** no regular attack. Every 4th crank of the fight, including Spring cranks, it strikes for 15 after the arriving part's chain resolves, hitting current Block (a strike still lands if that trigger overheats). 115 HP (±3). Replaced the 12-crank instant-loss rule, which made Block useless: every Plate trigger spent one of the 12 cranks. When the 12th crank happens, the tower strikes at the end of that turn unless the enemy is already dead.
 - **Not simulated yet:** Rust (its stat is undefined), Blueprints, Second Gear, Bigger Gear (gear size is a setting), part upgrades, and §8b #6 (enemies scaling with machine size).
 - **Win/loss:** the fight is won the moment enemy HP reaches 0, even partway through a chain.
 
