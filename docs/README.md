@@ -13,5 +13,9 @@ simulator** as the AI agents (through [Pyodide](https://pyodide.org)), so the ru
 
 **Local test:** `cd docs && python -m http.server`, then open http://localhost:8000.
 
-Playtesters can copy a fight report (setup, result and every action, so the fight can be replayed
-exactly in the simulator) or open a pre-filled GitHub issue from the result screen.
+**Modes:** *Run* (default): dummy → spiker → saboteur → enrager → Clock Tower with HP carried over,
+10 HP healed after each win, and an optional pick-1-of-3 part reward (or skip) after each fight.
+*Single fight*: any deck against any enemy at full HP.
+
+Playtesters can copy a fight report (setup, result and every action, so each fight can be replayed
+exactly in the simulator; run reports include every fight and reward pick) or open a pre-filled GitHub issue from the result screen.

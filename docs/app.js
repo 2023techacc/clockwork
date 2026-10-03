@@ -77,19 +77,60 @@ function setupScreen() {
   showDeck();
   randomSeed();
   $("random-seed").onclick = randomSeed;
-  $("start").onclick = () => startFight($("deck").value, $("enemy").value, Number($("seed").value) || 0);
+  const syncMode = () => {
+    const run = mode() === "run";
+    $("enemy-label").hidden = run;
+    $("rewards-label").hidden = !run;
+    $("route").textContent = run
+      ? `Route: ${opts.route.join(" → ")}. Heal ${opts.rules.heal} HP after each win.` : "";
+  };
+  document.querySelectorAll("input[name=mode]").forEach((r) => { r.onchange = syncMode; });
+  syncMode();
+  $("start").onclick = () => {
+    const seed = Number($("seed").value) || 0;
+    if (mode() === "run") startRun($("deck").value, seed, $("rewards").checked);
+    else startFight($("deck").value, $("enemy").value, seed);
+  };
 }
+
+function mode() { return document.querySelector("input[name=mode]:checked").value; }
 
 function randomSeed() { $("seed").value = Math.floor(Math.random() * 1e6); }
 
-function startFight(deck, enemy, seed) {
+function showGame() {
   logHistory = [];
   selected = null;
   $("setup").hidden = true;
   $("result").hidden = true;
   $("game").hidden = false;
   buildGear(6);
+}
+
+function startFight(deck, enemy, seed) {
+  showGame();
   update(play.start(deck, enemy, seed));
+}
+
+function startRun(deck, seed, rewards) {
+  showGame();
+  update(play.start_run(deck, seed, rewards));
+}
+
+function nextFight(choice) {
+  showGame();
+  call(play.next_fight, choice || "");
+}
+
+function drawRunBanner(v) {
+  const b = $("run-banner");
+  b.hidden = !v.run;
+  if (!v.run) return;
+  const steps = v.run.route.map((e, i) => {
+    const cls = i < v.run.index ? "done" : i === v.run.index ? "now" : "";
+    return `<span class="step ${cls}">${i + 1}. ${e}</span>`;
+  }).join("");
+  const parts = Object.values(v.run.deck).reduce((a, b) => a + b, 0);
+  b.innerHTML = `<b>Run</b>${steps}<span class="muted">HP carries over · heal ${v.run.heal} after each win · deck: ${parts} parts</span>`;
 }
 
 function call(fn, ...args) {
@@ -193,6 +234,7 @@ function update(json) {
 
 function render() {
   const v = view;
+  drawRunBanner(v);
   drawGear(v);
   const hand = $("hand");
   hand.innerHTML = "";
@@ -280,11 +322,18 @@ function onSlot(i) {
 
 // ---------------------------------------------------------------- results
 function report() {
+  const notes = $("notes").value.trim();
+  if (view.run) {
+    return { version, mode: "run", setup: view.setup, status: view.run.status, deck: view.run.deck,
+      history: view.run.history, notes };
+  }
   return {
-    version, setup: view.setup, result: view.result, reason: view.reason, summary: view.summary,
-    notes: $("notes").value.trim(), actions: view.actions,
+    version, mode: "fight", setup: view.setup, result: view.result, reason: view.reason, summary: view.summary,
+    notes, actions: view.actions,
   };
 }
+
+function runOver(v) { return v.run && (v.run.status === "lost" || v.run.status === "cleared"); }
 
 function showResult() {
   const v = view;
@@ -296,16 +345,44 @@ function showResult() {
   $("result-text").textContent = win
     ? `You won on turn ${v.turn} with ${v.hp} HP left.`
     : `${reasons[v.reason] || v.reason} The enemy had ${v.enemy.hp} HP left (turn ${v.turn}).`;
+  const r = v.run;
+  $("reward").hidden = !(r && r.status === "reward");
+  $("continue-row").hidden = !(r && r.status === "next");
+  $("again").hidden = !!r;
+  $("run-history").textContent = "";
+  if (r) {
+    if (r.status === "reward" || r.status === "next") {
+      $("result-text").textContent += ` Healed ${r.heal}: you start the next fight (${r.route[r.index + 1]}) with ${r.hp} HP.`;
+    }
+    if (r.status === "cleared") { $("result-title").textContent = "Run cleared!"; }
+    if (r.status === "lost") { $("result-title").textContent = `Run over at fight ${r.index + 1} of ${r.route.length}`; }
+    $("run-history").textContent = r.history.map((h, i) =>
+      `${i + 1}. ${h.enemy}: ${h.result === "win" ? "won" : "lost"}, HP ${h.hp_start} → ${h.hp_end}` +
+      (h.reward ? `, took ${h.reward}` : "")).join("   ");
+    const cards = $("reward-cards");
+    cards.innerHTML = "";
+    for (const kind of r.offer) {
+      const c = partCard({ kind, mod: null }, null, false);
+      c.classList.remove("static");
+      c.tabIndex = 0;
+      c.onclick = () => nextFight(kind);
+      cards.appendChild(c);
+    }
+  }
   updateIssueLink();
   $("result").scrollIntoView({ behavior: "smooth" });
 }
 
 function updateIssueLink() {
   const r = report();
-  const title = `Playtest: ${r.setup.deck} vs ${r.setup.enemy}: ${r.result}`;
+  const title = r.mode === "run"
+    ? `Playtest run: ${r.setup.deck}: ${r.status === "cleared" ? "cleared" : `${r.status} at fight ${r.setup.fight}`}`
+    : `Playtest: ${r.setup.deck} vs ${r.setup.enemy}: ${r.result}`;
   let body = (r.notes || "(no notes)") + "\n\n```json\n" + JSON.stringify(r) + "\n```";
   if (body.length > 6000) {
-    const short = { ...r, actions: "(omitted, too long; paste the copied report instead)" };
+    const short = r.mode === "run"
+      ? { ...r, history: r.history.map(({ actions, ...h }) => h), note: "actions omitted; paste the copied report" }
+      : { ...r, actions: "(omitted, too long; paste the copied report instead)" };
     body = (r.notes || "(no notes)") + "\n\n```json\n" + JSON.stringify(short) + "\n```";
   }
   $("issue-link").href = `https://github.com/${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
@@ -319,8 +396,12 @@ $("copy-report").onclick = async () => {
   setTimeout(() => { $("copied").hidden = true; }, 2000);
 };
 $("again").onclick = () => startFight(view.setup.deck, view.setup.enemy, view.setup.seed);
-$("new-fight").onclick = () => { $("result").hidden = true; $("game").hidden = true; $("setup").hidden = false; randomSeed(); };
-$("abandon").onclick = () => { $("game").hidden = true; $("setup").hidden = false; };
+$("new-fight").onclick = () => {
+  $("result").hidden = true; $("game").hidden = true; $("run-banner").hidden = true; $("setup").hidden = false; randomSeed();
+};
+$("abandon").onclick = () => { $("game").hidden = true; $("run-banner").hidden = true; $("setup").hidden = false; };
+$("skip-reward").onclick = () => nextFight("");
+$("continue").onclick = () => nextFight("");
 $("go-cw").onclick = () => call(play.end_install, "cw");
 $("go-ccw").onclick = () => call(play.end_install, "ccw");
 $("go-dead").onclick = () => call(play.end_install, "cw");

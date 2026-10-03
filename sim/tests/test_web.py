@@ -38,3 +38,47 @@ class WebBundle(unittest.TestCase):
             self.assertIsNotNone(v["result"])
             self.assertTrue(v["summary"])
             self.assertTrue(v["actions"])
+
+
+class RunMode(unittest.TestCase):
+    def play_fight(self, v, rng):
+        for _ in range(400):
+            if v["result"]:
+                return v
+            if v["can_install"] and v["hand"] and rng.random() < 0.6:
+                v = json.loads(play.install(rng.randrange(len(v["hand"])), rng.randrange(6)))
+            elif v["can_end_install"]:
+                v = json.loads(play.end_install(rng.choice(["cw", "ccw"])))
+            elif v["can_crank"] and rng.random() < 0.6:
+                v = json.loads(play.crank())
+            else:
+                v = json.loads(play.end_turn())
+        self.fail("fight did not end")
+
+    def test_run_carries_hp_heals_and_offers_rewards(self):
+        rng = random.Random(1)
+        for seed in range(6):
+            v = json.loads(play.start_run("big_hit", seed, True))
+            self.assertEqual(v["run"]["status"], "fighting")
+            while True:
+                v = self.play_fight(v, rng)
+                run = v["run"]
+                if run["status"] in ("lost", "cleared"):
+                    break
+                self.assertEqual(run["status"], "reward")
+                self.assertEqual(len(run["offer"]), 3)
+                hp_end = run["history"][-1]["hp_end"]
+                self.assertEqual(run["hp"], min(55, hp_end + run["heal"]))
+                pick = run["offer"][0]
+                before = run["deck"].get(pick, 0)
+                v = json.loads(play.next_fight(pick))
+                self.assertEqual(v["hp"], run["hp"])                       # HP carried over
+                self.assertEqual(v["run"]["deck"].get(pick, 0), before + 1)
+            self.assertEqual(len(v["run"]["history"]), v["run"]["index"] + 1)
+
+    def test_run_without_rewards(self):
+        v = json.loads(play.start_run("starter", 0, False))
+        v = self.play_fight(v, random.Random(0))
+        if v["run"]["status"] == "next":
+            v = json.loads(play.next_fight(""))
+            self.assertEqual(v["setup"]["fight"], 2)
