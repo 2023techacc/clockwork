@@ -34,9 +34,10 @@ def evaluate(layout, heat, template):
     n = len(layout)
     s.gear = [None] * n
     s.top = 0
-    for k, kind in enumerate(layout):
-        if kind is not None:
-            s.gear[(-k) % n] = Part(k, kind)
+    for k, key in enumerate(layout):
+        if key is not None:
+            kind, mods = key if isinstance(key, tuple) else (key, ())
+            s.gear[(-k) % n] = Part(k, kind, mods)
     s.heat = heat
     best_t = best_d = None
     for acts, end in after_installs(s, []):
@@ -57,9 +58,14 @@ def _template(rules):
 
 def _chunk(args):
     deck_name, first, heat = args
+    return chunk_for((DECKS[deck_name], first, heat))
+
+
+def chunk_for(args):
+    """Every layout of `deck` (keys Kind or (Kind, mods)) whose first part is `first`."""
+    deck, first, heat = args
     rules = DEFAULT_RULES
     template = _template(rules)
-    deck = DECKS[deck_name]
     out = []
     rest_deck = dict(deck)
     if first is not None:
@@ -71,9 +77,18 @@ def _chunk(args):
     return out
 
 
+def _name(key):
+    if key is None:
+        return "--"
+    if isinstance(key, tuple):
+        mods = key[1] if isinstance(key[1], tuple) else (key[1],)
+        return key[0].value + "".join("+" + m.value for m in mods)
+    return key.value
+
+
 def fmt(layout, r):
     t, d, heat, over, acts = r
-    names = " > ".join(k.value if k else "--" for k in layout)
+    names = " > ".join(_name(k) for k in layout)
     cranks = " ".join("free " + a[1] if a[0] == "end_install" and len(a) > 1 else a[0] for a in acts)
     return f"{t:3d} triggers {d:4d} dmg  end Heat {heat}{' OVERHEAT' if over else ''}  [{names}]  ({cranks})"
 

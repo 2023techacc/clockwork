@@ -53,61 +53,89 @@ def attach_all(run):
         run.attach(i, cards[0]["id"])
 
 
-def choose_door(run):
+# Play-style knobs for studies (clockwork.studies); the defaults are the policy described above.
+DEFAULT_STYLE = {
+    "elites": "auto",       # auto (when HP >= 70%) | seek (unless HP < 40%) | avoid
+    "rest": "auto",         # auto (heal below 60%) | heal | tinker
+    "parts": "value",       # value (PART_VALUE > 0) | none (always scrap) | all (best offered, always)
+    "remove_basics": False,  # Workshop: remove a Plate, then a Striker, when affordable
+    "machine_first": False,  # Workshop: save for machine upgrades before buying attachments
+}
+
+
+def choose_door(run, style=DEFAULT_STYLE):
     doors = run.doors
     frac = run.hp / run.max_hp()
     order = []
-    if frac >= 0.7:
+    if style["elites"] == "seek" and frac >= 0.4 or style["elites"] == "auto" and frac >= 0.7:
         order.append("elite")
     if frac < 0.5:
         order.append("rest")
     if run.cogs >= 55:
         order.append("workshop")
-    order += ["fight", "rest", "workshop", "elite", "boss"]
+    order += ["fight", "rest", "workshop"] + (["elite"] if style["elites"] != "avoid" else []) + ["boss"]
     for t in order:
         if t in doors:
             return doors.index(t)
     return 0
 
 
-def shop(run):
+def shop(run, style=DEFAULT_STYLE):
     o = run.offer
     if run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
-    for i, item in enumerate(o["attachments"]):
-        if not item["sold"] and run.cogs >= item["price"]:
-            run.buy("attachment", i)
-    if o.get("machine") and not o["machine"]["sold"] and run.cogs >= o["machine"]["price"]:
+    machine = o.get("machine")
+    if style["machine_first"] and machine and not machine["sold"] and run.cogs >= machine["price"]:
         run.buy("machine")
+    reserve = 120 if style["machine_first"] and len(run.machine) < 2 else 0
+    for i, item in enumerate(o["attachments"]):
+        if not item["sold"] and run.cogs - item["price"] >= reserve:
+            run.buy("attachment", i)
+    if machine and not machine["sold"] and run.cogs >= machine["price"]:
+        run.buy("machine")
+    if style["remove_basics"]:
+        for kind in (Kind.PLATE, Kind.STRIKER):
+            card = next((c for c in run.cards if c["kind"] == kind and not c["mods"]), None)
+            if card and len(run.cards) > 6 and run.cogs - run.remove_price() >= reserve:
+                run.remove_card(card["id"])
+                break
     parts = sorted(range(len(o["parts"])), key=lambda i: -PART_VALUE.get(Kind(o["parts"][i]["kind"]), 0))
     for i in parts:
         item = o["parts"][i]
-        if not item["sold"] and run.cogs >= item["price"] and PART_VALUE.get(Kind(item["kind"]), 0) > 0:
+        if (not item["sold"] and run.cogs - item["price"] >= reserve and style["parts"] != "none"
+                and PART_VALUE.get(Kind(item["kind"]), 0) > 0):
             run.buy("part", i)
     run.leave_workshop()
 
 
-def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None):
+def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=()):
+    """Play a whole run. `style` overrides DEFAULT_STYLE keys; `machine` starts the run with
+    those machine upgrades already installed."""
+    style = {**DEFAULT_STYLE, **(style or {})}
     run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth)
+    run.machine = list(machine)
     while run.phase not in ("won", "lost"):
         attach_all(run)
         if run.phase == "doors":
-            run.choose_door(choose_door(run))
+            run.choose_door(choose_door(run, style))
         elif run.phase == "fight":
             play_fight(run, agent_name)
         elif run.phase == "reward":
             parts = sorted(run.offer["parts"], key=lambda p: -PART_VALUE.get(Kind(p), 0))
-            best = parts[0] if PART_VALUE.get(Kind(parts[0]), 0) > 0 else ""
+            best = parts[0] if PART_VALUE.get(Kind(parts[0]), 0) > 0 or style["parts"] == "all" else ""
+            if style["parts"] == "none":
+                best = ""
             mods = run.offer.get("attachments", [])
             run.take_reward(part=best, attachment=mods[0] if mods else "", scrap=not best)
         elif run.phase == "rest":
-            if run.hp < 0.6 * run.max_hp():
+            heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
+            if heal:
                 run.rest("heal")
             else:
                 run.rest("tinker", run.offer["attachments"][0])
         elif run.phase == "workshop":
-            shop(run)
+            shop(run, style)
     return run
 
 
