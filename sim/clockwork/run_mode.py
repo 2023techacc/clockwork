@@ -42,15 +42,15 @@ REPAIR = (15, 25)               # HP, price
 REMOVE_PRICE, REMOVE_STEP = 40, 15
 MACHINE = {
     "flywheel": ("Flywheel", "+1 Crank Power per turn", 70),
-    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 80),
+    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 85),
     "extra_hands": ("Extra Hands", "+1 install per turn", 90),
-    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6", 70),
+    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6, and +1 Crank Power to turn it", 75),
 }
 # Candidate machine upgrades, testable with simulate_run(machine=[...]) but not sold.
 MACHINE_CANDIDATES = {
     "frame": ("Reinforced Frame", "+10 max HP"),
     "hopper": ("Wide Hopper", "4 parts offered each turn instead of 3"),
-    "big_flywheel": ("Bigger Gear", "8 gear slots and +1 Crank Power"),
+    "plain_gear": ("Bigger Gear (old)", "8 gear slots instead of 6"),
 }
 
 
@@ -90,13 +90,13 @@ class Run:
         if "extra_hands" in self.machine:
             r = replace(r, installs_per_turn=r.installs_per_turn + 1)
         if "bigger_gear" in self.machine:
+            r = replace(r, gear_size=8, crank_power=r.crank_power + 1)
+        if "plain_gear" in self.machine:
             r = replace(r, gear_size=8)
         if "frame" in self.machine:
             r = replace(r, player_hp=r.player_hp + 10)
         if "hopper" in self.machine:
             r = replace(r, offered_per_turn=r.offered_per_turn + 1, queue_visible=r.queue_visible + 1)
-        if "big_flywheel" in self.machine:
-            r = replace(r, gear_size=8, crank_power=r.crank_power + 1)
         return r
 
     def fight_deck(self) -> dict:
