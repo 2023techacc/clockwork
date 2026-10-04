@@ -125,3 +125,37 @@ Elites are needed because normal fights almost never kill (a casual player reach
 - the value of each part+ upgrade, and of removal, with partial-deck runs;
 - cogs per run against Workshop prices;
 - whole-district runs with a simple route policy, compared with the current 74% casual clear rate.
+
+---
+
+## Decisions (designer, 2026-10-04)
+
+### Map
+- **Real game: D, "twelve hours to midnight."** A free-roam district graph. Each node costs hours (draft costs: fight 2, elite 3, Workshop 1, rest 2, event 1), and the district boss strikes at midnight (12 hours). You choose how much to fit in before then: more fights for more loot, or more rests for safety. Open questions:
+  - what happens if the hours run out mid-route: the boss arrives early, so plan for it;
+  - whether some nodes can be seen but are locked behind others;
+  - whether parts or attachments can buy time.
+- **Playtest prototype: C, door choices.** About 9 stops per district, then the boss. Each stop offers 2–3 doors, each showing its node type.
+
+### Money: cogs, looted from enemies
+- **Each enemy carries a set amount of cogs that fits its design.** Harder enemies carry more, and enemies of the same level stay close to each other (small variance).
+- **Scrapping:** a part reward can be scrapped for cogs instead of taken.
+
+### Workshop
+- **Real game: D + A.** *Commissions:* order a specific part or attachment, delivered after your next fight, for a deposit. *Shop shelf:* cheap, ready-made items.
+- **Playtest prototype: A.** Parts for sale, attachments for sale, 1 machine upgrade, part removal and repair. Unattached attachments can be sold.
+
+### Upgrades
+- **Upgrades are attachments (B).** The content is roughly what "+" versions would have been (+damage, +Block, less Heat), but delivered as things you bolt onto a part, which suits a tinkering game.
+- **Machine upgrades (C) exist in the game.** They improve the machine: +1 Crank Power, +2 Heat capacity, +1 install per turn, Bigger Gear. In the prototype they're a rare, expensive Workshop item; later they're also boss rewards between districts.
+
+### Attachments
+- **Attachments are items with a rarity:** common, uncommon or rare.
+- **Sources:** a rest site gives a **common** one; elites and the Workshop give **uncommon or rare** ones.
+- **Unattached attachments sit in your inventory** and can be sold at a Workshop.
+- **Once attached, an attachment can't normally be removed,** and it stays with that part copy, including through the discard and reinstalls.
+- **A part can hold several attachments, up to a limit** (prototype: 2, no duplicates on one part).
+
+### Elites
+- **Now: machine attackers (A).**
+- **Later: rule-benders (B) and enemy pairs (D)** will probably be added.
