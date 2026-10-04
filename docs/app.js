@@ -306,7 +306,9 @@ function renderRest() {
   $("rest-heal").onclick = () => call(play.rest, "heal", "");
   const box = $("rest-attachments");
   box.innerHTML = "";
-  for (const m of r.offer.attachments) box.appendChild(itemCard(m, "Take it", () => call(play.rest, "tinker", m)));
+  for (const m of r.offer.attachments) box.appendChild(itemCard(m, "", null));
+  $("rest-tinker").textContent = `Tinker: take ${r.offer.attachments.join(" + ")}`;
+  $("rest-tinker").onclick = () => call(play.rest, "tinker", "");
 }
 
 function renderShop() {
@@ -514,6 +516,9 @@ function renderResult() {
   $("again").hidden = !!r;
   if (rewarding) {
     const atts = r.offer.attachments || [];
+    const salvage = r.offer.salvage ? v.machine_all[r.offer.salvage] : null;
+    show("reward-salvage", !!salvage);
+    if (salvage) $("reward-salvage").textContent = `Salvaged from the elite: ${salvage.name} (${salvage.text}). Installed when you take your reward.`;
     show("reward-att-wrap", atts.length > 0);
     if (atts.length && pickedAttachment === null) pickedAttachment = atts[0];
     const ab = $("reward-attachments");
@@ -535,7 +540,7 @@ function renderResult() {
   $("run-history").textContent = r ? r.history.map((h) => h.enemy
     ? `${h.stop >= r.stops ? "Boss" : h.stop + 1}. ${h.enemy}: ${h.result === "win" ? "won" : "lost"}, HP ${h.hp_start} → ${h.hp_end}` +
       (h.cogs ? `, +${h.cogs} cogs` : "") + (h.reward ? `, ${h.reward === "scrapped" ? "scrapped" : "took " + h.reward}` : "") +
-      (h.attachment ? `, +${h.attachment}` : "")
+      (h.attachment ? `, +${h.attachment}` : "") + (h.salvage ? `, salvaged ${v.machine_all[h.salvage].name}` : "")
     : `${h.stop + 1}. ${h.node}${h.choice ? ": " + h.choice : ""}`).join("  ·  ") : "";
   updateIssueLink();
 }

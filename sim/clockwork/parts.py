@@ -30,13 +30,13 @@ class Mod(str, Enum):
     # common
     SHARPENED = "Sharpened"        # +2 damage when it triggers
     COUNTERWEIGHT = "Counterweight"  # +2 Block when it triggers
-    BRACING = "Bracing"            # immune to Jam, Rust and Unscrew
+    BRACING = "Bracing"            # +1 damage and +1 Block; immune to Jam, Rust and Unscrew
     # uncommon
     HEAT_SINK = "Heat Sink"        # its triggers cost 1 less Heat
     COIL = "Coil"        # Spring: the part its crank triggers also deals coil_damage
     POLISH = "Polish"    # Mirror: the copy's damage/Block gets +polish_bonus (adds to Amplifiers)
     CLAMP = "Clamp"      # Magnet: the first part it pulls is triggered
-    FEEDER = "Feeder"    # Loader: loads into the next slot to come up, not a random one
+    FEEDER = "Feeder"    # Loader: loads 1 more part, into the next slots to come up; loaded parts trigger
     # rare
     GOVERNOR = "Governor"          # its triggers add no Heat
     ECHO = "Echo"                  # the first time it triggers each turn, it triggers again

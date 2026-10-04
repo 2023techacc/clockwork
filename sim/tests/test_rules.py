@@ -18,7 +18,8 @@ S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMP
 # Mechanics tests pin the numbers they were written against, so balance passes that change
 # defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
 MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1,
-                  loader_replaces=False, magnet_block_per_pull=0, part_overrides=(
+                  loader_replaces=False, magnet_block_per_pull=0, coil_damage=4, bracing_damage=0,
+                  bracing_block=0, feeder_extra_loads=0, feeder_triggers=0, part_overrides=(
     ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
@@ -551,6 +552,20 @@ class NewAttachmentsAndElites(unittest.TestCase):
         apply(s, ("end_turn",))
         self.assertIsNotNone(s.gear[slot[1]])
         self.assertEqual(s.rust, {})
+
+    def test_bracing_v12_adds_damage_and_block(self):
+        s, _ = self.one(S, Mod.BRACING, rules=dc_replace(MECH, bracing_damage=1, bracing_block=1))
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block), (7, 1))
+
+    def test_feeder_v12_loaded_parts_trigger(self):
+        rules = dc_replace(MECH, loader_loads=2, feeder_extra_loads=1, feeder_triggers=3)
+        s, slot = setup([None, None, None, None, None, None], queue=[S, P, S], rules=rules)
+        s.gear[slot[1]] = Part(50, L, Mod.FEEDER)
+        free_crank(s)
+        # Loads 3 parts into the next slots to come up, and each triggers right away.
+        self.assertEqual([s.gear[slot[k]].kind for k in (2, 3, 4)], [S, P, S])
+        self.assertEqual((999 - s.enemy_hp, s.block, s.triggers_turn), (12, 6, 4))
 
     def test_rust_weakens_top_part_for_the_fight(self):
         s, slot = self.one(S, ())

@@ -19,7 +19,7 @@ from .parts import MOD_RARITY, Kind, Mod, fits
 STOPS = 9                       # door choices before the boss
 # Enemies grow stronger through the district (players do too): HP and attacks are scaled by
 # 1 + GROWTH * stop / STOPS, so the boss gets the full 1 + GROWTH.
-GROWTH = 0.11                    # tuned: a casual player (MCTS@50) clears ~65% of runs
+GROWTH = 0.20                    # tuned (v12): casual player ~65-70%; 0.21+ rounds the boss chime up to 15
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
 PART_TIER = {
@@ -31,15 +31,30 @@ PART_TIER = {
 TIER_WEIGHT = {"common": 5, "uncommon": 4, "rare": 1}
 PART_PRICE = {"common": 30, "uncommon": 45, "rare": 65}
 MOD_PRICE = {"common": 30, "uncommon": 55, "rare": 90}
+# Elite rewards on top of the loot: a part (from these tiers) and attachments to choose from.
+# v12 (high risk, high return; roadmap Results v12): tuned so hunting elites pays about as well as
+# avoiding them, with more deaths on the way and a much stronger machine for the boss.
+ELITE_PART_TIERS = ("uncommon", "rare")
+ELITE_ATTACHMENTS = 3           # uncommon/rare attachments offered; one is taken
+ELITE_RARE_WEIGHT = 3           # rare attachments' weight against 3 for an uncommon
+ELITE_COG_BONUS = 0             # extra cogs per elite
+ELITE_SCALE = 0.9               # elites' HP and attacks are multiplied by this (on top of growth)
+ELITE_SALVAGE = 0.5             # chance an elite also offers a free machine upgrade (salvaged from it)
 SCRAP_VALUE = 10
 REST_HEAL = 15
 REPAIR = (15, 25)               # HP, price
 REMOVE_PRICE, REMOVE_STEP = 40, 15
 MACHINE = {
-    "flywheel": ("Flywheel", "+1 Crank Power per turn", 120),
-    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 110),
-    "extra_hands": ("Extra Hands", "+1 install per turn", 130),
-    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6", 120),
+    "flywheel": ("Flywheel", "+1 Crank Power per turn", 70),
+    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 85),
+    "extra_hands": ("Extra Hands", "+1 install per turn", 90),
+    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6, and +1 Crank Power to turn it", 75),
+}
+# Candidate machine upgrades, testable with simulate_run(machine=[...]) but not sold.
+MACHINE_CANDIDATES = {
+    "frame": ("Reinforced Frame", "+10 max HP"),
+    "hopper": ("Wide Hopper", "4 parts offered each turn instead of 3"),
+    "plain_gear": ("Bigger Gear (old)", "8 gear slots instead of 6"),
 }
 
 
@@ -79,7 +94,13 @@ class Run:
         if "extra_hands" in self.machine:
             r = replace(r, installs_per_turn=r.installs_per_turn + 1)
         if "bigger_gear" in self.machine:
+            r = replace(r, gear_size=8, crank_power=r.crank_power + 1)
+        if "plain_gear" in self.machine:
             r = replace(r, gear_size=8)
+        if "frame" in self.machine:
+            r = replace(r, player_hp=r.player_hp + 10)
+        if "hopper" in self.machine:
+            r = replace(r, offered_per_turn=r.offered_per_turn + 1, queue_visible=r.queue_visible + 1)
         return r
 
     def fight_deck(self) -> dict:
@@ -95,13 +116,15 @@ class Run:
     def enemy_spec(self):
         """The current enemy, grown for how far into the district the run is."""
         f = self.enemy_scale()
+        if ENEMIES[self.enemy].elite:
+            f *= ELITE_SCALE
         return ENEMIES[self.enemy] if f == 1 else scaled(ENEMIES[self.enemy], f)
 
     def fight_seed(self) -> int:
         return self.seed * 100 + self.stop
 
     def max_hp(self) -> int:
-        return self.base_rules.player_hp
+        return self.rules().player_hp
 
     # ------------------------------------------------------------------ map
     def _make_doors(self):
@@ -173,15 +196,23 @@ class Run:
             self.phase = "won"
             return self
         self.hp = min(self.max_hp(), max(0, hp) + self.base_rules.heal_between_fights)
-        self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         if self.node == "elite":
-            self.offer["attachments"] = [m.value for m in self._roll_mods(["uncommon", "rare"], 2)]
+            self.cogs += ELITE_COG_BONUS
+            entry["cogs"] = loot + ELITE_COG_BONUS
+            self.offer = {"parts": [k.value for k in self._roll_parts(3, ELITE_PART_TIERS)],
+                          "attachments": [m.value for m in self._roll_mods(["uncommon", "rare"], ELITE_ATTACHMENTS,
+                                                                           ELITE_RARE_WEIGHT)]}
+            free = [k for k in MACHINE if k not in self.machine]
+            if free and self.rng.random() < ELITE_SALVAGE:
+                self.offer["salvage"] = self.rng.choice(free)
+        else:
+            self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         self.phase = "reward"
         return self
 
-    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False):
+    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False, salvage: bool = False):
         """After a win: take one offered part (or scrap the reward for cogs, or skip), and for an
-        elite one offered attachment into the inventory."""
+        elite one offered attachment into the inventory and the salvaged machine upgrade, if any."""
         self._need("reward")
         entry = self.history[-1]
         if part:
@@ -195,18 +226,24 @@ class Run:
             self._check_offer("attachments", attachment)
             self.inventory.append(Mod(attachment))
             entry["attachment"] = attachment
+        if salvage:
+            key = self.offer.get("salvage")
+            if not key:
+                raise RunError("nothing to salvage")
+            self._install_machine(key)
+            entry["salvage"] = key
         self._advance()
         return self
 
     # ------------------------------------------------------------------ rest
     def rest(self, choice: str, attachment: str = ""):
-        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take one offered common attachment)."""
+        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take both offered common attachments)."""
         self._need("rest")
         if choice == "heal":
             self.hp = min(self.max_hp(), self.hp + REST_HEAL)
         elif choice == "tinker":
-            self._check_offer("attachments", attachment)
-            self.inventory.append(Mod(attachment))
+            attachment = ", ".join(self.offer["attachments"])
+            self.inventory += [Mod(m) for m in self.offer["attachments"]]
         else:
             raise RunError(f"unknown rest choice {choice}")
         self.history.append({"stop": self.stop, "node": "rest", "choice": choice, "attachment": attachment or None})
@@ -220,7 +257,7 @@ class Run:
                 for m in self._roll_mods(["uncommon", "rare"], 2)]
         free = [k for k in MACHINE if k not in self.machine]
         machine = None
-        if free and self.rng.random() < 0.5:
+        if free:
             k = self.rng.choice(free)
             machine = {"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1], "price": MACHINE[k][2], "sold": False}
         return {"parts": parts, "attachments": mods, "machine": machine}
@@ -241,7 +278,7 @@ class Run:
                 raise RunError("no machine upgrade for sale")
             self._pay(item["price"])
             item["sold"] = True
-            self.machine.append(item["key"])
+            self._install_machine(item["key"])
             return self
         shelf = self.offer["parts" if what == "part" else "attachments"]
         item = shelf[int(index)]
@@ -297,8 +334,8 @@ class Run:
         return self
 
     # ------------------------------------------------------------------ helpers
-    def _roll_parts(self, n):
-        kinds = list(PART_TIER)
+    def _roll_parts(self, n, tiers=None):
+        kinds = [k for k in PART_TIER if tiers is None or PART_TIER[k] in tiers]
         weights = [TIER_WEIGHT[PART_TIER[k]] for k in kinds]
         out = []
         while len(out) < n:
@@ -307,15 +344,22 @@ class Run:
                 out.append(k)
         return out
 
-    def _roll_mods(self, rarities, n):
+    def _roll_mods(self, rarities, n, rare_weight=1):
         pool = [m for m in Mod if MOD_RARITY[m] in rarities]
-        weights = [3 if MOD_RARITY[m] != "rare" else 1 for m in pool]
+        weights = [3 if MOD_RARITY[m] != "rare" else rare_weight for m in pool]
         out = []
         while len(out) < min(n, len(pool)):
             m = self.rng.choices(pool, weights)[0]
             if m not in out:
                 out.append(m)
         return out
+
+    def _install_machine(self, key):
+        before = self.max_hp()
+        self.machine.append(key)
+        self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
+        if self.phase == "workshop" and self.offer.get("machine", {}) and self.offer["machine"]["key"] == key:
+            self.offer["machine"]["sold"] = True
 
     def _add_card(self, kind):
         self.cards.append({"id": self.next_id, "kind": kind, "mods": []})

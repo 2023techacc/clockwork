@@ -143,17 +143,23 @@ def study_attachments(pool, args):
 # ---------------------------------------------------------------- runs
 
 def _runs(args):
-    seeds, agent, style, machine, rules = args
-    out = []
-    for seed in seeds:
-        run = simulate_run("starter", seed, agent, rules=rules, style=style, machine=machine)
-        out.append(summarise(run))
-    return out
+    seeds, agent, style, machine, rules, patch = args
+    from . import run_mode
+    saved = {name: getattr(run_mode, name) for name in patch}
+    for name, value in patch.items():        # module-level run constants, e.g. ELITE_COG_BONUS
+        setattr(run_mode, name, value)
+    try:
+        return [summarise(simulate_run("starter", seed, agent, rules=rules, style=style, machine=machine))
+                for seed in seeds]
+    finally:
+        for name, value in saved.items():
+            setattr(run_mode, name, value)
 
 
 def summarise(run):
     fights = [h for h in run.history if "enemy" in h]
-    return {"won": run.phase == "won", "stop": run.stop, "cogs": run.cogs,
+    boss_loot = sum(h.get("cogs", 0) for h in fights if h["node"] == "boss")
+    return {"won": run.phase == "won", "stop": run.stop, "cogs": run.cogs - boss_loot,   # unspent before the boss
             "elites": sum(h["node"] == "elite" for h in fights),
             "attachments": sum(len(c["mods"]) for c in run.cards) + len(run.inventory),
             "machine": len(run.machine), "deck": len(run.cards),
@@ -165,8 +171,8 @@ def summarise(run):
             "shops": sum(h.get("node") == "workshop" for h in run.history)}
 
 
-def play_runs(pool, runs, agent, style=None, machine=(), rules=None, block=3):
-    tasks = [(range(lo, min(lo + block, runs)), agent, style or {}, tuple(machine), rules)
+def play_runs(pool, runs, agent, style=None, machine=(), rules=None, block=3, patch=None):
+    tasks = [(range(lo, min(lo + block, runs)), agent, style or {}, tuple(machine), rules, patch or {})
              for lo in range(0, runs, block)]
     return [o for chunk in pool.map(_runs, tasks) for o in chunk]
 
@@ -186,7 +192,7 @@ def run_line(label, out, base=None):
           f"at {statistics.mean(boss) if boss else 0:4.1f} HP | elites {statistics.mean(o['elites'] for o in out):.2f} "
           f"| attach {statistics.mean(o['attachments'] for o in out):.1f} | machine "
           f"{statistics.mean(o['machine'] for o in out):.2f} | deck {statistics.mean(o['deck'] for o in out):.1f} "
-          f"| cogs left {statistics.mean(o['cogs'] for o in out):3.0f}{delta}", flush=True)
+          f"| unspent {statistics.mean(o['cogs'] for o in out):3.0f}{delta}", flush=True)
 
 
 def study_machine(pool, args):

@@ -88,7 +88,7 @@ class RunMode(unittest.TestCase):
         run = Run("starter", 6)
         run.machine = ["flywheel", "heat_housing", "extra_hands", "bigger_gear"]
         r = run.rules()
-        self.assertEqual((r.crank_power, r.overheat_at, r.installs_per_turn, r.gear_size), (3, 12, 3, 8))
+        self.assertEqual((r.crank_power, r.overheat_at, r.installs_per_turn, r.gear_size), (4, 12, 3, 8))
 
     def test_rest(self):
         run = Run("starter", 7)

@@ -591,3 +591,57 @@ At the boss setting, players block about 46% of strike damage.
 - **Machine upgrades are the strongest thing in the Workshop and can't be bought.** Suggested: prices 70–90 (Extra Hands highest), always stock one, and rework Bigger Gear (e.g. 7 slots plus +1 install, or "the gear's empty slots don't count for Spring cranks").
 - **Weak attachments to buff or rework:** Bracing, Feeder, Coil, Spring-host attachments.
 - **The boss remains the wall:** a quarter of the runs that reach it die there.
+
+## Results v12 (elites high risk/high return, tinkering, machine upgrades, attachment buffs)
+
+**Changes** (designer decisions after v11):
+- **Elites: high risk, high return.** Risk was roughly right; return was too low: the extra cogs had nothing worth buying, and one attachment is worth only 2–4 HP per later fight. Tested reward and strength variants against avoiding elites (150 runs each):
+
+| Elite variant | Fight elites at HP ≥ 70% | At HP ≥ 40% | (avoid elites: 81%) |
+|---|---|---|---|
+| v11 rewards | 70% | 49% | |
+| Better part + 1 of 3 attachments ("rich") | 77% | 52% | |
+| rich + 20 cogs | 79% | 57% | |
+| rich + 50% machine salvage | 79% | 64% | |
+| rich + 100% machine salvage | 81% | 72% | |
+| rich, elites at 90% | 79% | 73% | |
+| rich, elites at 85% | 81% | 87% (no risk left) | |
+| **rich + 50% salvage, elites at 90% (chosen)** | **80%** | **80%** | |
+
+  Chosen: elites at 90% strength; loot is a part from the uncommon/rare tiers, 1 of 3 uncommon/rare attachments (rares 3× as likely), and a 50% chance to salvage a free machine upgrade.
+- **Rest sites:** tinkering gives both offered common attachments.
+- **Machine upgrades:** every Workshop stocks one; Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90. **Bigger Gear reworked** to 8 slots *and* +1 Crank Power (8 slots alone was useless). Candidates tested, runs started with each (no upgrade 66%): Extra Hands 82%, Heat Housing 81%, Flywheel 73%, old Bigger Gear 68%, new Bigger Gear 74%, Reinforced Frame (+10 max HP) 85%, Wide Hopper (4 parts offered) 70%. Reinforced Frame is kept as a candidate.
+- **Attachments** (HP kept per fight; target 2.5–4):
+  - Bracing: +1 damage and +1 Block on top of its immunity → +4.1 on a Striker, +5.8 on a Plate (was +0.3). +3 Block alone: +2.6/+4.4; +2/+2: +4.0/+7.3.
+  - Coil: 8 damage → +3.2 (4: +0.7, 6: +1.7, 10: +5.0).
+  - Feeder reworked: loads 1 more part and every loaded part triggers right away → +2.5. Extra loads alone did nothing (+0.3, −0.1); triggering 1 or 2 loaded parts gave +0.7 and +1.7. The Loader itself remains a weak host.
+- **Run policy:** buys the machine upgrade first; picks the attachment worth most to the deck and puts it on its best host (MOD_VALUE/MOD_HOSTS from the studies).
+- **Measurement fix:** v11's "cogs left" included the boss's loot, which can't be spent. Runs actually reached the boss with ~20–40 unspent cogs, not 60–90.
+- **Difficulty:** district growth 0.11 → **0.20** (casual 80% → 72%). 0.21 rounds the boss chime from 14 up to 15 damage and drops the casual player to 59%.
+
+**Whole runs** (starter deck):
+
+| Player | Runs cleared | v10 | Elites | Attachments | Machine upgrades |
+|---|---|---|---|---|---|
+| greedy (150) | 43% | 47% | 0.7 | 1.5 | 0.4 |
+| MCTS@50 (150) | 72% | 67% | 1.1 | 2.1 | 0.9 |
+| MCTS@200 (60) | 88% | 80% | 1.3 | 2.2 | 1.0 |
+
+**Run styles** (MCTS@50, base policy 72%):
+
+| Style | Cleared | v11 | Note |
+|---|---|---|---|
+| Avoid elites | 63% | 83% | Elites now pay when healthy |
+| Seek elites (unless HP < 40%) | 67% | 43% | 22% die before the boss; survivors bring 1.8 machine upgrades |
+| Rest: always heal | 72% | 69% | |
+| Rest: always tinker | 69% | 45% | Now a real choice: 7 attachments, boss at 27 HP |
+| Never take parts | 50% | 36% | |
+| Remove basics / save for machine | 71% / 69% | 69% / 63% | |
+
+**Where runs lose HP:** normal fights 12–15 HP, elites 21–25 (was 26–27), Clock Tower 26 with 34 deaths in 142 fights.
+
+**Reading:**
+- **Elites are now high risk, high return:** taking them when healthy is the best plan, hunting them aggressively is a gamble that can pay off, and skipping them costs 9 points.
+- **Every rest choice and route style is now within a few points of the base,** except skipping parts. There's no single dominant strategy.
+- **The skill curve is wider** (43% → 72% → 88%, was 47% → 67% → 80%).
+- **Remaining weak spots:** the Loader as a part (and so Feeder), attachments on a Spring, and the boss still causing most deaths.

@@ -24,9 +24,10 @@ FIGHT_RECORDED = False
 
 NODE_TEXT = {
     "fight": "Fight: an ordinary enemy. Loot cogs, then pick a part.",
-    "elite": "Elite: a dangerous machine-wrecker. More cogs, a part and an attachment.",
+    "elite": "Elite: a dangerous machine-wrecker. High risk, high return: more cogs, a better part, "
+             "1 of 3 attachments, and a 50% chance to salvage a free machine upgrade.",
     "workshop": "Workshop: buy parts, attachments and machine upgrades; remove parts; repair.",
-    "rest": f"Rest: heal, or tinker for a common attachment.",
+    "rest": "Rest: heal, or tinker for two common attachments.",
     "boss": "Boss: the Clock Tower.",
 }
 
@@ -56,12 +57,14 @@ def _describe_parts():
                   "it this turn.",
         "+Sharpened": f"(any part) +{SHARPENED_DAMAGE} damage when it triggers.",
         "+Counterweight": f"(any part) +{COUNTERWEIGHT_BLOCK} Block when it triggers.",
-        "+Bracing": "(any part) Immune to Jam, Rust and Unscrew.",
+        "+Bracing": f"(any part) +{R.bracing_damage} damage and +{R.bracing_block} Block when it triggers. "
+                    "Immune to Jam, Rust and Unscrew.",
         "+Heat Sink": "(any part) Its triggers cost 1 less Heat.",
         "+Coil": f"(Spring) The part this Spring's crank triggers also deals {R.coil_damage} damage.",
         "+Polish": f"(Mirror) The copy's damage and Block +{pct(R.polish_bonus)}.",
         "+Clamp": "(Magnet) The first part it pulls is triggered.",
-        "+Feeder": "(Loader) Loads into the next slot to come up instead of a random one.",
+        "+Feeder": f"(Loader) Loads {R.feeder_extra_loads} more part, into the next slots to come up instead of "
+                   "random ones, and the loaded parts trigger right away.",
         "+Governor": "(any part) Its triggers add no Heat.",
         "+Echo": "(any part) The first time it triggers each turn, it triggers again.",
     }
@@ -114,7 +117,8 @@ def choose_door(index):
 
 
 def take_reward(part="", attachment="", scrap=False):
-    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap))
+    # A salvaged machine upgrade is free, so it is always taken with the reward.
+    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap), salvage=bool(RUN.offer.get("salvage")))
     return view()
 
 

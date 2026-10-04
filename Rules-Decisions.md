@@ -155,6 +155,12 @@ All numbers are settings in `sim/clockwork/config.py` and `sim/clockwork/parts.p
 - **Slider:** moved bonus +3 (was +6).
 - **Enemy HP:** each fight rolls base ±3.
 
+### Balance pass v12 (attachments)
+Measured as HP kept per fight (roadmap, Results v11/v12). Target: common and uncommon attachments worth about 2.5–4 HP per fight.
+- **Bracing:** +1 damage and +1 Block when it triggers, on top of the immunity to Jam, Rust and Unscrew (immunity alone was worth +0.3).
+- **Coil:** 8 damage (was 4; 4 and 6 were worth +0.7 and +1.7).
+- **Feeder (reworked):** the Loader loads 1 more part, into the next slots to come up, and every part it loads triggers right away. Extra loads alone were worth nothing.
+
 ### Runs: HP carry-over (decided)
 - **HP carries over between fights; a small heal follows each win.** Sim placeholder: 10 HP (`heal_between_fights`).
 - **Normal enemies** are tuned to cost a casual player about 15 HP per win.
