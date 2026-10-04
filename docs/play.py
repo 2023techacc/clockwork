@@ -24,7 +24,8 @@ FIGHT_RECORDED = False
 
 NODE_TEXT = {
     "fight": "Fight: an ordinary enemy. Loot cogs, then pick a part.",
-    "elite": "Elite: a dangerous machine-wrecker. More cogs, a part and an attachment.",
+    "elite": "Elite: a dangerous machine-wrecker. High risk, high return: more cogs, a better part, "
+             "1 of 3 attachments, and a 50% chance to salvage a free machine upgrade.",
     "workshop": "Workshop: buy parts, attachments and machine upgrades; remove parts; repair.",
     "rest": "Rest: heal, or tinker for two common attachments.",
     "boss": "Boss: the Clock Tower.",
@@ -116,7 +117,8 @@ def choose_door(index):
 
 
 def take_reward(part="", attachment="", scrap=False):
-    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap))
+    # A salvaged machine upgrade is free, so it is always taken with the reward.
+    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap), salvage=bool(RUN.offer.get("salvage")))
     return view()
 
 

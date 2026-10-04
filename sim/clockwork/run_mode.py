@@ -32,12 +32,14 @@ TIER_WEIGHT = {"common": 5, "uncommon": 4, "rare": 1}
 PART_PRICE = {"common": 30, "uncommon": 45, "rare": 65}
 MOD_PRICE = {"common": 30, "uncommon": 55, "rare": 90}
 # Elite rewards on top of the loot: a part (from these tiers) and attachments to choose from.
-ELITE_PART_TIERS = ("common", "uncommon", "rare")
-ELITE_ATTACHMENTS = 2           # uncommon/rare attachments offered; one is taken
-ELITE_RARE_WEIGHT = 1           # rare attachments' weight against 3 for an uncommon
+# v12 (high risk, high return; roadmap Results v12): tuned so hunting elites pays about as well as
+# avoiding them, with more deaths on the way and a much stronger machine for the boss.
+ELITE_PART_TIERS = ("uncommon", "rare")
+ELITE_ATTACHMENTS = 3           # uncommon/rare attachments offered; one is taken
+ELITE_RARE_WEIGHT = 3           # rare attachments' weight against 3 for an uncommon
 ELITE_COG_BONUS = 0             # extra cogs per elite
-ELITE_SCALE = 1.0               # elites' HP and attacks are multiplied by this (on top of growth)
-ELITE_SALVAGE = 0.0             # chance an elite also offers a free machine upgrade (salvaged from it)
+ELITE_SCALE = 0.9               # elites' HP and attacks are multiplied by this (on top of growth)
+ELITE_SALVAGE = 0.5             # chance an elite also offers a free machine upgrade (salvaged from it)
 SCRAP_VALUE = 10
 REST_HEAL = 15
 REPAIR = (15, 25)               # HP, price
