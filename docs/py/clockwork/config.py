@@ -37,11 +37,11 @@ class RulesConfig:
 
     # --- Part-effect numbers that aren't per-part stats ---
     amplifier_bonus: float = 0.3     # per adjacent Amplifier, additive (Rules.md: 0.5; balance pass v5)
-    coil_damage: int = 4             # Coil attachment
-    bracing_damage: int = 0          # Bracing attachment: flat damage/Block when the part triggers
-    bracing_block: int = 0           # (on top of its immunity to Jam, Rust and Unscrew)
-    feeder_extra_loads: int = 0      # a Loader with Feeder installs this many more parts per trigger
-    feeder_triggers: int = 0         # ... and the first this-many parts it loads trigger right away
+    coil_damage: int = 8             # Coil attachment (was 4; v12)
+    bracing_damage: int = 1          # Bracing attachment: flat damage/Block when the part triggers (v12)
+    bracing_block: int = 1           # (on top of its immunity to Jam, Rust and Unscrew)
+    feeder_extra_loads: int = 1      # a Loader with Feeder installs this many more parts per trigger
+    feeder_triggers: int = 3         # ... and the first this-many parts it loads trigger right away (v12)
     polish_bonus: float = 0.2        # Polish attachment, added to the Amplifier bonus (was 0.5)
     clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     loader_loads: int = 2            # parts a Loader installs per trigger (was 1)

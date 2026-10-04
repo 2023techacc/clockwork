@@ -29,6 +29,17 @@ from .run_mode import Run
 PART_VALUE = {Kind.PRIMER: 17, Kind.COUPLER: 8, Kind.HAMMER: 9, Kind.AMPLIFIER: 6, Kind.MAGNET: 4,
               Kind.SLIDER: 2, Kind.ASSEMBLY: 2, Kind.COOLANT: -1, Kind.MIRROR: -7, Kind.LOADER: -8,
               Kind.SPRING: -14}
+# HP kept per fight on the best host (studies, Results v11/v12), and the hosts in order of preference.
+MOD_VALUE = {Mod.GOVERNOR: 5.5, Mod.BRACING: 5.0, Mod.COUNTERWEIGHT: 4.1, Mod.SHARPENED: 3.6, Mod.ECHO: 3.5,
+             Mod.COIL: 3.2, Mod.HEAT_SINK: 2.9, Mod.FEEDER: 2.5, Mod.POLISH: 2.3, Mod.CLAMP: 2.0}
+MOD_HOSTS = {
+    Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
+    Mod.BRACING: [Kind.PLATE, Kind.STRIKER],
+    Mod.COUNTERWEIGHT: [Kind.PLATE],
+    Mod.SHARPENED: [Kind.PLATE, Kind.STRIKER, Kind.HAMMER],
+    Mod.ECHO: [Kind.PLATE, Kind.STRIKER, Kind.PRIMER],
+    Mod.HEAT_SINK: [Kind.STRIKER, Kind.HAMMER],
+}
 CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLIDER, Kind.COUPLER,
                  Kind.PLATE, Kind.SPRING, Kind.MIRROR, Kind.MAGNET, Kind.LOADER, Kind.AMPLIFIER, Kind.COOLANT]
 
@@ -49,8 +60,17 @@ def attach_all(run):
         if not cards:
             i += 1
             continue
-        cards.sort(key=lambda c: CARD_PRIORITY.index(c["kind"]) if c["kind"] in CARD_PRIORITY else 99)
+        hosts = MOD_HOSTS.get(mod, [])
+        cards.sort(key=lambda c: (hosts.index(c["kind"]) if c["kind"] in hosts else len(hosts),
+                                  CARD_PRIORITY.index(c["kind"]) if c["kind"] in CARD_PRIORITY else 99,
+                                  len(c["mods"])))
         run.attach(i, cards[0]["id"])
+
+
+def best_mod(run, offered):
+    """The offered attachment worth most to this deck (one that fits some part)."""
+    usable = [m for m in offered if any(run.can_attach(Mod(m), c) for c in run.cards)] or offered
+    return max(usable, key=lambda m: MOD_VALUE.get(Mod(m), 0)) if usable else ""
 
 
 # Play-style knobs for studies (clockwork.studies); the defaults are the policy described above.
@@ -89,8 +109,10 @@ def shop(run, style=DEFAULT_STYLE):
     if machine and not machine["sold"] and run.cogs >= machine["price"]:
         run.buy("machine")
     reserve = 90 if style["machine_first"] and len(run.machine) < 2 else 0
-    for i, item in enumerate(o["attachments"]):
-        if not item["sold"] and run.cogs - item["price"] >= reserve:
+    for i in sorted(range(len(o["attachments"])), key=lambda i: -MOD_VALUE.get(Mod(o["attachments"][i]["mod"]), 0)):
+        item = o["attachments"][i]
+        if (not item["sold"] and run.cogs - item["price"] >= reserve
+                and any(run.can_attach(Mod(item["mod"]), c) for c in run.cards)):
             run.buy("attachment", i)
     if style["remove_basics"]:
         for kind in (Kind.PLATE, Kind.STRIKER):
@@ -126,7 +148,7 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
             if style["parts"] == "none":
                 best = ""
             mods = run.offer.get("attachments", [])
-            run.take_reward(part=best, attachment=mods[0] if mods else "", scrap=not best)
+            run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best)
         elif run.phase == "rest":
             heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
             run.rest("heal" if heal else "tinker")

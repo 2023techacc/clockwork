@@ -31,6 +31,11 @@ PART_TIER = {
 TIER_WEIGHT = {"common": 5, "uncommon": 4, "rare": 1}
 PART_PRICE = {"common": 30, "uncommon": 45, "rare": 65}
 MOD_PRICE = {"common": 30, "uncommon": 55, "rare": 90}
+# Elite rewards on top of the loot: a part (from these tiers) and attachments to choose from.
+ELITE_PART_TIERS = ("common", "uncommon", "rare")
+ELITE_ATTACHMENTS = 2           # uncommon/rare attachments offered; one is taken
+ELITE_RARE_WEIGHT = 1           # rare attachments' weight against 3 for an uncommon
+ELITE_COG_BONUS = 0             # extra cogs per elite
 SCRAP_VALUE = 10
 REST_HEAL = 15
 REPAIR = (15, 25)               # HP, price
@@ -185,9 +190,14 @@ class Run:
             self.phase = "won"
             return self
         self.hp = min(self.max_hp(), max(0, hp) + self.base_rules.heal_between_fights)
-        self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         if self.node == "elite":
-            self.offer["attachments"] = [m.value for m in self._roll_mods(["uncommon", "rare"], 2)]
+            self.cogs += ELITE_COG_BONUS
+            entry["cogs"] = loot + ELITE_COG_BONUS
+            self.offer = {"parts": [k.value for k in self._roll_parts(3, ELITE_PART_TIERS)],
+                          "attachments": [m.value for m in self._roll_mods(["uncommon", "rare"], ELITE_ATTACHMENTS,
+                                                                           ELITE_RARE_WEIGHT)]}
+        else:
+            self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         self.phase = "reward"
         return self
 
@@ -311,8 +321,8 @@ class Run:
         return self
 
     # ------------------------------------------------------------------ helpers
-    def _roll_parts(self, n):
-        kinds = list(PART_TIER)
+    def _roll_parts(self, n, tiers=None):
+        kinds = [k for k in PART_TIER if tiers is None or PART_TIER[k] in tiers]
         weights = [TIER_WEIGHT[PART_TIER[k]] for k in kinds]
         out = []
         while len(out) < n:
@@ -321,9 +331,9 @@ class Run:
                 out.append(k)
         return out
 
-    def _roll_mods(self, rarities, n):
+    def _roll_mods(self, rarities, n, rare_weight=1):
         pool = [m for m in Mod if MOD_RARITY[m] in rarities]
-        weights = [3 if MOD_RARITY[m] != "rare" else 1 for m in pool]
+        weights = [3 if MOD_RARITY[m] != "rare" else rare_weight for m in pool]
         out = []
         while len(out) < min(n, len(pool)):
             m = self.rng.choices(pool, weights)[0]
