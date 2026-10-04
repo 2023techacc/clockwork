@@ -105,6 +105,15 @@ class RunMode(unittest.TestCase):
 
 
 class Growth(unittest.TestCase):
+    def test_play_styles_and_starting_machine(self):
+        for style in ({"elites": "seek", "rest": "tinker"}, {"elites": "avoid", "parts": "none"},
+                      {"remove_basics": True, "machine_first": True, "rest": "heal"}):
+            run = simulate_run("starter", 4, "greedy", style=style, machine=["flywheel"])
+            self.assertIn(run.phase, ("won", "lost"))
+            self.assertIn("flywheel", run.machine)
+        run = simulate_run("starter", 4, "greedy", style={"elites": "avoid"})
+        self.assertFalse(any(h.get("node") == "elite" for h in run.history))
+
     def test_enemies_grow_through_the_district(self):
         run = Run("starter", 1, growth=0.5)
         run.choose_door(0)

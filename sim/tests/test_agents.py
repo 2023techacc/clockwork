@@ -49,6 +49,13 @@ class LoopFinder(unittest.TestCase):
             self.assertLessEqual(lay.count(K.SPRING), 1)
             self.assertLessEqual(lay.count(K.STRIKER), 2)
 
+    def test_layouts_with_attachments(self):
+        from clockwork.parts import Mod
+        plain = evaluate((None, K.STRIKER, None, None, None, None), 0, _template(DEFAULT_RULES))[1]
+        sharp = evaluate((None, (K.STRIKER, (Mod.SHARPENED,)), None, None, None, None), 0,
+                         _template(DEFAULT_RULES))[1]
+        self.assertEqual(sharp[1] - plain[1], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
