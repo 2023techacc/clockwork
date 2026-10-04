@@ -159,3 +159,21 @@ Elites are needed because normal fights almost never kill (a casual player reach
 ### Elites
 - **Now: machine attackers (A).**
 - **Later: rule-benders (B) and enemy pairs (D)** will probably be added.
+
+### Prototype numbers (simulator / playtest page)
+- **District:** 9 stops; stops 1–2 are fights; stops 3–8 offer 3 doors weighted fight 4 / elite 2 / Workshop 1.5 / rest 1.5; stop 9 offers a rest site or a Workshop; then the boss.
+- **Enemy growth:** HP and attacks × (1 + 0.11 × stop/9). Heal 5 HP after each win.
+- **Cogs:** normal 12–16, elite 30–36, boss 60 (±10%). Scrapping a part reward pays 10.
+- **Part rewards:** pick 1 of 3. Tiers: common (Spring, Coolant, Mirror), uncommon (Amplifier, Coupler, Loader, Magnet, Slider, Primer, Assembly), rare (Hammer).
+- **Rest site:** heal 15, or 1 of 2 common attachments.
+- **Elite loot:** a part reward, plus 1 of 2 uncommon or rare attachments.
+- **Workshop prices:** parts 30/45/65 by tier; attachments 30/55/90 by rarity; repair 15 HP for 25; removal 40, then +15 each time; selling an attachment pays half its price.
+- **Machine upgrades** (sometimes in the Workshop):
+  - Flywheel (+1 Crank Power), 120;
+  - Heat Housing (+2 Heat capacity), 110;
+  - Extra Hands (+1 install per turn), 130;
+  - Bigger Gear (8 slots), 120.
+- **Attachments:**
+  - common: Sharpened (+2 damage), Counterweight (+2 Block), Bracing (immune to Jam/Rust/Unscrew);
+  - uncommon: Heat Sink (−1 Heat), Coil, Polish, Clamp, Feeder;
+  - rare: Governor (no Heat), Echo (triggers twice, once per turn).
