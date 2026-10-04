@@ -19,7 +19,7 @@ from .parts import MOD_RARITY, Kind, Mod, fits
 STOPS = 9                       # door choices before the boss
 # Enemies grow stronger through the district (players do too): HP and attacks are scaled by
 # 1 + GROWTH * stop / STOPS, so the boss gets the full 1 + GROWTH.
-GROWTH = 0.11                    # tuned: a casual player (MCTS@50) clears ~65% of runs
+GROWTH = 0.21                    # tuned (v12): a casual player (MCTS@50) clears ~65-70% of runs
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
 PART_TIER = {
