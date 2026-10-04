@@ -158,7 +158,8 @@ def _runs(args):
 
 def summarise(run):
     fights = [h for h in run.history if "enemy" in h]
-    return {"won": run.phase == "won", "stop": run.stop, "cogs": run.cogs,
+    boss_loot = sum(h.get("cogs", 0) for h in fights if h["node"] == "boss")
+    return {"won": run.phase == "won", "stop": run.stop, "cogs": run.cogs - boss_loot,   # unspent before the boss
             "elites": sum(h["node"] == "elite" for h in fights),
             "attachments": sum(len(c["mods"]) for c in run.cards) + len(run.inventory),
             "machine": len(run.machine), "deck": len(run.cards),
@@ -191,7 +192,7 @@ def run_line(label, out, base=None):
           f"at {statistics.mean(boss) if boss else 0:4.1f} HP | elites {statistics.mean(o['elites'] for o in out):.2f} "
           f"| attach {statistics.mean(o['attachments'] for o in out):.1f} | machine "
           f"{statistics.mean(o['machine'] for o in out):.2f} | deck {statistics.mean(o['deck'] for o in out):.1f} "
-          f"| cogs left {statistics.mean(o['cogs'] for o in out):3.0f}{delta}", flush=True)
+          f"| unspent {statistics.mean(o['cogs'] for o in out):3.0f}{delta}", flush=True)
 
 
 def study_machine(pool, args):
