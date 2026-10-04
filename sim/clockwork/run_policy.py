@@ -1,0 +1,153 @@
+"""A simple automated player for whole runs (run_mode.Run), so runs can be simulated.
+
+Fights are played by an agent (default mcts@50, the casual stand-in). Map, reward, rest and
+Workshop choices follow plain heuristics:
+- doors: an elite when HP is high, a rest site when HP is low, otherwise a Workshop if it can
+  afford something, otherwise a fight;
+- part rewards: highest value in PART_VALUE (from the partial-deck probes), else scrap;
+- attachments: always taken and attached to the best part they fit;
+- rest: heal below 60% HP, otherwise take an attachment;
+- Workshop: repair when low, then buy the best affordable attachment, machine upgrade or part.
+
+    python -m clockwork.run_policy --agent mcts@50 --runs 60
+"""
+import argparse
+import os
+import statistics
+from concurrent.futures import ProcessPoolExecutor
+
+from .decks import DECKS
+from .engine import apply, legal_actions, new_fight
+from .parts import Kind, Mod
+from .run import make_agent
+from .run_mode import Run
+
+# Rough value of one copy, from the partial-deck probes (win-rate points over the starter).
+PART_VALUE = {Kind.PRIMER: 17, Kind.COUPLER: 8, Kind.HAMMER: 9, Kind.AMPLIFIER: 6, Kind.MAGNET: 4,
+              Kind.SLIDER: 2, Kind.ASSEMBLY: 2, Kind.COOLANT: -1, Kind.MIRROR: -7, Kind.LOADER: -8,
+              Kind.SPRING: -14}
+CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLIDER, Kind.COUPLER,
+                 Kind.PLATE, Kind.SPRING, Kind.MIRROR, Kind.MAGNET, Kind.LOADER, Kind.AMPLIFIER, Kind.COOLANT]
+
+
+def play_fight(run, agent_name):
+    s = new_fight(run.fight_deck(), run.enemy, seed=run.fight_seed(), rules=run.rules(), start_hp=run.hp)
+    agent = make_agent(agent_name, run.fight_seed())
+    while s.result is None:
+        apply(s, agent.act(s, legal_actions(s)))
+    run.finish_fight(s.result, s.hp, s.turn)
+
+
+def attach_all(run):
+    i = 0
+    while i < len(run.inventory):
+        mod = run.inventory[i]
+        cards = [c for c in run.cards if run.can_attach(mod, c)]
+        if not cards:
+            i += 1
+            continue
+        cards.sort(key=lambda c: CARD_PRIORITY.index(c["kind"]) if c["kind"] in CARD_PRIORITY else 99)
+        run.attach(i, cards[0]["id"])
+
+
+def choose_door(run):
+    doors = run.doors
+    frac = run.hp / run.max_hp()
+    order = []
+    if frac >= 0.7:
+        order.append("elite")
+    if frac < 0.5:
+        order.append("rest")
+    if run.cogs >= 55:
+        order.append("workshop")
+    order += ["fight", "rest", "workshop", "elite", "boss"]
+    for t in order:
+        if t in doors:
+            return doors.index(t)
+    return 0
+
+
+def shop(run):
+    o = run.offer
+    if run.hp < 0.5 * run.max_hp():
+        while run.cogs >= 25 and run.hp < run.max_hp() - 10:
+            run.buy("repair")
+    for i, item in enumerate(o["attachments"]):
+        if not item["sold"] and run.cogs >= item["price"]:
+            run.buy("attachment", i)
+    if o.get("machine") and not o["machine"]["sold"] and run.cogs >= o["machine"]["price"]:
+        run.buy("machine")
+    parts = sorted(range(len(o["parts"])), key=lambda i: -PART_VALUE.get(Kind(o["parts"][i]["kind"]), 0))
+    for i in parts:
+        item = o["parts"][i]
+        if not item["sold"] and run.cogs >= item["price"] and PART_VALUE.get(Kind(item["kind"]), 0) > 0:
+            run.buy("part", i)
+    run.leave_workshop()
+
+
+def simulate_run(deck, seed, agent_name="mcts@50"):
+    run = Run(deck, seed)
+    while run.phase not in ("won", "lost"):
+        attach_all(run)
+        if run.phase == "doors":
+            run.choose_door(choose_door(run))
+        elif run.phase == "fight":
+            play_fight(run, agent_name)
+        elif run.phase == "reward":
+            parts = sorted(run.offer["parts"], key=lambda p: -PART_VALUE.get(Kind(p), 0))
+            best = parts[0] if PART_VALUE.get(Kind(parts[0]), 0) > 0 else ""
+            mods = run.offer.get("attachments", [])
+            run.take_reward(part=best, attachment=mods[0] if mods else "", scrap=not best)
+        elif run.phase == "rest":
+            if run.hp < 0.6 * run.max_hp():
+                run.rest("heal")
+            else:
+                run.rest("tinker", run.offer["attachments"][0])
+        elif run.phase == "workshop":
+            shop(run)
+    return run
+
+
+def _block(args):
+    deck, agent, seeds = args
+    out = []
+    for seed in seeds:
+        run = simulate_run(deck, seed, agent)
+        fights = [h for h in run.history if "enemy" in h]
+        out.append({"won": run.phase == "won", "stop": run.stop, "hp": run.hp, "cogs": run.cogs,
+                    "elites": sum(h["node"] == "elite" for h in fights),
+                    "attachments": sum(len(c["mods"]) for c in run.cards),
+                    "machine": len(run.machine), "deck": len(run.cards),
+                    "boss_hp": next((h["hp_start"] for h in fights if h["node"] == "boss"), None),
+                    "died_to": fights[-1]["enemy"] if run.phase == "lost" else None})
+    return deck, out
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--agent", default="mcts@50")
+    ap.add_argument("--runs", type=int, default=60)
+    ap.add_argument("--decks", nargs="+", default=["starter"], choices=list(DECKS))
+    args = ap.parse_args(argv)
+    tasks = [(d, args.agent, range(lo, min(lo + 5, args.runs))) for d in args.decks for lo in range(0, args.runs, 5)]
+    res = {}
+    with ProcessPoolExecutor(os.cpu_count()) as pool:
+        for deck, out in pool.map(_block, tasks):
+            res.setdefault(deck, []).extend(out)
+    for deck, out in res.items():
+        n = len(out)
+        won = [o for o in out if o["won"]]
+        boss = [o["boss_hp"] for o in out if o["boss_hp"] is not None]
+        deaths = {}
+        for o in out:
+            if o["died_to"]:
+                deaths[o["died_to"]] = deaths.get(o["died_to"], 0) + 1
+        print(f"{args.agent} | {deck}: cleared {len(won)/n:.0%} of {n} runs | reached boss {len(boss)/n:.0%} "
+              f"with {statistics.mean(boss) if boss else 0:.1f} HP | elites fought {statistics.mean(o['elites'] for o in out):.2f} "
+              f"| attachments {statistics.mean(o['attachments'] for o in out):.1f} | machine upgrades "
+              f"{statistics.mean(o['machine'] for o in out):.2f} | final deck {statistics.mean(o['deck'] for o in out):.1f} "
+              f"| cogs left {statistics.mean(o['cogs'] for o in out):.0f} | deaths {deaths}")
+
+
+if __name__ == "__main__":
+    main()

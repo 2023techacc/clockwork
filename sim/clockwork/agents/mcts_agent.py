@@ -30,7 +30,7 @@ def reward(s) -> float:
 
 def end_key(s) -> tuple:
     return (gear_key(s), s.top, s.heat, s.block, s.enemy_hp, s.overheat_pending, s.result,
-            tuple(sorted(str(p.kind.value) + str(p.mod) for p in s.discard)),
+            tuple(sorted(str(p.kind.value) + str(p.mods) for p in s.discard)),
             frozenset(p.uid for p in s.gear if p is not None and p.uid in s.fresh), tuple(sorted(s.jams.items())))
 
 

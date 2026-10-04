@@ -55,6 +55,17 @@ label.inline { flex-direction: row; align-items: center; gap: 6px; color: var(--
 .banner .step.done { color: var(--muted); text-decoration: line-through; }
 .banner .step.now { border-color: var(--accent); color: var(--accent); font-weight: 600; }
 #run-history { margin: 8px 0; font-size: 13px; }
+.banner .steps { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.doors .door { min-width: 160px; max-width: 260px; padding: 12px; align-items: flex-start; }
+.door .icon { font-size: 24px; line-height: 1; }
+.rarity { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.card .price { color: var(--accent); font-weight: 600; margin-top: 4px; }
+.card.fits { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; cursor: pointer; }
+.card.chip { min-width: 96px; max-width: 150px; flex: 0 1 auto; padding: 5px 8px; }
+.card.chip .mods { color: var(--accent); font-weight: 600; }
+#deck-cards .with-action { flex: 0 1 auto; max-width: 150px; }
+.with-action { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 120px; max-width: 200px; }
+.with-action .card { width: 100%; max-width: none; }
 select, input, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
 input[type=number] { width: 110px; }
 textarea { width: 100%; resize: vertical; }

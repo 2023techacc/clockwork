@@ -12,6 +12,8 @@ from typing import Optional, Tuple
 #   ("jam", slot, turns)        slot can't trigger for `turns` player turns
 #   ("wind_back",)              gear turns 1 step counter-clockwise, no trigger
 #   ("unscrew", slot)           part goes to the discard pile
+#   ("overclock", heat)         adds Heat to your machine (can overheat it)
+#   ("rust", amount)            the part at the Trigger Point deals/blocks `amount` less this fight
 Action = tuple
 Intent = Tuple[Action, ...]
 
@@ -25,6 +27,8 @@ class EnemySpec:
     crank_limit: Optional[int] = None         # total cranks in the fight (old Clock Tower rule)
     chime_every: Optional[int] = None         # Clock Tower: strikes on every Nth crank of the fight
     chime_damage: int = 0                     # ... for this much damage, hitting your current Block
+    cogs: int = 0                             # cogs looted on a win (harder enemies carry more)
+    elite: bool = False
 
 
 # Tuned v7 for runs where HP carries over (clockwork.tune; MCTS@50 = casual player stand-in):
@@ -33,34 +37,54 @@ class EnemySpec:
 ENEMIES = {
     # Normal fights (v7, HP carries over in a run): tuned so MCTS@50 loses ~15 HP per win.
     # Rules.md §8b paper-prototype baseline. v1: 60 HP, Attack 8.
-    "dummy": EnemySpec("dummy", 55, ((("attack", 7),),)),
+    "dummy": EnemySpec("dummy", 55, ((("attack", 7),),), cogs=12),
     # Telegraphed big hit every 3rd turn: tests Block timing. v1: 70 HP, 4/4/18.
-    "spiker": EnemySpec("spiker", 58, ((("attack", 3),), (("attack", 3),), (("attack", 14),))),
+    "spiker": EnemySpec("spiker", 58, ((("attack", 3),), (("attack", 3),), (("attack", 14),)), cogs=15),
     # Enrage timer: 3, 4, 5, 6 ... tests burst. v1: 75 HP, 4 +2 per turn.
-    "enrager": EnemySpec("enrager", 60, ((("attack", 3),),), attack_growth=1),
+    "enrager": EnemySpec("enrager", 60, ((("attack", 3),),), attack_growth=1, cogs=14),
     # Attacks the machine. v1: 65 HP, attacks 8/6/8/6.
     "saboteur": EnemySpec("saboteur", 56, (
         (("attack", 7),),
         (("jam", 2), ("attack", 5)),
         (("wind_back",), ("attack", 7)),
         (("unscrew",), ("attack", 5)),
-    )),
+    ), cogs=16),
     # Boss. v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
-    "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12),
+    "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12, cogs=60),
+    # Elites (machine attackers). Target: a casual player wins ~85% and loses ~25 HP.
+    "overclocker": EnemySpec("overclocker", 70, (
+        (("attack", 6),),
+        (("overclock", 3), ("attack", 4)),
+    ), cogs=32, elite=True),
+    "rust_golem": EnemySpec("rust_golem", 75, (
+        (("rust", 2), ("attack", 7)),
+        (("attack", 7),),
+    ), cogs=34, elite=True),
+    "pickpocket": EnemySpec("pickpocket", 60, ((("unscrew",), ("attack", 5)),), cogs=30, elite=True),
+    "jammer_prime": EnemySpec("jammer_prime", 70, (
+        (("jam", 2), ("jam", 2), ("attack", 6)),
+        (("attack", 6),),
+    ), cogs=36, elite=True),
 }
+NORMAL = ["dummy", "spiker", "enrager", "saboteur"]
+ELITES = ["overclocker", "rust_golem", "pickpocket", "jammer_prime"]
+BOSSES = ["clock_tower"]
 
 
 def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
     """Materialize the intent for `turn` (1-based), picking random targets now."""
     template = spec.pattern[(turn - 1) % len(spec.pattern)]
     occupied = [i for i, p in enumerate(gear) if p is not None]
+    jammed = set()
     out = []
     for act in template:
         if act[0] == "attack":
             out.append(("attack", act[1] + spec.attack_growth * (turn - 1)))
         elif act[0] == "jam":
-            slot = rng.choice(occupied) if occupied else rng.randrange(len(gear))
+            free = [i for i in occupied if i not in jammed]
+            slot = rng.choice(free) if free else rng.randrange(len(gear))
+            jammed.add(slot)
             out.append(("jam", slot, act[1]))
         elif act[0] == "unscrew":
             if occupied:
@@ -80,4 +104,4 @@ def scaled(spec: EnemySpec, f: float, attack_f: Optional[float] = None) -> Enemy
     return EnemySpec(spec.name, max(1, round(spec.hp * f)), pattern,
                      attack_growth=round(spec.attack_growth * a), crank_limit=spec.crank_limit,
                      chime_every=spec.chime_every, chime_damage=max(1, round(spec.chime_damage * a))
-                     if spec.chime_damage else 0)
+                     if spec.chime_damage else 0, cogs=spec.cogs, elite=spec.elite)

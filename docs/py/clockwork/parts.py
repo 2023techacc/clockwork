@@ -25,11 +25,21 @@ class Kind(str, Enum):
 
 
 class Mod(str, Enum):
-    """Attachments: at most one per part, each fits one part kind."""
-    COIL = "Coil"        # Spring: the part its crank triggers also deals COIL_DAMAGE
-    POLISH = "Polish"    # Mirror: the copy's damage/Block gets +POLISH_BONUS (adds to Amplifiers)
-    CLAMP = "Clamp"      # Magnet: every part it pulls is triggered
-    FEEDER = "Feeder"    # Loader: loads into the next empty slot to come up, not a random one
+    """Attachments. A part can hold several (up to rules.max_attachments, no duplicates).
+    Generic ones fit any part; specific ones fit one part kind (MOD_FITS)."""
+    # common
+    SHARPENED = "Sharpened"        # +2 damage when it triggers
+    COUNTERWEIGHT = "Counterweight"  # +2 Block when it triggers
+    BRACING = "Bracing"            # immune to Jam, Rust and Unscrew
+    # uncommon
+    HEAT_SINK = "Heat Sink"        # its triggers cost 1 less Heat
+    COIL = "Coil"        # Spring: the part its crank triggers also deals coil_damage
+    POLISH = "Polish"    # Mirror: the copy's damage/Block gets +polish_bonus (adds to Amplifiers)
+    CLAMP = "Clamp"      # Magnet: the first part it pulls is triggered
+    FEEDER = "Feeder"    # Loader: loads into the next slot to come up, not a random one
+    # rare
+    GOVERNOR = "Governor"          # its triggers add no Heat
+    ECHO = "Echo"                  # the first time it triggers each turn, it triggers again
 
     def __str__(self) -> str:
         return self.value
@@ -68,6 +78,17 @@ SPECS = {
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}
+MOD_RARITY = {
+    Mod.SHARPENED: "common", Mod.COUNTERWEIGHT: "common", Mod.BRACING: "common",
+    Mod.HEAT_SINK: "uncommon", Mod.COIL: "uncommon", Mod.POLISH: "uncommon", Mod.CLAMP: "uncommon",
+    Mod.FEEDER: "uncommon", Mod.GOVERNOR: "rare", Mod.ECHO: "rare",
+}
+SHARPENED_DAMAGE = 2
+COUNTERWEIGHT_BLOCK = 2
+
+
+def fits(mod: "Mod", kind: "Kind") -> bool:
+    return MOD_FITS.get(mod, kind) == kind
 # Coil damage, Polish bonus and the Amplifier bonus live in RulesConfig (sweepable).
 
 
@@ -76,10 +97,18 @@ MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGN
 class Part:
     uid: int
     kind: Kind
-    mod: Optional[Mod] = None
+    mods: tuple = ()          # attachments, sorted by name (a single Mod is accepted too)
+
+    def __post_init__(self):
+        mods = self.mods
+        if mods is None:
+            mods = ()
+        elif isinstance(mods, Mod):
+            mods = (mods,)
+        object.__setattr__(self, "mods", tuple(sorted(mods, key=lambda m: m.value)))
 
     def __str__(self) -> str:
-        return f"{self.kind}{'+' + self.mod.value if self.mod else ''}#{self.uid}"
+        return f"{self.kind}{''.join('+' + m.value for m in self.mods)}#{self.uid}"
 
 
 @lru_cache(maxsize=None)

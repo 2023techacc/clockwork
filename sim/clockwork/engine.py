@@ -30,7 +30,7 @@ from typing import Dict, List, Optional
 from .config import DEFAULT_RULES, RulesConfig
 from .decks import deck_list
 from .enemies import ENEMIES, EnemySpec, reveal_intent
-from .parts import Kind, Mod, Part, specs_for
+from .parts import COUNTERWEIGHT_BLOCK, SHARPENED_DAMAGE, Kind, Mod, Part, specs_for
 from .rng import Rng
 
 CW, CCW = "cw", "ccw"   # crank directions; CW = forward
@@ -70,6 +70,8 @@ class State:
     jams: Dict[int, int] = field(default_factory=dict)   # slot -> player turns left
     fresh: set = field(default_factory=set)       # uids installed this turn, not triggered since (Primer)
     installed: set = field(default_factory=set)   # uids installed this turn (Assembly)
+    rust: Dict[int, int] = field(default_factory=dict)   # uid -> damage/Block lost this fight
+    echoed: set = field(default_factory=set)      # uids that already echoed this turn
     moved: set = field(default_factory=set)   # uids a Magnet moved this turn (Slider)
     turn: int = 0
     phase: str = "install"          # install | crank | over
@@ -109,6 +111,8 @@ class State:
         s.jams = dict(self.jams)
         s.fresh = set(self.fresh)
         s.installed = set(self.installed)
+        s.rust = dict(self.rust)
+        s.echoed = set(self.echoed)
         s.moved = set(self.moved)
         s.part_triggers = dict(self.part_triggers)
         st = Stats(**self.stats.__dict__)
@@ -137,7 +141,7 @@ def new_fight(deck, enemy="dummy", seed=0, rules: RulesConfig = DEFAULT_RULES, t
     """start_hp: HP carried over from earlier fights (default: full)."""
     spec = ENEMIES[enemy] if isinstance(enemy, str) else enemy
     rng = Rng(seed)
-    parts = [Part(uid, kind, mod) for uid, (kind, mod) in enumerate(deck_list(deck))]
+    parts = [Part(uid, kind, mods) for uid, (kind, mods) in enumerate(deck_list(deck))]
     rng.shuffle(parts)
     s = State(rules=rules, enemy=spec, rng=rng, gear=[None] * rules.gear_size, queue=parts,
               hp=rules.player_hp if start_hp is None else start_hp, enemy_hp=spec.hp,
@@ -160,9 +164,9 @@ def legal_actions(s: State) -> List[tuple]:
         if s.installs_left > 0:
             seen = set()
             for i, part in enumerate(s.hand):
-                if (part.kind, part.mod) in seen:      # identical parts give identical results
+                if (part.kind, part.mods) in seen:      # identical parts give identical results
                     continue
-                seen.add((part.kind, part.mod))
+                seen.add((part.kind, part.mods))
                 acts.extend(("install", i, slot) for slot in range(len(s.gear)))
         if s.rules.crank_direction_lock and not s.dead_turn:
             acts += [("end_install", CW), ("end_install", CCW)]
@@ -259,6 +263,7 @@ def _start_turn(s: State) -> None:
     s.moved = set()
     s.fresh = set()
     s.installed = set()
+    s.echoed = set()
     s.turn_runaway = False
     s.dead_turn, s.overheat_pending = s.overheat_pending, False
     s.locked = False
@@ -335,9 +340,17 @@ def _end_turn(s: State) -> None:
             s.top = (s.top + 1) % n     # gear turns counter-clockwise, nothing triggers
         elif act[0] == "unscrew":
             part = s.gear[act[1]]
-            if part is not None:
+            if part is not None and Mod.BRACING not in part.mods:
                 s.discard.append(part)
                 s.gear[act[1]] = None
+        elif act[0] == "overclock":
+            s.heat += act[1]
+            if _check_overheat(s):
+                s.stats.overheats_by["Overclock"] = s.stats.overheats_by.get("Overclock", 0) + 1
+        elif act[0] == "rust":
+            part = s.gear[s.top]
+            if part is not None and Mod.BRACING not in part.mods:
+                s.rust[part.uid] = s.rust.get(part.uid, 0) + act[1]
         _log(s, f"enemy: {act}")
     if s.hp <= 0:
         _finish(s, "loss", "hp")
@@ -454,11 +467,13 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if part is None:
         _log(s, f"  slot {slot}: empty, nothing happens")
         return True
-    if slot in s.jams:
+    if slot in s.jams and Mod.BRACING not in part.mods:
         _log(s, f"  {part}: jammed")
         return True
     eff = _effective_part(s, slot)
     kind = eff.kind if eff is not None else None
+    # A Mirror acts as the copied part, attachments included, plus its own attachments.
+    mods = set(eff.mods if eff is not None else ()) | set(part.mods)
     specs = specs_for(r.part_overrides)
     if kind is None or not specs[kind].triggers:
         _log(s, f"  {part}: does not trigger")
@@ -485,6 +500,10 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if kind == Kind.SPRING:
         s.chain_springs += 1
         heat += s.chain_springs * r.spring_heat_step
+    if Mod.GOVERNOR in mods:
+        heat = 0
+    elif Mod.HEAT_SINK in mods:
+        heat = max(0, heat - 1)
     s.heat += heat
     label = str(part) if part.kind == kind else f"{part} as {kind}"
     notes = [f"+{heat} Heat"]
@@ -498,20 +517,26 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         base += spec.per_install_damage * sum(1 for p in s.gear if p is not None and p.uid in s.installed)
     if spec.moved_bonus and part.uid in s.moved:
         base += spec.moved_bonus
+    block = spec.block
+    if Mod.SHARPENED in mods:
+        base += SHARPENED_DAMAGE
+    if Mod.COUNTERWEIGHT in mods:
+        block += COUNTERWEIGHT_BLOCK
+    rust = s.rust.get(part.uid, 0)
+    base, block = max(0, base - rust), max(0, block - rust)
     s.fresh.discard(part.uid)
     mult = 1 + r.amplifier_bonus * _adjacent_amplifiers(s, slot)
-    if part.kind == Kind.MIRROR and part.mod == Mod.POLISH:
+    if part.kind == Kind.MIRROR and Mod.POLISH in part.mods:
         mult += r.polish_bonus
-    if base or spec.block:
-        if base:
-            dmg = int(base * mult)
-            s.enemy_hp -= dmg
-            s.damage_turn += dmg
-            notes.append(f"{dmg} damage")
-        if spec.block:
-            blk = int(spec.block * mult)
-            s.block += blk
-            notes.append(f"{blk} Block")
+    if base:
+        dmg = int(base * mult)
+        s.enemy_hp -= dmg
+        s.damage_turn += dmg
+        notes.append(f"{dmg} damage")
+    if block:
+        blk = int(block * mult)
+        s.block += blk
+        notes.append(f"{blk} Block")
     if spec.cooling:
         s.heat = max(0, s.heat - spec.cooling)
         notes.append(f"-{spec.cooling} Heat")
@@ -520,7 +545,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         s.damage_turn += bonus
         notes.append(f"+{bonus} damage (Coil)")
     if kind == Kind.LOADER:
-        notes.append(_load(s, slot, feeder=eff.mod == Mod.FEEDER))
+        notes.append(_load(s, slot, feeder=Mod.FEEDER in mods))
     pulled = []
     if kind == Kind.MAGNET:
         note, pulled = _magnet(s, slot)
@@ -545,17 +570,20 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         return False
 
     if kind == Kind.SPRING:
-        stack.append(("crank", direction, r.coil_damage if eff.mod == Mod.COIL else 0))
+        stack.append(("crank", direction, r.coil_damage if Mod.COIL in mods else 0))
     elif kind == Kind.COUPLER:
         left, right = (slot - 1) % n, (slot + 1) % n
         # Depth-first, left then right: push right first so left resolves (fully) first.
         for nb, d in ((right, CCW), (left, CW)):
             if s.gear[nb] is not None:
                 stack.append(("trigger", nb, d, True, s.gear[nb].uid, 0))
-    elif kind == Kind.MAGNET and eff.mod == Mod.CLAMP:
+    elif kind == Kind.MAGNET and Mod.CLAMP in mods:
         # Clamp: each pulled part triggers, left side first (pushed last).
         for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
             stack.append(("trigger", near, d, False, uid, 0))
+    if Mod.ECHO in mods and part.uid not in s.echoed:
+        s.echoed.add(part.uid)      # triggers again right away (before its follow-ups), once per turn
+        stack.append(("trigger", slot, direction, from_coupler, part.uid, 0))
     return True
 
 

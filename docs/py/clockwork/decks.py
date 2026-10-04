@@ -1,5 +1,5 @@
 """Fixed test decks: the starter bag plus 4 parts, roughly a deck a few fights into a run."""
-from .parts import MOD_FITS, Kind as K, Mod
+from .parts import Kind as K, Mod, fits
 
 STARTER = {K.STRIKER: 4, K.PLATE: 3, K.SPRING: 1}
 
@@ -21,14 +21,27 @@ DECKS = {
 }
 
 
+def norm_mods(mods):
+    """Attachments as a sorted tuple (accepts None, one Mod, or an iterable)."""
+    if mods is None:
+        return ()
+    if isinstance(mods, Mod):
+        return (mods,)
+    return tuple(sorted(mods, key=lambda m: m.value))
+
+
 def deck_list(deck):
-    """Expand {Kind: count} or {(Kind, Mod): count} into a list of (kind, mod) in a stable order."""
+    """Expand a deck {Kind: count} / {(Kind, Mod or mods): count} into (kind, mods) pairs in a
+    stable order."""
     out = []
     for key, n in deck.items():
-        kind, mod = key if isinstance(key, tuple) else (key, None)
-        if mod is not None and MOD_FITS[mod] != kind:
-            raise ValueError(f"{mod} does not fit {kind}")
-        out += [(kind, mod)] * n
+        kind, mods = (key[0], norm_mods(key[1])) if isinstance(key, tuple) else (key, ())
+        for m in mods:
+            if not fits(m, kind):
+                raise ValueError(f"{m} does not fit {kind}")
+        if len(set(mods)) != len(mods):
+            raise ValueError(f"duplicate attachment on {kind}")
+        out += [(kind, mods)] * n
     return out
 
 

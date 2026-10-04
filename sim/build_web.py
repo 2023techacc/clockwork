@@ -14,7 +14,7 @@ import shutil
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "sim", "clockwork")
 DST = os.path.join(ROOT, "docs", "py", "clockwork")
-MODULES = ["__init__.py", "config.py", "decks.py", "enemies.py", "engine.py", "parts.py", "rng.py"]
+MODULES = ["__init__.py", "config.py", "decks.py", "enemies.py", "engine.py", "parts.py", "rng.py", "run_mode.py"]
 
 
 def expected():
