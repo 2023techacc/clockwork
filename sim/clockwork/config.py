@@ -41,6 +41,7 @@ class RulesConfig:
     bracing_damage: int = 0          # Bracing attachment: flat damage/Block when the part triggers
     bracing_block: int = 0           # (on top of its immunity to Jam, Rust and Unscrew)
     feeder_extra_loads: int = 0      # a Loader with Feeder installs this many more parts per trigger
+    feeder_triggers: int = 0         # ... and the first this-many parts it loads trigger right away
     polish_bonus: float = 0.2        # Polish attachment, added to the Amplifier bonus (was 0.5)
     clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     loader_loads: int = 2            # parts a Loader installs per trigger (was 1)

@@ -547,8 +547,10 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         s.enemy_hp -= bonus
         s.damage_turn += bonus
         notes.append(f"+{bonus} damage (Coil)")
+    loaded = []
     if kind == Kind.LOADER:
-        notes.append(_load(s, slot, feeder=Mod.FEEDER in mods))
+        note, loaded = _load(s, slot, feeder=Mod.FEEDER in mods)
+        notes.append(note)
     pulled = []
     if kind == Kind.MAGNET:
         note, pulled = _magnet(s, slot)
@@ -580,6 +582,10 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         for nb, d in ((right, CCW), (left, CW)):
             if s.gear[nb] is not None:
                 stack.append(("trigger", nb, d, True, s.gear[nb].uid, 0))
+    elif kind == Kind.LOADER and Mod.FEEDER in mods and r.feeder_triggers:
+        # Feeder: the first loaded parts trigger, in load order (pushed last-first).
+        for target in reversed(loaded[:r.feeder_triggers]):
+            stack.append(("trigger", target, direction, False, s.gear[target].uid, 0))
     elif kind == Kind.MAGNET and Mod.CLAMP in mods:
         # Clamp: each pulled part triggers, left side first (pushed last).
         for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
@@ -608,13 +614,13 @@ def _adjacent_amplifiers(s: State, slot: int) -> int:
                if s.gear[nb] is not None and s.gear[nb].kind == Kind.AMPLIFIER)
 
 
-def _load(s: State, slot: int, feeder: bool = False) -> str:
+def _load(s: State, slot: int, feeder: bool = False):
     """Install the next parts in the queue (rules.loader_loads of them). Each goes into an empty
     slot; once the gear is full, one load per trigger replaces a part (the part opposite the Loader,
     or with Feeder the next part to come up), sending the old part to the discard pile."""
     n = len(s.gear)
     step = -1 if s.turn_direction == CW else 1
-    notes, replaced, loaded = [], False, set()
+    notes, replaced, loaded, slots = [], False, set(), []
     for _ in range(s.rules.loader_loads + (s.rules.feeder_extra_loads if feeder else 0)):
         empty = [i for i, p in enumerate(s.gear) if p is None]
         if empty:
@@ -632,9 +638,10 @@ def _load(s: State, slot: int, feeder: bool = False) -> str:
             notes.append("gear full")
             break
         notes.append(_load_into(s, target))
-        if s.gear[target] is not None:
+        if s.gear[target] is not None and s.gear[target].uid not in loaded:
             loaded.add(s.gear[target].uid)
-    return "; ".join(notes)
+            slots.append(target)
+    return "; ".join(notes), slots
 
 
 def _load_into(s: State, target: int) -> str:
