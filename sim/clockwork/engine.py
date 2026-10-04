@@ -522,6 +522,9 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         base += SHARPENED_DAMAGE
     if Mod.COUNTERWEIGHT in mods:
         block += COUNTERWEIGHT_BLOCK
+    if Mod.BRACING in mods:
+        base += r.bracing_damage
+        block += r.bracing_block
     rust = s.rust.get(part.uid, 0)
     base, block = max(0, base - rust), max(0, block - rust)
     s.fresh.discard(part.uid)
@@ -612,7 +615,7 @@ def _load(s: State, slot: int, feeder: bool = False) -> str:
     n = len(s.gear)
     step = -1 if s.turn_direction == CW else 1
     notes, replaced, loaded = [], False, set()
-    for _ in range(s.rules.loader_loads):
+    for _ in range(s.rules.loader_loads + (s.rules.feeder_extra_loads if feeder else 0)):
         empty = [i for i, p in enumerate(s.gear) if p is None]
         if empty:
             if feeder:      # the next empty slot to come up in this turn's direction

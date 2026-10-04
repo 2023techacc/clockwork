@@ -6,8 +6,8 @@ Workshop choices follow plain heuristics:
   afford something, otherwise a fight;
 - part rewards: highest value in PART_VALUE (from the partial-deck probes), else scrap;
 - attachments: always taken and attached to the best part they fit;
-- rest: heal below 60% HP, otherwise take an attachment;
-- Workshop: repair when low, then buy the best affordable attachment, machine upgrade or part.
+- rest: heal below 60% HP, otherwise tinker (both offered common attachments);
+- Workshop: repair when low, then buy the machine upgrade, then the best affordable attachments and parts.
 
     python -m clockwork.run_policy --agent mcts@50 --runs 60
 """
@@ -86,14 +86,12 @@ def shop(run, style=DEFAULT_STYLE):
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
     machine = o.get("machine")
-    if style["machine_first"] and machine and not machine["sold"] and run.cogs >= machine["price"]:
+    if machine and not machine["sold"] and run.cogs >= machine["price"]:
         run.buy("machine")
-    reserve = 120 if style["machine_first"] and len(run.machine) < 2 else 0
+    reserve = 90 if style["machine_first"] and len(run.machine) < 2 else 0
     for i, item in enumerate(o["attachments"]):
         if not item["sold"] and run.cogs - item["price"] >= reserve:
             run.buy("attachment", i)
-    if machine and not machine["sold"] and run.cogs >= machine["price"]:
-        run.buy("machine")
     if style["remove_basics"]:
         for kind in (Kind.PLATE, Kind.STRIKER):
             card = next((c for c in run.cards if c["kind"] == kind and not c["mods"]), None)
@@ -115,6 +113,7 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
     style = {**DEFAULT_STYLE, **(style or {})}
     run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth)
     run.machine = list(machine)
+    run.hp = run.max_hp()
     while run.phase not in ("won", "lost"):
         attach_all(run)
         if run.phase == "doors":
@@ -130,10 +129,7 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
             run.take_reward(part=best, attachment=mods[0] if mods else "", scrap=not best)
         elif run.phase == "rest":
             heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
-            if heal:
-                run.rest("heal")
-            else:
-                run.rest("tinker", run.offer["attachments"][0])
+            run.rest("heal" if heal else "tinker")
         elif run.phase == "workshop":
             shop(run, style)
     return run

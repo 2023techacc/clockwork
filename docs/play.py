@@ -26,7 +26,7 @@ NODE_TEXT = {
     "fight": "Fight: an ordinary enemy. Loot cogs, then pick a part.",
     "elite": "Elite: a dangerous machine-wrecker. More cogs, a part and an attachment.",
     "workshop": "Workshop: buy parts, attachments and machine upgrades; remove parts; repair.",
-    "rest": f"Rest: heal, or tinker for a common attachment.",
+    "rest": "Rest: heal, or tinker for two common attachments.",
     "boss": "Boss: the Clock Tower.",
 }
 

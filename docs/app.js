@@ -306,7 +306,9 @@ function renderRest() {
   $("rest-heal").onclick = () => call(play.rest, "heal", "");
   const box = $("rest-attachments");
   box.innerHTML = "";
-  for (const m of r.offer.attachments) box.appendChild(itemCard(m, "Take it", () => call(play.rest, "tinker", m)));
+  for (const m of r.offer.attachments) box.appendChild(itemCard(m, "", null));
+  $("rest-tinker").textContent = `Tinker: take ${r.offer.attachments.join(" + ")}`;
+  $("rest-tinker").onclick = () => call(play.rest, "tinker", "");
 }
 
 function renderShop() {

@@ -36,10 +36,16 @@ REST_HEAL = 15
 REPAIR = (15, 25)               # HP, price
 REMOVE_PRICE, REMOVE_STEP = 40, 15
 MACHINE = {
-    "flywheel": ("Flywheel", "+1 Crank Power per turn", 120),
-    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 110),
-    "extra_hands": ("Extra Hands", "+1 install per turn", 130),
-    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6", 120),
+    "flywheel": ("Flywheel", "+1 Crank Power per turn", 70),
+    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 80),
+    "extra_hands": ("Extra Hands", "+1 install per turn", 90),
+    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6", 70),
+}
+# Candidate machine upgrades, testable with simulate_run(machine=[...]) but not sold.
+MACHINE_CANDIDATES = {
+    "frame": ("Reinforced Frame", "+10 max HP"),
+    "hopper": ("Wide Hopper", "4 parts offered each turn instead of 3"),
+    "big_flywheel": ("Bigger Gear", "8 gear slots and +1 Crank Power"),
 }
 
 
@@ -80,6 +86,12 @@ class Run:
             r = replace(r, installs_per_turn=r.installs_per_turn + 1)
         if "bigger_gear" in self.machine:
             r = replace(r, gear_size=8)
+        if "frame" in self.machine:
+            r = replace(r, player_hp=r.player_hp + 10)
+        if "hopper" in self.machine:
+            r = replace(r, offered_per_turn=r.offered_per_turn + 1, queue_visible=r.queue_visible + 1)
+        if "big_flywheel" in self.machine:
+            r = replace(r, gear_size=8, crank_power=r.crank_power + 1)
         return r
 
     def fight_deck(self) -> dict:
@@ -101,7 +113,7 @@ class Run:
         return self.seed * 100 + self.stop
 
     def max_hp(self) -> int:
-        return self.base_rules.player_hp
+        return self.rules().player_hp
 
     # ------------------------------------------------------------------ map
     def _make_doors(self):
@@ -200,13 +212,13 @@ class Run:
 
     # ------------------------------------------------------------------ rest
     def rest(self, choice: str, attachment: str = ""):
-        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take one offered common attachment)."""
+        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take both offered common attachments)."""
         self._need("rest")
         if choice == "heal":
             self.hp = min(self.max_hp(), self.hp + REST_HEAL)
         elif choice == "tinker":
-            self._check_offer("attachments", attachment)
-            self.inventory.append(Mod(attachment))
+            attachment = ", ".join(self.offer["attachments"])
+            self.inventory += [Mod(m) for m in self.offer["attachments"]]
         else:
             raise RunError(f"unknown rest choice {choice}")
         self.history.append({"stop": self.stop, "node": "rest", "choice": choice, "attachment": attachment or None})
@@ -220,7 +232,7 @@ class Run:
                 for m in self._roll_mods(["uncommon", "rare"], 2)]
         free = [k for k in MACHINE if k not in self.machine]
         machine = None
-        if free and self.rng.random() < 0.5:
+        if free:
             k = self.rng.choice(free)
             machine = {"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1], "price": MACHINE[k][2], "sold": False}
         return {"parts": parts, "attachments": mods, "machine": machine}
@@ -241,7 +253,9 @@ class Run:
                 raise RunError("no machine upgrade for sale")
             self._pay(item["price"])
             item["sold"] = True
+            before = self.max_hp()
             self.machine.append(item["key"])
+            self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
             return self
         shelf = self.offer["parts" if what == "part" else "attachments"]
         item = shelf[int(index)]
