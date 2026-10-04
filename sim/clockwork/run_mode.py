@@ -36,6 +36,7 @@ ELITE_PART_TIERS = ("common", "uncommon", "rare")
 ELITE_ATTACHMENTS = 2           # uncommon/rare attachments offered; one is taken
 ELITE_RARE_WEIGHT = 1           # rare attachments' weight against 3 for an uncommon
 ELITE_COG_BONUS = 0             # extra cogs per elite
+ELITE_SALVAGE = 0.0             # chance an elite also offers a free machine upgrade (salvaged from it)
 SCRAP_VALUE = 10
 REST_HEAL = 15
 REPAIR = (15, 25)               # HP, price
@@ -196,14 +197,17 @@ class Run:
             self.offer = {"parts": [k.value for k in self._roll_parts(3, ELITE_PART_TIERS)],
                           "attachments": [m.value for m in self._roll_mods(["uncommon", "rare"], ELITE_ATTACHMENTS,
                                                                            ELITE_RARE_WEIGHT)]}
+            free = [k for k in MACHINE if k not in self.machine]
+            if free and self.rng.random() < ELITE_SALVAGE:
+                self.offer["salvage"] = self.rng.choice(free)
         else:
             self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         self.phase = "reward"
         return self
 
-    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False):
+    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False, salvage: bool = False):
         """After a win: take one offered part (or scrap the reward for cogs, or skip), and for an
-        elite one offered attachment into the inventory."""
+        elite one offered attachment into the inventory and the salvaged machine upgrade, if any."""
         self._need("reward")
         entry = self.history[-1]
         if part:
@@ -217,6 +221,12 @@ class Run:
             self._check_offer("attachments", attachment)
             self.inventory.append(Mod(attachment))
             entry["attachment"] = attachment
+        if salvage:
+            key = self.offer.get("salvage")
+            if not key:
+                raise RunError("nothing to salvage")
+            self._install_machine(key)
+            entry["salvage"] = key
         self._advance()
         return self
 
@@ -263,9 +273,7 @@ class Run:
                 raise RunError("no machine upgrade for sale")
             self._pay(item["price"])
             item["sold"] = True
-            before = self.max_hp()
-            self.machine.append(item["key"])
-            self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
+            self._install_machine(item["key"])
             return self
         shelf = self.offer["parts" if what == "part" else "attachments"]
         item = shelf[int(index)]
@@ -340,6 +348,13 @@ class Run:
             if m not in out:
                 out.append(m)
         return out
+
+    def _install_machine(self, key):
+        before = self.max_hp()
+        self.machine.append(key)
+        self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
+        if self.phase == "workshop" and self.offer.get("machine", {}) and self.offer["machine"]["key"] == key:
+            self.offer["machine"]["sold"] = True
 
     def _add_card(self, kind):
         self.cards.append({"id": self.next_id, "kind": kind, "mods": []})

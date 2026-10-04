@@ -148,7 +148,8 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
             if style["parts"] == "none":
                 best = ""
             mods = run.offer.get("attachments", [])
-            run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best)
+            run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best,
+                            salvage=bool(run.offer.get("salvage")))
         elif run.phase == "rest":
             heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
             run.rest("heal" if heal else "tinker")
