@@ -36,6 +36,7 @@ ELITE_PART_TIERS = ("common", "uncommon", "rare")
 ELITE_ATTACHMENTS = 2           # uncommon/rare attachments offered; one is taken
 ELITE_RARE_WEIGHT = 1           # rare attachments' weight against 3 for an uncommon
 ELITE_COG_BONUS = 0             # extra cogs per elite
+ELITE_SCALE = 1.0               # elites' HP and attacks are multiplied by this (on top of growth)
 ELITE_SALVAGE = 0.0             # chance an elite also offers a free machine upgrade (salvaged from it)
 SCRAP_VALUE = 10
 REST_HEAL = 15
@@ -113,6 +114,8 @@ class Run:
     def enemy_spec(self):
         """The current enemy, grown for how far into the district the run is."""
         f = self.enemy_scale()
+        if ENEMIES[self.enemy].elite:
+            f *= ELITE_SCALE
         return ENEMIES[self.enemy] if f == 1 else scaled(ENEMIES[self.enemy], f)
 
     def fight_seed(self) -> int:
