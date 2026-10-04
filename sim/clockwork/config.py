@@ -53,7 +53,7 @@ class RulesConfig:
     part_overrides: tuple = ()
 
     # --- Runs ---
-    heal_between_fights: int = 10    # HP carries over between fights; this much is healed after each win
+    heal_between_fights: int = 5     # HP carries over between fights; this much is healed after each win
 
     # --- Enemies ---
     enemy_hp_jitter: int = 3         # each fight's enemy HP is base +/- this (uniform)

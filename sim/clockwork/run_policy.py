@@ -15,6 +15,9 @@ import argparse
 import os
 import statistics
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import replace
+
+from .config import DEFAULT_RULES
 
 from .decks import DECKS
 from .engine import apply, legal_actions, new_fight
@@ -31,7 +34,7 @@ CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLI
 
 
 def play_fight(run, agent_name):
-    s = new_fight(run.fight_deck(), run.enemy, seed=run.fight_seed(), rules=run.rules(), start_hp=run.hp)
+    s = new_fight(run.fight_deck(), run.enemy_spec(), seed=run.fight_seed(), rules=run.rules(), start_hp=run.hp)
     agent = make_agent(agent_name, run.fight_seed())
     while s.result is None:
         apply(s, agent.act(s, legal_actions(s)))
@@ -85,8 +88,8 @@ def shop(run):
     run.leave_workshop()
 
 
-def simulate_run(deck, seed, agent_name="mcts@50"):
-    run = Run(deck, seed)
+def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None):
+    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth)
     while run.phase not in ("won", "lost"):
         attach_all(run)
         if run.phase == "doors":
@@ -109,10 +112,11 @@ def simulate_run(deck, seed, agent_name="mcts@50"):
 
 
 def _block(args):
-    deck, agent, seeds = args
+    deck, agent, seeds, heal, growth = args
+    rules = None if heal is None else replace(DEFAULT_RULES, heal_between_fights=heal)
     out = []
     for seed in seeds:
-        run = simulate_run(deck, seed, agent)
+        run = simulate_run(deck, seed, agent, rules, growth)
         fights = [h for h in run.history if "enemy" in h]
         out.append({"won": run.phase == "won", "stop": run.stop, "hp": run.hp, "cogs": run.cogs,
                     "elites": sum(h["node"] == "elite" for h in fights),
@@ -128,8 +132,11 @@ def main(argv=None):
     ap.add_argument("--agent", default="mcts@50")
     ap.add_argument("--runs", type=int, default=60)
     ap.add_argument("--decks", nargs="+", default=["starter"], choices=list(DECKS))
+    ap.add_argument("--heal", type=int, default=None, help="override HP healed after each win")
+    ap.add_argument("--growth", type=float, default=None, help="override enemy growth through the district")
     args = ap.parse_args(argv)
-    tasks = [(d, args.agent, range(lo, min(lo + 5, args.runs))) for d in args.decks for lo in range(0, args.runs, 5)]
+    tasks = [(d, args.agent, range(lo, min(lo + 5, args.runs)), args.heal, args.growth)
+             for d in args.decks for lo in range(0, args.runs, 5)]
     res = {}
     with ProcessPoolExecutor(os.cpu_count()) as pool:
         for deck, out in pool.map(_block, tasks):
@@ -142,7 +149,8 @@ def main(argv=None):
         for o in out:
             if o["died_to"]:
                 deaths[o["died_to"]] = deaths.get(o["died_to"], 0) + 1
-        print(f"{args.agent} | {deck}: cleared {len(won)/n:.0%} of {n} runs | reached boss {len(boss)/n:.0%} "
+        print(f"{args.agent} heal {args.heal if args.heal is not None else DEFAULT_RULES.heal_between_fights}"
+              f" | {deck}: cleared {len(won)/n:.0%} of {n} runs | reached boss {len(boss)/n:.0%} "
               f"with {statistics.mean(boss) if boss else 0:.1f} HP | elites fought {statistics.mean(o['elites'] for o in out):.2f} "
               f"| attachments {statistics.mean(o['attachments'] for o in out):.1f} | machine upgrades "
               f"{statistics.mean(o['machine'] for o in out):.2f} | final deck {statistics.mean(o['deck'] for o in out):.1f} "

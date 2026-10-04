@@ -109,7 +109,7 @@ def start_run(deck, seed):
 def choose_door(index):
     RUN.choose_door(int(index))
     if RUN.phase == "fight":
-        _begin_fight(RUN.fight_deck(), RUN.enemy, RUN.fight_seed(), RUN.rules(), RUN.hp)
+        _begin_fight(RUN.fight_deck(), RUN.enemy_spec(), RUN.fight_seed(), RUN.rules(), RUN.hp)
     return view()
 
 

@@ -19,7 +19,7 @@ class RunMode(unittest.TestCase):
         run.choose_door(0)
         self.assertEqual(run.phase, "fight")
         run.finish_fight("win", 30)
-        self.assertEqual(run.hp, 40)                        # +10 heal
+        self.assertEqual(run.hp, 30 + run.base_rules.heal_between_fights)
         self.assertGreater(run.cogs, 0)
         self.assertEqual(len(run.offer["parts"]), 3)
         part = run.offer["parts"][0]
@@ -102,3 +102,15 @@ class RunMode(unittest.TestCase):
         for seed in range(3):
             run = simulate_run("starter", seed, "greedy")
             self.assertIn(run.phase, ("won", "lost"))
+
+
+class Growth(unittest.TestCase):
+    def test_enemies_grow_through_the_district(self):
+        run = Run("starter", 1, growth=0.5)
+        run.choose_door(0)
+        first = run.enemy_spec()
+        self.assertEqual(first.hp, __import__("clockwork.enemies", fromlist=["ENEMIES"]).ENEMIES[run.enemy].hp)
+        run.stop = run.stops
+        run.enemy = "clock_tower"
+        self.assertEqual(run.enemy_scale(), 1.5)
+        self.assertGreater(run.enemy_spec().hp, 98)

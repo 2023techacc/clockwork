@@ -13,10 +13,13 @@ from dataclasses import replace
 
 from .config import DEFAULT_RULES, RulesConfig
 from .decks import DECKS, deck_list
-from .enemies import BOSSES, ELITES, ENEMIES, NORMAL
+from .enemies import BOSSES, ELITES, ENEMIES, NORMAL, scaled
 from .parts import MOD_RARITY, Kind, Mod, fits
 
 STOPS = 9                       # door choices before the boss
+# Enemies grow stronger through the district (players do too): HP and attacks are scaled by
+# 1 + GROWTH * stop / STOPS, so the boss gets the full 1 + GROWTH.
+GROWTH = 0.0
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
 PART_TIER = {
@@ -45,8 +48,9 @@ class RunError(ValueError):
 
 
 class Run:
-    def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS):
+    def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None):
         self.seed, self.base_rules, self.stops = int(seed), rules, stops
+        self.growth = GROWTH if growth is None else growth
         self.rng = random.Random(self.seed * 7919 + 17)
         self.deck_name = deck
         self.cards = [{"id": i, "kind": k, "mods": list(m)} for i, (k, m) in enumerate(deck_list(DECKS[deck]))]
@@ -84,6 +88,14 @@ class Run:
             key = (c["kind"], tuple(c["mods"]))
             deck[key] = deck.get(key, 0) + 1
         return deck
+
+    def enemy_scale(self) -> float:
+        return 1 + self.growth * min(self.stop, self.stops) / self.stops
+
+    def enemy_spec(self):
+        """The current enemy, grown for how far into the district the run is."""
+        f = self.enemy_scale()
+        return ENEMIES[self.enemy] if f == 1 else scaled(ENEMIES[self.enemy], f)
 
     def fight_seed(self) -> int:
         return self.seed * 100 + self.stop
@@ -333,7 +345,8 @@ class Run:
         return {
             "deck_name": self.deck_name, "seed": self.seed, "phase": self.phase, "stop": self.stop,
             "stops": self.stops, "doors": self.doors if self.phase == "doors" else [],
-            "node": self.node, "enemy": self.enemy, "hp": self.hp, "max_hp": self.max_hp(),
+            "node": self.node, "enemy": self.enemy, "enemy_scale": round(self.enemy_scale(), 3),
+            "hp": self.hp, "max_hp": self.max_hp(),
             "cogs": self.cogs, "offer": self.offer, "remove_price": self.remove_price(),
             "repair": {"hp": REPAIR[0], "price": REPAIR[1]}, "rest_heal": REST_HEAL, "scrap": SCRAP_VALUE,
             "heal_after_fight": self.base_rules.heal_between_fights,
