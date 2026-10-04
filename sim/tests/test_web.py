@@ -24,61 +24,60 @@ class WebBundle(unittest.TestCase):
         rng = random.Random(0)
         for deck in opts["decks"]:
             v = json.loads(play.start(deck, "saboteur", 3))
-            for _ in range(400):
-                if v["result"]:
-                    break
-                if v["can_install"] and v["hand"] and rng.random() < 0.6:
-                    v = json.loads(play.install(rng.randrange(len(v["hand"])), rng.randrange(6)))
-                elif v["can_end_install"]:
-                    v = json.loads(play.end_install(rng.choice(["cw", "ccw"])))
-                elif v["can_crank"] and rng.random() < 0.6:
-                    v = json.loads(play.crank())
-                else:
-                    v = json.loads(play.end_turn())
-            self.assertIsNotNone(v["result"])
-            self.assertTrue(v["summary"])
-            self.assertTrue(v["actions"])
+            v = RunMode.play_fight(self, v, rng)
+            self.assertIsNotNone(v["fight"]["result"])
+            self.assertTrue(v["fight"]["summary"])
+            self.assertTrue(v["fight"]["actions"])
 
 
 class RunMode(unittest.TestCase):
     def play_fight(self, v, rng):
-        for _ in range(400):
-            if v["result"]:
+        for _ in range(500):
+            f = v["fight"]
+            if f["result"]:
                 return v
-            if v["can_install"] and v["hand"] and rng.random() < 0.6:
-                v = json.loads(play.install(rng.randrange(len(v["hand"])), rng.randrange(6)))
-            elif v["can_end_install"]:
+            if f["can_install"] and f["hand"] and rng.random() < 0.6:
+                v = json.loads(play.install(rng.randrange(len(f["hand"])), rng.randrange(len(f["gear"]))))
+            elif f["can_end_install"]:
                 v = json.loads(play.end_install(rng.choice(["cw", "ccw"])))
-            elif v["can_crank"] and rng.random() < 0.6:
+            elif f["can_crank"] and rng.random() < 0.6:
                 v = json.loads(play.crank())
             else:
                 v = json.loads(play.end_turn())
         self.fail("fight did not end")
 
-    def test_run_carries_hp_heals_and_offers_rewards(self):
+    def test_full_runs_through_the_bridge(self):
         rng = random.Random(1)
-        for seed in range(6):
-            v = json.loads(play.start_run("big_hit", seed, True))
-            self.assertEqual(v["run"]["status"], "fighting")
-            while True:
-                v = self.play_fight(v, rng)
+        screens = set()
+        for seed in range(8):
+            v = json.loads(play.start_run("big_hit", seed))
+            for _ in range(60):
+                screen = v["screen"]
+                screens.add(screen)
                 run = v["run"]
-                if run["status"] in ("lost", "cleared"):
+                if screen in ("won", "lost"):
                     break
-                self.assertEqual(run["status"], "reward")
-                self.assertEqual(len(run["offer"]), 3)
-                hp_end = run["history"][-1]["hp_end"]
-                self.assertEqual(run["hp"], min(55, hp_end + run["heal"]))
-                pick = run["offer"][0]
-                before = run["deck"].get(pick, 0)
-                v = json.loads(play.next_fight(pick))
-                self.assertEqual(v["hp"], run["hp"])                       # HP carried over
-                self.assertEqual(v["run"]["deck"].get(pick, 0), before + 1)
-            self.assertEqual(len(v["run"]["history"]), v["run"]["index"] + 1)
+                if run["inventory"] and run["inventory"][0]["fits"]:
+                    v = json.loads(play.attach(0, run["inventory"][0]["fits"][0]))
+                    continue
+                if screen == "doors":
+                    v = json.loads(play.choose_door(rng.randrange(len(run["doors"]))))
+                elif screen == "fight":
+                    hp = run["hp"]
+                    self.assertEqual(v["fight"]["hp"], hp)              # HP carried into the fight
+                    v = self.play_fight(v, rng)
+                elif screen == "reward":
+                    atts = run["offer"].get("attachments", [])
+                    v = json.loads(play.take_reward(run["offer"]["parts"][0], atts[0] if atts else "", False))
+                elif screen == "rest":
+                    v = json.loads(play.rest("tinker", run["offer"]["attachments"][0]))
+                elif screen == "workshop":
+                    if run["cogs"] >= 30 and not run["offer"]["parts"][0]["sold"] and run["offer"]["parts"][0]["price"] <= run["cogs"]:
+                        v = json.loads(play.buy("part", 0))
+                    v = json.loads(play.leave_workshop())
+            self.assertIn(v["screen"], ("won", "lost"))
+        self.assertTrue({"doors", "fight", "reward"} <= screens)
 
-    def test_run_without_rewards(self):
-        v = json.loads(play.start_run("starter", 0, False))
-        v = self.play_fight(v, random.Random(0))
-        if v["run"]["status"] == "next":
-            v = json.loads(play.next_fight(""))
-            self.assertEqual(v["setup"]["fight"], 2)
+    def test_single_fight_mode(self):
+        v = json.loads(play.start("starter", "dummy", 2))
+        self.assertEqual((v["mode"], v["screen"], v["run"]), ("fight", "fight", None))

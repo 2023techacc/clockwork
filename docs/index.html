@@ -21,19 +21,18 @@
   <section id="setup" class="panel" hidden>
     <h2>New game</h2>
     <div class="row mode">
-      <label class="inline"><input type="radio" name="mode" value="run" checked> Run (5 fights, HP carries over)</label>
+      <label class="inline"><input type="radio" name="mode" value="run" checked> Run (one district, HP carries over)</label>
       <label class="inline"><input type="radio" name="mode" value="fight"> Single fight</label>
     </div>
     <div class="row">
       <label>Deck <select id="deck"></select></label>
       <label id="enemy-label">Enemy <select id="enemy"></select></label>
-      <label id="rewards-label" class="inline"><input id="rewards" type="checkbox" checked> Part rewards after fights</label>
       <label>Seed <input id="seed" type="number" min="0" step="1"></label>
       <button id="random-seed" type="button" class="secondary">Random seed</button>
       <button id="start" type="button">Start</button>
     </div>
     <p id="deck-list" class="muted"></p>
-    <p id="route" class="muted"></p>
+    <p id="mode-text" class="muted"></p>
     <details>
       <summary>How to play</summary>
       <ol class="howto">
@@ -42,11 +41,43 @@
         <li><b>Crank</b> more steps in the same direction for 1 Crank Power each (<span data-rule="crank_power"></span> per turn).</li>
         <li>Every trigger adds 1 Heat (some parts add more). At <span data-rule="overheat_at"></span> Heat the machine <b>overheats</b>: the turn stops, Heat resets to 0, and next turn nothing can crank. Heat past the limit is forgiven.</li>
         <li>Block resets every turn. The enemy acts at the end of your turn — its intent is shown. Win by bringing its HP to 0.</li>
+        <li><b>Runs:</b> choose a door at each stop (fight, elite, Workshop, rest), then face the Clock Tower. Enemies drop cogs. Attachments go to your inventory; attach them to a part between fights (permanent, up to <span data-rule="max_attachments"></span> per part).</li>
       </ol>
     </details>
   </section>
 
   <div id="run-banner" class="panel banner" hidden></div>
+
+  <section id="map" class="panel" hidden>
+    <h2 id="map-title"></h2>
+    <div id="doors" class="cards doors"></div>
+  </section>
+
+  <section id="rest" class="panel" hidden>
+    <h2>Rest site</h2>
+    <p class="muted">Heal, or tinker: take one common attachment into your inventory.</p>
+    <div class="row"><button id="rest-heal" type="button"></button></div>
+    <h3>Tinker</h3>
+    <div id="rest-attachments" class="cards"></div>
+  </section>
+
+  <section id="shop" class="panel" hidden>
+    <h2>Workshop <span id="shop-cogs" class="muted"></span></h2>
+    <h3>Parts</h3>
+    <div id="shop-parts" class="cards"></div>
+    <h3>Attachments</h3>
+    <div id="shop-attachments" class="cards"></div>
+    <div id="shop-machine-wrap" hidden>
+      <h3>Machine upgrade</h3>
+      <div id="shop-machine" class="cards"></div>
+    </div>
+    <h3>Services</h3>
+    <div class="row">
+      <button id="shop-repair" type="button" class="secondary"></button>
+      <span class="muted" id="remove-hint"></span>
+    </div>
+    <div class="row"><button id="shop-leave" type="button">Leave the Workshop</button></div>
+  </section>
 
   <main id="game" hidden>
     <section class="panel board">
@@ -97,11 +128,17 @@
     <h2 id="result-title"></h2>
     <p id="result-text"></p>
     <div id="reward" hidden>
+      <div id="reward-att-wrap" hidden>
+        <h3>Elite loot: choose an attachment</h3>
+        <div id="reward-attachments" class="cards"></div>
+      </div>
       <h3>Add a part to your deck</h3>
       <div id="reward-cards" class="cards"></div>
-      <div class="row"><button id="skip-reward" type="button" class="secondary">Skip</button></div>
+      <div class="row">
+        <button id="scrap-reward" type="button" class="secondary"></button>
+        <button id="skip-reward" type="button" class="secondary">Skip</button>
+      </div>
     </div>
-    <div id="continue-row" class="row" hidden><button id="continue" type="button">Next fight</button></div>
     <div id="run-history" class="muted"></div>
     <label class="block">Notes for the designer (what felt good, confusing, broken?)
       <textarea id="notes" rows="4"></textarea>
@@ -115,9 +152,17 @@
     <p id="copied" class="muted" hidden>Copied.</p>
   </section>
 
+  <section id="deck-panel" class="panel" hidden>
+    <h2>Your deck <span id="deck-count" class="muted"></span></h2>
+    <p id="attach-hint" class="muted"></p>
+    <div id="deck-cards" class="cards small"></div>
+    <h3>Inventory (attachments)</h3>
+    <div id="inventory" class="cards small"></div>
+  </section>
+
   <section class="panel reference">
     <details>
-      <summary>Part reference</summary>
+      <summary>Part and attachment reference</summary>
       <dl id="parts"></dl>
     </details>
   </section>

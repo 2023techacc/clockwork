@@ -474,3 +474,41 @@ At the boss setting, players block about 46% of strike damage.
 - **Casual players arrive at the boss with more HP than the 35 tuned for** (34–49), since 10 healed per win offsets most of the 12–15 lost. If the boss should be harder in practice, lower the heal or raise normal-fight damage slightly.
 - **The utility deck trivializes the boss:** greedy clears 97%. Its Magnet Block engine blocks most strikes. Worth watching if Magnet decks become common in real runs.
 - **Normal fights almost never kill now** (casual reaches the boss 98–100% of the time). That suits a first district, but later districts or elites will need real risk.
+
+---
+
+## Results v10 (run prototype: door map, cogs, Workshop, rest, attachments, elites)
+
+**What's in** (Run-Design.md, "Decisions"; `clockwork/run_mode.py`, shared by the simulator and the playtest page):
+- 9 stops of door choices, then the Clock Tower.
+- Cogs looted per enemy: normal 12–16, elite 30–36, boss 60, each ±10%. Part rewards can be scrapped for 10 cogs.
+- Rest sites: heal 15, or take 1 of 2 common attachments.
+- Workshop: 3 parts, 2 attachments, sometimes a machine upgrade; remove, repair, and sell unattached attachments.
+- Attachments have a rarity: common, uncommon or rare, with new generic ones (Sharpened, Counterweight, Bracing, Heat Sink, Governor, Echo). Up to 2 per part, permanent once attached.
+- Elites (machine attackers), tuned so a casual player loses about 25 HP per win:
+
+| Elite | HP | Attack | Twist |
+|---|---|---|---|
+| Overclocker | 80 | 7/5 | +3 Heat to your machine every other turn |
+| Rust Golem | 86 | 7 | Rusts the top part (−2 damage/Block for the fight) every other turn |
+| Pickpocket | 84 | 7 | Unscrews a part every turn |
+| Jammer Prime | 74 | 7 | Jams 2 parts every other turn |
+
+**Difficulty.** With rewards, attachments, rest sites and repairs on top of enemies tuned for fixed decks, runs were far too easy: greedy cleared 90%, MCTS@50 100%. Removing the after-win heal entirely still left the casual player at 92%. Two changes:
+- the after-win heal goes from 10 to 5 ("heal a bit");
+- **enemies grow through the district:** HP and attacks are multiplied by 1 + 0.11 × stop/9, so the boss is 11% stronger than base. Tuned so MCTS@50 clears about 65%.
+
+**Whole runs** (`clockwork.run_policy`: fights played by the agent; doors, rewards, rest and Workshop choices made by simple rules; starter deck):
+
+| Player | Runs cleared | Reached the boss (HP) | Elites fought | Attachments | Cogs left at the end |
+|---|---|---|---|---|---|
+| greedy (60 runs) | 47% | 78% (37) | 0.6 | 0.9 | 60 |
+| MCTS@50 (60 runs) | 67% | 95% (37) | 1.3 | 1.3 | 86 |
+| MCTS@200 (20 runs) | 80% | 95% (36) | 1.4 | 1.6 | 90 |
+
+**Reading:**
+- **The boss is the main wall:** 17 of the 20 casual deaths and 19 of 31 careless deaths are to the Clock Tower. Normal fights and elites drain HP but rarely kill.
+- **The skill curve is flatter than in single fights** (47% → 67% → 80%). Part of that is the simple rule-based route and shop choices, which every agent shares. A smarter run policy would widen the gap.
+- **Money isn't a constraint:** runs end with 60–90 cogs unspent and no machine upgrades bought (110–130 cogs, and the rules buy attachments first). Either raise prices or the value of what's for sale, or add more ways to spend.
+- **Attachments are rarer than intended** (about 1.3 per run against a 2–4 target), because the rules skip elites below 70% HP. More attachment sources, or cheaper rest-site tinkering, would raise it.
+- **Caveat:** every route, reward and Workshop decision here comes from fixed rules, so these numbers describe the content balance under one reasonable play style, not the best possible play.

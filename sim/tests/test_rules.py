@@ -504,6 +504,81 @@ class ClockTowerChime(unittest.TestCase):
         self.assertEqual(s.stats.chimes, 1)
 
 
+class NewAttachmentsAndElites(unittest.TestCase):
+    def one(self, kind, mods, arrival_rest=(), **kw):
+        s, slot = setup([None, None] + list(arrival_rest), **kw)
+        s.gear[slot[1]] = Part(77, kind, mods)
+        return s, slot
+
+    def test_sharpened_and_counterweight(self):
+        s, _ = self.one(S, Mod.SHARPENED)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 8)
+        s, _ = self.one(P, (Mod.SHARPENED, Mod.COUNTERWEIGHT))
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block), (2, 8))
+
+    def test_heat_sink_and_governor(self):
+        s, _ = self.one(H, Mod.HEAT_SINK, rules=RULES_MD)
+        free_crank(s)
+        self.assertEqual(s.heat, 2)                      # Hammer 3 Heat - 1
+        s, _ = self.one(H, Mod.GOVERNOR, rules=RULES_MD)
+        free_crank(s)
+        self.assertEqual(s.heat, 0)
+
+    def test_echo_once_per_turn(self):
+        s, _ = self.one(S, Mod.ECHO)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.heat), (12, 2))
+        s.crank_power = 2
+        apply(s, ("crank",))                             # onto the empty slot
+        s.top = (s.top + 1) % 6                          # put the Echo Striker back on top by hand
+        s.stack = None
+        engine._resolve(s, [("trigger", s.top, engine.CW, False, None, 0)])
+        self.assertEqual(999 - s.enemy_hp, 18)           # no second echo this turn
+
+    def test_two_attachments_stack(self):
+        s, _ = self.one(S, (Mod.SHARPENED, Mod.ECHO))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 16)
+
+    def test_bracing_ignores_jam_unscrew_rust(self):
+        s, slot = self.one(S, Mod.BRACING)
+        s.jams[slot[1]] = 2
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 6)            # jammed slot, but Bracing
+        s.intent = (("unscrew", slot[1]), ("rust", 2))
+        apply(s, ("end_turn",))
+        self.assertIsNotNone(s.gear[slot[1]])
+        self.assertEqual(s.rust, {})
+
+    def test_rust_weakens_top_part_for_the_fight(self):
+        s, slot = self.one(S, ())
+        free_crank(s)                                    # Striker now at the top
+        s.intent = (("rust", 2),)
+        apply(s, ("end_turn",))
+        self.assertEqual(s.rust, {77: 2})
+        s.top = slot[0]
+        s.enemy_hp = 999
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4)
+
+    def test_overclock_adds_heat_and_can_overheat(self):
+        s, _ = setup([None])
+        free_crank(s)
+        s.heat, s.intent = 8, (("overclock", 3),)
+        apply(s, ("end_turn",))
+        self.assertTrue(s.dead_turn)
+        self.assertEqual(s.heat, 0)
+
+    def test_deck_with_two_attachments(self):
+        s = new_fight({(S, (Mod.SHARPENED, Mod.ECHO)): 1, P: 1}, "dummy", seed=0)
+        parts = s.hand + s.queue
+        self.assertIn((Mod.ECHO, Mod.SHARPENED), [p.mods for p in parts])
+        with self.assertRaises(ValueError):
+            new_fight({(S, (Mod.SHARPENED, Mod.SHARPENED)): 1})
+
+
 class EnemiesAndCaps(unittest.TestCase):
     def test_jam_lasts_two_turns(self):
         s, slot = setup([None, S, None, None, None, None])

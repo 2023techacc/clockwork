@@ -6,7 +6,8 @@
     "clockwork/enemies.py",
     "clockwork/engine.py",
     "clockwork/parts.py",
-    "clockwork/rng.py"
+    "clockwork/rng.py",
+    "clockwork/run_mode.py"
   ],
-  "version": "e5ce583be55e"
+  "version": "6f45ddb07524"
 }

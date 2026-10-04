@@ -9,7 +9,7 @@ from .engine import State, apply, legal_actions
 
 
 def gear_key(s: State) -> tuple:
-    return tuple((p.kind, p.mod) if p is not None else None for p in s.gear)
+    return tuple((p.kind, p.mods) if p is not None else None for p in s.gear)
 
 
 def install_plans(s: State) -> List[Tuple[list, State]]:
