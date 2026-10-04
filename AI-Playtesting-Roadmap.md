@@ -512,3 +512,82 @@ At the boss setting, players block about 46% of strike damage.
 - **Money isn't a constraint:** runs end with 60–90 cogs unspent and no machine upgrades bought (110–130 cogs, and the rules buy attachments first). Either raise prices or the value of what's for sale, or add more ways to spend.
 - **Attachments are rarer than intended** (about 1.3 per run against a 2–4 target), because the rules skip elites below 70% HP. More attachment sources, or cheaper rest-site tinkering, would raise it.
 - **Caveat:** every route, reward and Workshop decision here comes from fixed rules, so these numbers describe the content balance under one reasonable play style, not the best possible play.
+
+## Results v11 (studies: attachments, machine upgrades, run styles, combo ceilings)
+
+`python -m clockwork.studies attachments|machine|styles|combos` (casual player, MCTS@50). Single fights start at full HP against all 9 enemies (40 fights each, paired seeds) and almost always end in a win, so the measure is **HP kept per fight**. Run studies play 150 whole runs per variant on the same seeds; "+a/−b" counts runs the variant won that the base policy lost, and the reverse.
+
+**What one attachment is worth** (HP kept per fight against the same deck without it; starter baseline 34.6):
+
+| Attachment | Best host | HP kept | Weak or useless on |
+|---|---|---|---|
+| Sharpened | Plate | +3.6 (Striker +2.3) | Spring +0.3 |
+| Counterweight | Plate | +4.1 | Striker +0.7 |
+| Bracing | Striker | +0.3 | (only matters against a few enemies) |
+| Heat Sink | Striker | +2.9 | Spring −0.1 |
+| Coil | Spring | +0.7 | |
+| Polish | Mirror | +2.3 | |
+| Clamp | Magnet | +2.0 | |
+| Feeder | Loader | +0.4 | |
+| Governor | Hammer | +5.5 (Striker +2.9) | Spring −0.4 |
+| Echo | Plate | +3.5 (Striker +3.2) | Spring +0.1, Hammer +1.7 |
+| Sharpened + Echo | Striker | +6.6 | |
+| Echo + Governor | Hammer | +12.6 | |
+
+- **A single attachment is worth about 2–4 HP per fight.** Two on the same part stack better than either alone.
+- **Dead attachments:** Bracing, Feeder, Coil, and anything on a Spring.
+- Rare attachments (Governor, Echo) are not clearly better than common ones (Sharpened, Counterweight) unless paired.
+
+**Machine upgrades:**
+
+| Upgrade | Single fights (HP kept) | Runs started with it: cleared (base 69%) | Paired |
+|---|---|---|---|
+| Extra Hands | +0.6 | **84%** | +35/−12 |
+| Heat Housing | +1.9 | **79%** | +28/−13 |
+| Flywheel | +2.5 | 73% | +26/−20 |
+| Bigger Gear | −0.7 | 67% | +20/−23 |
+
+- Extra Hands and Heat Housing are strong in runs, mostly against the boss.
+- **Bigger Gear is worthless:** 8 slots spread the same parts thinner.
+- **Nobody can buy them:** even a policy that saves for machine upgrades bought 0.01 per run. Cogs arrive too slowly for 110–130 prices, and only half of Workshops stock one.
+
+**Run styles** (base policy 69% cleared):
+
+| Style | Cleared | Paired | Note |
+|---|---|---|---|
+| Avoid elites | **83%** | +31/−10 | 1.2 attachments instead of 2.1 |
+| Seek elites (unless HP < 40%) | 43% | +9/−47 | |
+| Rest: always heal | 69% | +3/−2 | |
+| Rest: always tinker | 45% | +8/−43 | Reaches the boss with 24 HP instead of 36 |
+| Never take parts (scrap) | 36% | +15/−64 | Part rewards matter a lot |
+| Take the best part, always | 67% | +3/−5 | |
+| Remove Strikers/Plates in Workshop | 69% | +1/−1 | Rarely affordable |
+| Save for machine upgrades | 63% | +8/−16 | Never reaches the price |
+
+**Where runs lose HP** (base policy):
+
+| Node | Mean HP lost per fight | Deaths | Cogs |
+|---|---|---|---|
+| Normal fights | 12–14 | 9 in 659 fights | 12–16 |
+| Elites | 26–27 | 2 in 175 fights | 30–36 (+ attachment) |
+| Clock Tower | 25 | 36 in 139 fights | 60 |
+
+**Combo ceilings** (loop finder, start Heat 0, every layout and crank plan; boss HP 98–109):
+
+| Deck | Best single turn |
+|---|---|
+| big_hit / copy_loop / spring_chain (no attachments) | 28 / 24 / 21 |
+| Echo+Sharpened Strikers | 38 |
+| Echo Coupler + Hammers | 48 |
+| Echo+Governor Hammer, Coupler, Mirror | 51 (ends at 9 Heat) |
+| Coil, Polish, Heat Sink, Governor Spring combos | 24–35 |
+
+- No degenerate combo: the 10-Heat cap bounds every chain, and the best turn is about half the boss's HP.
+- **A plain Spring never adds a damaging trigger on a 6-slot gear:** its free crank replaces a crank you would have made. It only adds damage with Coil or Echo, which is why Spring measured slightly negative.
+
+**Reading:**
+- **Elites are a bad deal.** An elite costs about 13 HP more than a normal fight; its extra cogs and one attachment (worth 2–4 HP per later fight) don't pay that back. Rational players will skip them. Fix by making elites cheaper in HP (about −20% HP or attack) or richer: a choice of attachment *and* a part reward, more cogs, or a machine upgrade chance.
+- **Resting to tinker is a trap:** 15 HP for a common attachment loses runs. Tinker should give more (an uncommon, or two commons), or cost less.
+- **Machine upgrades are the strongest thing in the Workshop and can't be bought.** Suggested: prices 70–90 (Extra Hands highest), always stock one, and rework Bigger Gear (e.g. 7 slots plus +1 install, or "the gear's empty slots don't count for Spring cranks").
+- **Weak attachments to buff or rework:** Bracing, Feeder, Coil, Spring-host attachments.
+- **The boss remains the wall:** a quarter of the runs that reach it die there.
