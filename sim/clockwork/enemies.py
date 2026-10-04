@@ -52,19 +52,19 @@ ENEMIES = {
     # Boss. v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
     "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12, cogs=60),
-    # Elites (machine attackers). Target: a casual player wins ~85% and loses ~25 HP.
+    # Elites (machine attackers), tuned so a casual player (MCTS@50) loses ~25 HP per win.
     "overclocker": EnemySpec("overclocker", 80, (
         (("attack", 7),),
         (("overclock", 3), ("attack", 5)),
     ), cogs=32, elite=True),
-    "rust_golem": EnemySpec("rust_golem", 75, (
+    "rust_golem": EnemySpec("rust_golem", 86, (
         (("rust", 2), ("attack", 7)),
         (("attack", 7),),
     ), cogs=34, elite=True),
-    "pickpocket": EnemySpec("pickpocket", 60, ((("unscrew",), ("attack", 5)),), cogs=30, elite=True),
-    "jammer_prime": EnemySpec("jammer_prime", 70, (
-        (("jam", 2), ("jam", 2), ("attack", 6)),
-        (("attack", 6),),
+    "pickpocket": EnemySpec("pickpocket", 84, ((("unscrew",), ("attack", 7)),), cogs=30, elite=True),
+    "jammer_prime": EnemySpec("jammer_prime", 74, (
+        (("jam", 2), ("jam", 2), ("attack", 7)),
+        (("attack", 7),),
     ), cogs=36, elite=True),
 }
 NORMAL = ["dummy", "spiker", "enrager", "saboteur"]
