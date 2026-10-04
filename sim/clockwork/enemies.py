@@ -53,9 +53,9 @@ ENEMIES = {
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
     "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12, cogs=60),
     # Elites (machine attackers). Target: a casual player wins ~85% and loses ~25 HP.
-    "overclocker": EnemySpec("overclocker", 70, (
-        (("attack", 6),),
-        (("overclock", 3), ("attack", 4)),
+    "overclocker": EnemySpec("overclocker", 80, (
+        (("attack", 7),),
+        (("overclock", 3), ("attack", 5)),
     ), cogs=32, elite=True),
     "rust_golem": EnemySpec("rust_golem", 75, (
         (("rust", 2), ("attack", 7)),
