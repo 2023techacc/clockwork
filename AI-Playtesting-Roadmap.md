@@ -752,3 +752,41 @@ At the boss setting, players block about 46% of strike damage.
 - **Rest:** always healing beats always tinkering by 16 points (target ≤ 5). Healing got stronger as fights hit harder. Options: tinker gives an uncommon, or rest heals less (e.g. 12).
 - **Strongest single turn** 60 vs ≤ 55: the Coupler's new 2 damage repeats under Echo. Options: Echo can't go on a Coupler, or accept it (it needs a rare attachment).
 - Attachment and machine-upgrade values predate this pass and should be re-measured.
+
+## Results v16 (rest heal; attachments and machine upgrades re-measured)
+
+**Rest heal.** After the v15 pass, always healing beat always tinkering by 16 points. The rest heal goes down, and the after-win heal up to keep overall difficulty (300 runs per style from here on, since 150 runs swing ±5 points):
+
+| Rest heal | After-win heal | Base | Always heal | Always tinker | Gap |
+|---|---|---|---|---|---|
+| 15 | 5 | 68% | 73% | 57% | 16 (v15) |
+| 10 | 5 | 55% | 57% | 60% | −3 (150 runs) |
+| 10 | 6 | 60% | 62% | 53% | 9 |
+| **8** | **7** | **64%** | **66%** | **63%** | **3** |
+
+Chosen: rest heals 8, every win heals 7.
+
+**Attachments** (HP kept per fight from full HP, all 13 enemies, 40 fights each; target +2.5 to +4 for commons/uncommons, +4 to +6 for rares):
+
+| Attachment | v11/v12 | v16 | | Attachment | v11/v12 | v16 |
+|---|---|---|---|---|---|---|
+| Coil (Spring) | +3.2 | **+5.4** | | Clamp (Magnet) | +2.0 | +2.8 |
+| Heat Sink (Striker) | +2.9 | +3.6 | | Feeder (Loader) | +2.5 | +2.8 |
+| Bracing (Striker) | +4.1 | +3.5 | | Polish (Mirror) | +2.3 | **+2.3** |
+| Counterweight (Plate) | +4.1 | +3.3 | | Governor (Hammer) | +5.5 | **+6.5** |
+| Sharpened (Plate) | +3.6 | +3.0 | | Echo (Striker) | +3.2 | **+3.0** |
+
+Pairs: Sharpened+Echo on a Striker +6.5; Echo+Governor on a Hammer +12.9.
+
+- Coil climbed above the band, since its Spring now also gives Block. Governor is slightly high on a Hammer. Echo (rare) is below the rare band. Polish is slightly low.
+
+**Machine upgrades** (runs started with each, 150 runs, base 65%):
+
+| Upgrade | Price | v12 | v16 |
+|---|---|---|---|
+| Bigger Gear | 75 | +8 | **+18** |
+| Flywheel | 70 | +7 | **+16** |
+| Extra Hands | 90 | +16 | +14 |
+| Heat Housing | 85 | +15 | +11 |
+
+- **Crank Power became much more valuable** (Flywheel, Bigger Gear) now that the Coupler and Hammer cost less Heat, so more cranks can be used. The two cheapest upgrades are now the strongest, so price no longer matches value: reprice (e.g. Bigger Gear 90, Flywheel 85, Extra Hands 80, Heat Housing 70) or trim Crank Power.
