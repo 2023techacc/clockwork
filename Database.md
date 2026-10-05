@@ -8,25 +8,33 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 
 | Area | Metric | Target | Latest | Status | Source |
 |---|---|---|---|---|---|
-| Runs | Casual player clears a run | 65–70% | 64–65% | ⚠️ partly off | v16 |
-| Runs | Careless player clears a run | 40–50% | 43% | ✅ on target | v15 |
-| Runs | Expert player clears a run | 85–90% (clearly above casual) | 87% | ✅ on target | v15 |
-| Runs | HP when reaching the boss (casual) | about 35 | 37 | ✅ on target | v15 |
+| Runs | Casual player clears a run | 65–70% | 77% | ❌ off target | v17 (smarter run policy) |
+| Runs | Careless player clears a run | 40–50% | 44% | ✅ on target | v17 |
+| Runs | Expert player clears a run | 85–90% (clearly above casual) | 90% | ✅ on target | v17 |
+| Runs | HP when reaching the boss (casual) | about 35 | 36 | ✅ on target | v17 |
 | Fights | HP a normal fight costs (casual) | about 15 | 12–14 | ✅ on target | v15 |
 | Fights | HP an elite costs (casual) | about 25 (high risk) | 19–23 | ⚠️ partly off | v15 |
-| Fights | Boss beaten when reached (casual) | about 75%, every boss within ±5 of the others | 69–74% | ✅ on target | v15 |
+| Fights | Boss beaten when reached (casual) | about 75%, every boss within ±5 of the others | Clock Tower 66%, others 84–86% | ❌ off target | v17 |
 | Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 68% vs 57% | ✅ on target | v15 |
+| Choices | Hunting elites at low HP (risk) | should cost runs (high risk) | elites from 50% HP beat 60% and 70% (76% vs 70% vs 58%) | ❌ off target | v17 policy search |
 | Choices | Rest: always heal vs always tinker | within 5 points of each other | 66% vs 63% | ✅ on target | v16 (300 runs each) |
 | Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | best: seek elites, always heal (+5) | ✅ on target | v15 |
 | Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone | Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4, Hammer +3.8 | ✅ on target | v15 |
 | Content | One combo-enabler pick (same measure) | −5 to +3 | Mirror −1.7, Loader −2.8, Spring −3.5 | ✅ on target | v15 |
-| Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Coil +5.4, Heat Sink +3.6, Bracing +3.5, Counterweight +3.3, Sharpened +3.0, Clamp +2.8, Feeder +2.8, Polish +2.3 | ⚠️ partly off | v16 |
-| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +6.5, Echo +3.0 | ❌ off target | v16 |
+| Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Heat Sink +3.6, Coil +3.5, Bracing +3.5, Polish +3.4, Counterweight +3.3, Sharpened +3.0, Echo +3.0, Clamp +2.8, Feeder +2.8 | ✅ on target | v16/v17 (Coil 6, Polish +40%, Echo now uncommon) |
+| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +6.5 | ❌ off target | v16 |
 | Content | One machine upgrade (run clear points, started with it) | +7 to +16, rising with price (Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90) | Bigger Gear +18, Flywheel +16, Extra Hands +14, Heat Housing +11 | ⚠️ partly off | v16 |
 | Content | Strongest single turn (any combo) | about half the boss's HP (≤ 55; a few over is accepted) | 60 | ✅ on target | v15 (Echo Coupler + Hammers) |
-| Economy | Attachments per run | 2–4 | 2.3 | ✅ on target | v15 |
-| Economy | Machine upgrades per run | about 1 | 0.93 | ✅ on target | v15 |
-| Economy | Cogs unspent when reaching the boss | under 40 | 35 | ✅ on target | v15 |
+| Economy | Attachments per run | 2–4 | 3.9 | ✅ on target | v17 |
+| Economy | Machine upgrades per run | about 1 | 2.0 | ❌ off target | v17 |
+| Economy | Cogs unspent when reaching the boss | under 40 | 63 | ❌ off target | v17 |
+| Fun (simulator) | Fight length (turns): normal / boss | 4–8 / 6–12 | 6.3 / 7.6 | ✅ on target | v17 |
+| Fun (simulator) | Close wins (≤ 25% HP left): normal fights | 5–15% (rarely a scare) | 3% | ❌ off target | v17 |
+| Fun (simulator) | Close wins: elites / bosses | 15–30% / 30–50% | 20% / 45% | ✅ on target | v17 |
+| Fun (simulator) | Combo turns (4+ triggers) | 10–30% of turns | 18% | ✅ on target | v17 |
+| Fun (simulator) | Choice weight: best plan minus the median plan | 6 or more (choosing well matters) | 7.3 | ✅ on target | v17 |
+| Fun (simulator) | Turns with only one good option | under 25% (rarely forced) | 16% | ✅ on target | v17 |
+| Fun (simulator) | Build variety (entropy of the most-copied added part, 0–1) | 0.75 or more | 0.64 | ❌ off target | v17 (Magnet in 88 of 150 runs) |
 | Fun (playtests) | “How fun was it?” (1–5) | 4.0 or more | no playtests yet |  | 0 reports in playtests/ |
 | Fun (playtests) | “How tense were the fights?” (1–5) | 3.5–4.5 (tense, not stressful) | no playtests yet |  | 0 reports in playtests/ |
 | Fun (playtests) | “Did your choices matter?” (1–5) | 4.0 or more | no playtests yet |  | 0 reports in playtests/ |

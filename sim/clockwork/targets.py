@@ -9,18 +9,20 @@ the roadmap results named in `source`. Update it whenever a study re-measures th
 # latest value (number or text), source
 TARGETS = [
     # Whole runs (starter deck, random boss)
-    ("Runs", "Casual player clears a run", "65–70%", (65, 70), "64–65%", "v16"),
-    ("Runs", "Careless player clears a run", "40–50%", (40, 50), "43%", "v15"),
-    ("Runs", "Expert player clears a run", "85–90% (clearly above casual)", (85, 90), "87%", "v15"),
-    ("Runs", "HP when reaching the boss (casual)", "about 35", (32, 40), 37, "v15"),
+    ("Runs", "Casual player clears a run", "65–70%", (65, 70), "77%", "v17 (smarter run policy)"),
+    ("Runs", "Careless player clears a run", "40–50%", (40, 50), "44%", "v17"),
+    ("Runs", "Expert player clears a run", "85–90% (clearly above casual)", (85, 90), "90%", "v17"),
+    ("Runs", "HP when reaching the boss (casual)", "about 35", (32, 40), 36, "v17"),
     # Fights in a run
     ("Fights", "HP a normal fight costs (casual)", "about 15", (12, 17), "12–14", "v15"),
     ("Fights", "HP an elite costs (casual)", "about 25 (high risk)", (20, 28), "19–23", "v15"),
     ("Fights", "Boss beaten when reached (casual)", "about 75%, every boss within ±5 of the others",
-     (69, 80), "69–74%", "v15"),
+     (69, 80), "Clock Tower 66%, others 84–86%", "v17"),
     # Choices
     ("Choices", "Fighting elites when healthy vs avoiding them", "elites at least as good (high return)",
      "on target", "68% vs 57%", "v15"),
+    ("Choices", "Hunting elites at low HP (risk)", "should cost runs (high risk)", "off target",
+     "elites from 50% HP beat 60% and 70% (76% vs 70% vs 58%)", "v17 policy search"),
     ("Choices", "Rest: always heal vs always tinker", "within 5 points of each other", "on target",
      "66% vs 63%", "v16 (300 runs each)"),
     ("Choices", "Run styles (route, rest, Workshop)", "no style more than 5 points above the base",
@@ -33,9 +35,9 @@ TARGETS = [
     ("Content", "One combo-enabler pick (same measure)", "−5 to +3", (-5, 3),
      "Mirror −1.7, Loader −2.8, Spring −3.5", "v15"),
     ("Content", "One common/uncommon attachment (HP kept per fight)", "+2.5 to +4", (2.5, 4),
-     "Coil +5.4, Heat Sink +3.6, Bracing +3.5, Counterweight +3.3, Sharpened +3.0, Clamp +2.8, Feeder +2.8, "
-     "Polish +2.3", "v16"),
-    ("Content", "One rare attachment (HP kept per fight)", "+4 to +6", (4, 6), "Governor +6.5, Echo +3.0",
+     "Heat Sink +3.6, Coil +3.5, Bracing +3.5, Polish +3.4, Counterweight +3.3, Sharpened +3.0, Echo +3.0, "
+     "Clamp +2.8, Feeder +2.8", "v16/v17 (Coil 6, Polish +40%, Echo now uncommon)"),
+    ("Content", "One rare attachment (HP kept per fight)", "+4 to +6", (4, 6), "Governor +6.5",
      "v16"),
     ("Content", "One machine upgrade (run clear points, started with it)",
      "+7 to +16, rising with price (Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90)", (7, 16),
@@ -43,9 +45,20 @@ TARGETS = [
     ("Content", "Strongest single turn (any combo)", "about half the boss's HP (≤ 55; a few over is accepted)",
      (0, 60), 60, "v15 (Echo Coupler + Hammers)"),
     # Economy
-    ("Economy", "Attachments per run", "2–4", (2, 4), 2.3, "v15"),
-    ("Economy", "Machine upgrades per run", "about 1", (0.7, 1.5), 0.93, "v15"),
-    ("Economy", "Cogs unspent when reaching the boss", "under 40", (0, 40), 35, "v15"),
+    ("Economy", "Attachments per run", "2–4", (2, 4), 3.9, "v17"),
+    ("Economy", "Machine upgrades per run", "about 1", (0.7, 1.5), 2.0, "v17"),
+    ("Economy", "Cogs unspent when reaching the boss", "under 40", (0, 40), 63, "v17"),
+    # Fun proxies the simulator can measure (studies fun; casual player, 150 runs). Human ratings: playtests/.
+    ("Fun (simulator)", "Fight length (turns): normal / boss", "4–8 / 6–12", (4, 12), "6.3 / 7.6", "v17"),
+    ("Fun (simulator)", "Close wins (≤ 25% HP left): normal fights", "5–15% (rarely a scare)", (5, 15), "3%",
+     "v17"),
+    ("Fun (simulator)", "Close wins: elites / bosses", "15–30% / 30–50%", (15, 50), "20% / 45%", "v17"),
+    ("Fun (simulator)", "Combo turns (4+ triggers)", "10–30% of turns", (10, 30), "18%", "v17"),
+    ("Fun (simulator)", "Choice weight: best plan minus the median plan", "6 or more (choosing well matters)",
+     (6, 99), 7.3, "v17"),
+    ("Fun (simulator)", "Turns with only one good option", "under 25% (rarely forced)", (0, 25), "16%", "v17"),
+    ("Fun (simulator)", "Build variety (entropy of the most-copied added part, 0–1)", "0.75 or more", (0.75, 1),
+     0.64, "v17 (Magnet in 88 of 150 runs)"),
 ]
 
 
