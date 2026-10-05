@@ -710,3 +710,45 @@ At the boss setting, players block about 46% of strike damage.
 - **Hammer and Coupler have slipped below zero** since v6. The Heat-based elites and bosses, and the HP carry-over tuning, punish their Heat.
 - Spring, Mirror and Loader stay negative alone, as before (enablers that need partners). The proposed target allows enablers to be slightly negative.
 - Proposed target: **+3 to +10 points per pick**. A part balance pass would bring Magnet down (e.g. 4–5 Block per pull) and Hammer/Coupler up (less Heat).
+
+## Results v15 (part balance pass; difficulty and bosses retuned)
+
+**Part pass** (`clockwork.part_pass`: win-rate points over the starter when one copy is added, fights from 30 HP against all 13 enemies; 60 fights per enemy for the final check). Target +3 to +10; combo enablers may be slightly negative alone. An extra Striker measures −1.2, as a reference.
+
+| Part | v14 | Change | v15 |
+|---|---|---|---|
+| Magnet | +15.6 | 3 Block + 2 per pull (was 6 per pull) | +9.5 |
+| Slider | −0.2 | 7 damage (was 5) | +8.1 |
+| Primer | +3.1 | — | +7.7 |
+| Assembly | −2.5 | 1 damage + 3 per install (was 0 + 3) | +6.7 |
+| Amplifier | +8.5 | — | +5.5 |
+| Coupler | −6.2 | deals 2 damage, no extra Heat (was +2 Heat) | +5.4 |
+| Coolant | +5.4 | — | +4.4 |
+| Hammer | −2.7 | 10 damage, +3 Heat (was 9, +4) | +3.8 |
+| Mirror (enabler) | −4.6 | — | −1.7 |
+| Loader (enabler) | −7.3 | +3 Block | −2.8 |
+| Spring (enabler) | −8.1 | +3 Block (chain Heat rule unchanged) | −3.5 |
+
+- **Magnet had a breakpoint:** two pulls at 4 Block (8 total) stop a 7-damage attack outright (+12.7); at 3 (6 total) it fell to +0.4. A flat 3 plus 2 per pull keeps 7 Block for two pulls with less swing.
+- Single measurements move by a few points between runs (Primer read +3.1, then +7.7, unchanged), so values within ~3 points of a band edge are noise-level.
+
+**Knock-on retuning.** Stronger parts (and the starter's Spring now giving Block) made runs much easier (casual 89%, careless 57%). District growth 0.20 → **0.30**. Bosses re-tuned in run conditions (`boss_tune`): first all five to 76% at growth 0.27, then HP only at 0.30 against the Clock Tower. Bases are chosen so the run's scaled values match what was tuned (attacks round twice otherwise):
+
+| Boss | Base HP | Attacks / special | Beaten on arrival (150 runs each) |
+|---|---|---|---|
+| Clock Tower | 91 | chime 11 every 4 cranks | 73% |
+| Furnace | 66 | 6/6/9, +1/+1/+3 Heat | 72% |
+| Dismantler | 85 | 6/8, unscrew 2 / rust | 69% |
+| Iron Colossus | 78 | 6, armor 3 | 74% |
+| Pendulum | 87 | 4/10, swing | 72% |
+
+**Whole runs:** careless 43%, casual 69% (random boss), expert 87%. Normal fights cost 12–14 HP, elites 19–23.
+
+**Run styles** (casual, base 68%): seek elites 73%, avoid elites 57%, always heal 73%, always tinker 57%, never take parts 57%, save for machine 60%.
+
+**Combo ceiling** rose to 60 (Echo Coupler next to Hammers; Echo+Governor Hammer with Coupler and Mirror 58), from 51.
+
+**Off target now** (Database.md, Balance targets):
+- **Rest:** always healing beats always tinkering by 16 points (target ≤ 5). Healing got stronger as fights hit harder. Options: tinker gives an uncommon, or rest heals less (e.g. 12).
+- **Strongest single turn** 60 vs ≤ 55: the Coupler's new 2 damage repeats under Echo. Options: Echo can't go on a Coupler, or accept it (it needs a rare attachment).
+- Attachment and machine-upgrade values predate this pass and should be re-measured.
