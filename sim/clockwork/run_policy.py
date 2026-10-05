@@ -30,8 +30,8 @@ PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBL
               Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
               Kind.SPRING: -3.5}
 # HP kept per fight on the best host (studies, Results v16), and the hosts in order of preference.
-MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 5.4, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
-             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 2.3}
+MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 3.5, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
+             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 3.4}
 MOD_HOSTS = {
     Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
     Mod.BRACING: [Kind.STRIKER, Kind.PLATE],

@@ -80,12 +80,12 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 | **Counterweight** | common | any part | 30 | +2 Block when it triggers. | +3.3 (Plate) |
 | **Bracing** | common | any part | 30 | +1 damage and +1 Block when it triggers. Immune to Jam, Rust and Unscrew. | +3.5 (Striker) |
 | **Heat Sink** | uncommon | any part | 55 | Its triggers cost 1 less Heat. | +3.6 (Striker) |
-| **Coil** | uncommon | Spring | 55 | The part this Spring's crank triggers also deals 8 damage. | +5.4 |
-| **Polish** | uncommon | Mirror | 55 | The copy's damage and Block +20%. | +2.3 |
+| **Coil** | uncommon | Spring | 55 | The part this Spring's crank triggers also deals 6 damage. | +3.5 |
+| **Polish** | uncommon | Mirror | 55 | The copy's damage and Block +40%. | +3.4 |
 | **Clamp** | uncommon | Magnet | 55 | The first part it pulls is triggered. | +2.8 |
 | **Feeder** | uncommon | Loader | 55 | Loads 1 more part, into the next slots to come up instead of random ones, and the loaded parts trigger right away. | +2.8 |
+| **Echo** | uncommon | any part | 55 | The first time it triggers each turn, it triggers again. | +3.0 (Striker) |
 | **Governor** | rare | any part | 90 | Its triggers add no Heat. | +6.5 (Hammer) |
-| **Echo** | rare | any part | 90 | The first time it triggers each turn, it triggers again. | +3.0 (Striker) |
 
 ## Enemies
 

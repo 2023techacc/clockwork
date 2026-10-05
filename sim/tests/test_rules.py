@@ -18,7 +18,7 @@ S, P, SP, M, A, C, L, CO, H, MG = (K.STRIKER, K.PLATE, K.SPRING, K.MIRROR, K.AMP
 # Mechanics tests pin the numbers they were written against, so balance passes that change
 # defaults don't break them. Balance values themselves are checked in BalanceDefaults below.
 MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, loader_loads=1,
-                  loader_replaces=False, magnet_block_per_pull=0, coil_damage=4, bracing_damage=0,
+                  loader_replaces=False, magnet_block_per_pull=0, coil_damage=4, echo_per_turn=1, bracing_damage=0,
                   bracing_block=0, feeder_extra_loads=0, feeder_triggers=0, part_overrides=(
     ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),

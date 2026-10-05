@@ -81,7 +81,7 @@ MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGN
 MOD_RARITY = {
     Mod.SHARPENED: "common", Mod.COUNTERWEIGHT: "common", Mod.BRACING: "common",
     Mod.HEAT_SINK: "uncommon", Mod.COIL: "uncommon", Mod.POLISH: "uncommon", Mod.CLAMP: "uncommon",
-    Mod.FEEDER: "uncommon", Mod.GOVERNOR: "rare", Mod.ECHO: "rare",
+    Mod.FEEDER: "uncommon", Mod.GOVERNOR: "rare", Mod.ECHO: "uncommon",   # Echo rare -> uncommon (v17)
 }
 SHARPENED_DAMAGE = 2
 COUNTERWEIGHT_BLOCK = 2
