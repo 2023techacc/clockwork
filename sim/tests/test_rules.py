@@ -23,7 +23,7 @@ MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, 
     ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
-    ("Coupler", "extra_heat", 0)))
+    ("Coupler", "extra_heat", 0), ("Spring", "block", 0), ("Loader", "block", 0)))
 
 
 def mech(**kw):
@@ -419,6 +419,11 @@ class BalanceDefaults(unittest.TestCase):
         s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
         free_crank(s)
         self.assertEqual((999 - s.enemy_hp, s.block), (6, 12))  # only the Striker triggers; 12 Block from 2 pulls
+
+    def test_part_pass_v15(self):
+        from clockwork.parts import SPECS
+        self.assertEqual((SPECS[K.HAMMER].damage, SPECS[K.HAMMER].extra_heat), (10, 3))
+        self.assertEqual((SPECS[K.SPRING].block, SPECS[K.LOADER].block), (3, 3))
 
     def test_default_numbers(self):
         s, _ = setup([None, S, A], rules=RulesConfig())

@@ -53,21 +53,15 @@ def rules_for(setting):
 
 # part, label, setting (RulesConfig fields; "part" entries become part_overrides)
 SWEEP = [
-    (K.MAGNET, "Block per pull 5", {"magnet_block_per_pull": 5}),
-    (K.MAGNET, "Block per pull 4", {"magnet_block_per_pull": 4}),
-    (K.HAMMER, "10 dmg, +3 Heat", {"part": [("Hammer", "damage", 10), ("Hammer", "extra_heat", 3)]}),
-    (K.HAMMER, "11 dmg, +3 Heat", {"part": [("Hammer", "damage", 11), ("Hammer", "extra_heat", 3)]}),
-    (K.HAMMER, "10 dmg, +2 Heat", {"part": [("Hammer", "damage", 10), ("Hammer", "extra_heat", 2)]}),
-    (K.COUPLER, "+1 Heat", {"part": [("Coupler", "extra_heat", 1)]}),
-    (K.COUPLER, "+0 Heat", {"part": [("Coupler", "extra_heat", 0)]}),
-    (K.SLIDER, "6 dmg", {"part": [("Slider", "damage", 6)]}),
-    (K.SLIDER, "7 dmg", {"part": [("Slider", "damage", 7)]}),
+    # Round 2 (after round 1 set Hammer 10/+3, Loader +3 Block, Spring +3 Block)
+    (K.STRIKER, "extra Striker (reference)", {}),
+    (K.MAGNET, "Block per pull 3", {"magnet_block_per_pull": 3}),
+    (K.MAGNET, "Block per pull 2", {"magnet_block_per_pull": 2}),
+    (K.COUPLER, "+0 Heat, 2 dmg", {"part": [("Coupler", "extra_heat", 0), ("Coupler", "damage", 2)]}),
+    (K.COUPLER, "+0 Heat, 3 Block", {"part": [("Coupler", "extra_heat", 0), ("Coupler", "block", 3)]}),
+    (K.SLIDER, "8 dmg", {"part": [("Slider", "damage", 8)]}),
+    (K.ASSEMBLY, "1 + 3 per install", {"part": [("Assembly", "damage", 1)]}),
     (K.ASSEMBLY, "4 per install", {"part": [("Assembly", "per_install_damage", 4)]}),
-    (K.ASSEMBLY, "2 + 3 per install", {"part": [("Assembly", "damage", 2)]}),
-    (K.LOADER, "3 loads", {"loader_loads": 3}),
-    (K.LOADER, "2 loads + 3 Block", {"part": [("Loader", "block", 3)]}),
-    (K.SPRING, "no chain Heat", {"spring_heat_step": 0}),
-    (K.SPRING, "+3 Block", {"part": [("Spring", "block", 3)]}),
 ]
 
 

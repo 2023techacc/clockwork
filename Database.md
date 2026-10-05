@@ -55,7 +55,7 @@ Tier decides how often a part shows up as a reward and its Workshop price.
 | **Coupler** | uncommon | 45 | 3 | Triggers its left neighbour, then its right one. Can't trigger a Coupler. +2 Heat. |
 | **Loader** | uncommon | 45 | 1 | Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
 | **Coolant** | common | 30 | 1 | Remove 3 Heat. |
-| **Hammer** | rare | 65 | 5 | Deal 9 damage. +4 Heat. |
+| **Hammer** | rare | 65 | 4 | Deal 10 damage. +3 Heat. |
 | **Magnet** | uncommon | 45 | 1 | Pulls the parts 2 slots away into the slots next to it (swapping if occupied). 6 Block per part pulled. |
 | **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
 | **Assembly** | uncommon | 45 | 1 | Deal 3 damage per part installed this turn. |

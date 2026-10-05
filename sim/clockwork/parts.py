@@ -61,13 +61,13 @@ class PartSpec:
 SPECS = {
     Kind.STRIKER: PartSpec(damage=6),
     Kind.PLATE: PartSpec(block=6),
-    Kind.SPRING: PartSpec(),                 # extra Heat depends on its place in the chain
+    Kind.SPRING: PartSpec(block=3),          # extra Heat depends on its place in the chain; +3 Block (v15)
     Kind.MIRROR: PartSpec(),
     Kind.AMPLIFIER: PartSpec(triggers=False),
     Kind.COUPLER: PartSpec(extra_heat=2),                  # balance pass v5 (was +0)
-    Kind.LOADER: PartSpec(),
+    Kind.LOADER: PartSpec(block=3),                        # +3 Block (v15)
     Kind.COOLANT: PartSpec(cooling=3),
-    Kind.HAMMER: PartSpec(damage=9, extra_heat=4),     # Rules.md: 15 damage, +2 Heat (swept down, v3)
+    Kind.HAMMER: PartSpec(damage=10, extra_heat=3),    # Rules.md: 15/+2; v3: 9/+4; v15: 10/+3
     Kind.MAGNET: PartSpec(),
     # Payoff parts (sim v4 proposals)
     # Primer: fresh_damage only if it triggers on the turn it was installed.
