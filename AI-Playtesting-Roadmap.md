@@ -790,3 +790,57 @@ Pairs: Sharpened+Echo on a Striker +6.5; Echo+Governor on a Hammer +12.9.
 | Heat Housing | 85 | +15 | +11 |
 
 - **Crank Power became much more valuable** (Flywheel, Bigger Gear) now that the Coupler and Hammer cost less Heat, so more cranks can be used. The two cheapest upgrades are now the strongest, so price no longer matches value: reprice (e.g. Bigger Gear 90, Flywheel 85, Extra Hands 80, Heat Housing 70) or trim Crank Power.
+
+## Results v17 (attachment fixes, smarter run policy, fun measurement)
+
+**Attachment fixes** (HP kept per fight, 40 fights per enemy):
+- **Coil:** 6 damage (was 8): +5.4 → **+3.5**. 7 damage measured +4.6.
+- **Polish:** +40% (was +20%): +2.3 → **+3.4**. +30% measured +2.2.
+- **Echo** stays one repeat per turn but becomes **uncommon** (+3.0 fits the uncommon band). Repeating twice measured +6.0 on a Striker (a good rare value), but it raised the strongest single turn from 60 to 78: two Echo Strikers next to a Coupler reach 74 even with Echo kept off Couplers.
+
+**Smarter run policy.** The policy's thresholds became settings, plus three new behaviours: synergy-aware part picks, saving for a nearly affordable machine upgrade, and a measured machine-upgrade order. Each was tested alone against the old policy (200 runs, round 1), and the winners again with 300 runs (round 2):
+
+| Change | Round 1 (base 58%) | Round 2 (base: elites from 60%, 70%) |
+|---|---|---|
+| Take elites from 60% HP (was 70%) | **68%** | — |
+| Take elites from 50% HP | — | **76%** |
+| Take elites from 80% HP | 50% | — |
+| Rest door below 60% HP (was 50%) | 66% | **75%** |
+| Workshop from 70 cogs / 40 cogs | 62% / 61% | 69% |
+| Heal below 70% / 50% | 60% / 56% | 70% |
+| Save for a machine upgrade | 60% | 66% |
+| Synergy-aware part picks | 58% | — |
+| Machine upgrade order by v16 value | 58% | — |
+
+New defaults: elites from 50% HP, rest door below 60%. The other behaviours stay available as settings but are off.
+
+**With the smarter policy** (casual 300 runs, careless 300, expert 60): careless 44%, casual **77%**, expert 90%. Runs now take 3.2 elites, find 3.9 attachments and 2.0 machine upgrades, and reach the boss with 63 unspent cogs.
+
+| Boss | Beaten when reached |
+|---|---|
+| Clock Tower | **66%** |
+| Furnace | 85% |
+| Dismantler | 85% |
+| Iron Colossus | 84% |
+| Pendulum | 86% |
+
+**Fun measurement.**
+- **Playtest ratings:** when a run or single fight ends, the page asks 6 quick 1–5 ratings (fun, tension, agency, clarity, variety, play again). They go into the copied report and the GitHub issue with the minutes played and decisions made. Reports saved in `playtests/` fill the "Fun (playtests)" rows of Database.md.
+- **Simulator proxies** (`studies fun`, casual player, 150 runs, 1030 fights):
+
+| Proxy | Result | Target |
+|---|---|---|
+| Fight length (turns), normal / elite / boss | 6.3 / 7.5 / 7.6 | 4–8 / – / 6–12 |
+| Close wins (≤ 25% HP left), normal / elite / boss | 3% / 20% / 45% | 5–15% / 15–30% / 30–50% |
+| Combo turns (4+ triggers) | 18% | 10–30% |
+| Choice weight: best plan minus the median plan | 7.3 | ≥ 6 |
+| Turns with only one good option (within 3 points) | 16% | < 25% |
+| Build variety: entropy of each run's most-copied added part | 0.64 (Magnet in 88 of 150 runs) | ≥ 0.75 |
+
+**Reading:**
+- **Elites pay too well now.** The smart player wins most by fighting them down to 50% HP. Since v12 (when elites were tuned), parts and attachments got stronger and salvage gives upgrades, so the "high risk" half has faded. Options: elites back to 100% strength, salvage at 25–35%, or more elite HP.
+- **The Clock Tower is now the hard boss** (66% vs 84–86%). Smarter runs arrive with more machine upgrades; the other bosses suffer from them, but extra Crank Power makes the Clock Tower chime more often.
+- **Money piles up again** (63 unspent at the boss), from the extra elites. Prices are on hold until acts 2–3 exist.
+- **Magnet dominates builds** (the most-copied part in 59% of runs), partly because the policy ranks parts by fixed values. Real players pick more variously; the playtest "variety" rating will tell.
+- **Normal fights are rarely close** (3%): a quiet act until elites and bosses. That fits a first act; acts 2–3 can raise it.
+- Difficulty is not retuned to 65–70% here: the acts 2–3 targets (Acts-Design.md, question 1) will change act 1's target anyway.

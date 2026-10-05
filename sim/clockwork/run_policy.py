@@ -2,8 +2,8 @@
 
 Fights are played by an agent (default mcts@50, the casual stand-in). Map, reward, rest and
 Workshop choices follow plain heuristics:
-- doors: an elite when HP is high, a rest site when HP is low, otherwise a Workshop if it can
-  afford something, otherwise a fight;
+- doors: an elite when HP is at least half, a rest site below 60% HP, otherwise a Workshop if it
+  can afford something, otherwise a fight (thresholds from the v17 policy search);
 - part rewards: highest value in PART_VALUE (from the partial-deck probes), else scrap;
 - attachments: always taken and attached to the best part they fit;
 - rest: heal below 60% HP, otherwise tinker (both offered common attachments);
@@ -30,8 +30,8 @@ PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBL
               Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
               Kind.SPRING: -3.5}
 # HP kept per fight on the best host (studies, Results v16), and the hosts in order of preference.
-MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 5.4, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
-             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 2.3}
+MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 3.5, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
+             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 3.4}
 MOD_HOSTS = {
     Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
     Mod.BRACING: [Kind.STRIKER, Kind.PLATE],
@@ -43,6 +43,12 @@ MOD_HOSTS = {
 # Runs started with each machine upgrade (Results v12): Extra Hands +16, Heat Housing +15,
 # Bigger Gear +8, Flywheel +7 points.
 MACHINE_PRIORITY = ["extra_hands", "heat_housing", "bigger_gear", "flywheel"]
+MACHINE_ORDERS = {"v12": MACHINE_PRIORITY,
+                  "v16": ["bigger_gear", "flywheel", "extra_hands", "heat_housing"]}   # Results v16
+
+
+def machine_order(style=None):
+    return MACHINE_ORDERS[(style or DEFAULT_STYLE).get("machine_order", "v12")]
 CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLIDER, Kind.COUPLER,
                  Kind.PLATE, Kind.SPRING, Kind.MIRROR, Kind.MAGNET, Kind.LOADER, Kind.AMPLIFIER, Kind.COOLANT]
 
@@ -78,23 +84,53 @@ def best_mod(run, offered):
 
 # Play-style knobs for studies (clockwork.studies); the defaults are the policy described above.
 DEFAULT_STYLE = {
-    "elites": "auto",       # auto (when HP >= 70%) | seek (unless HP < 40%) | avoid
+    "elites": "auto",       # auto (when HP >= elite_hp) | seek (unless HP < 40%) | avoid
     "rest": "auto",         # auto (heal below 60%) | heal | tinker
     "parts": "value",       # value (PART_VALUE > 0) | none (always scrap) | all (best offered, always)
     "remove_basics": False,  # Workshop: remove a Plate, then a Striker, when affordable
     "machine_first": False,  # Workshop: save for machine upgrades before buying attachments
+    # Tunable thresholds (v17 policy search; the values here are the chosen defaults).
+    "elite_hp": 0.5,         # auto: take an elite door at or above this HP fraction (v17; was 0.7)
+    "rest_door_hp": 0.6,     # prefer a rest door below this HP fraction (v17; was 0.5)
+    "heal_below": 0.6,       # at a rest site, heal below this HP fraction (else tinker)
+    "workshop_cogs": 55,     # prefer a Workshop door with at least this many cogs
+    "save_margin": 0,        # in a Workshop, skip other purchases if the best machine upgrade is
+                             # at most this many cogs out of reach (save for it)
+    "synergy": False,        # value parts by what the deck already holds (SYNERGY)
+    "machine_order": "v12",  # which machine upgrade to buy first (MACHINE_ORDERS)
 }
+
+# A part is worth more when its partner is already in the deck (or, for Spring, a Coil is held).
+SYNERGY_BONUS = 6
+SYNERGY = {
+    Kind.LOADER: (Kind.PRIMER, Kind.ASSEMBLY), Kind.PRIMER: (Kind.LOADER,), Kind.ASSEMBLY: (Kind.LOADER,),
+    Kind.SLIDER: (Kind.MAGNET,), Kind.MAGNET: (Kind.SLIDER,),
+    Kind.MIRROR: (Kind.HAMMER, Kind.AMPLIFIER), Kind.AMPLIFIER: (Kind.HAMMER, Kind.MIRROR),
+    Kind.COOLANT: (Kind.HAMMER, Kind.COUPLER),
+}
+
+
+def part_value(run, kind, style=None):
+    style = style or DEFAULT_STYLE
+    value = PART_VALUE.get(kind, 0)
+    if style.get("synergy"):
+        kinds = {c["kind"] for c in run.cards}
+        if any(k in kinds for k in SYNERGY.get(kind, ())):
+            value += SYNERGY_BONUS
+        if kind == Kind.SPRING and (Mod.COIL in run.inventory or any(Mod.COIL in c["mods"] for c in run.cards)):
+            value += SYNERGY_BONUS
+    return value
 
 
 def choose_door(run, style=DEFAULT_STYLE):
     doors = run.doors
     frac = run.hp / run.max_hp()
     order = []
-    if style["elites"] == "seek" and frac >= 0.4 or style["elites"] == "auto" and frac >= 0.7:
+    if style["elites"] == "seek" and frac >= 0.4 or style["elites"] == "auto" and frac >= style["elite_hp"]:
         order.append("elite")
-    if frac < 0.5:
+    if frac < style["rest_door_hp"]:
         order.append("rest")
-    if run.cogs >= 55:
+    if run.cogs >= style["workshop_cogs"]:
         order.append("workshop")
     order += ["fight", "rest", "workshop"] + (["elite"] if style["elites"] != "avoid" else []) + ["boss"]
     for t in order:
@@ -108,12 +144,16 @@ def shop(run, style=DEFAULT_STYLE):
     if run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
-    machines = sorted(range(len(o["machines"])), key=lambda i: MACHINE_PRIORITY.index(o["machines"][i]["key"]))
+    order = machine_order(style)
+    machines = sorted(range(len(o["machines"])), key=lambda i: order.index(o["machines"][i]["key"]))
     for i in machines:
         if not o["machines"][i]["sold"] and run.cogs >= o["machines"][i]["price"]:
             run.buy("machine", i)
             break
     reserve = 90 if style["machine_first"] and len(run.machine) < 2 else 0
+    unsold = [o["machines"][i] for i in machines if not o["machines"][i]["sold"]]
+    if style["save_margin"] and unsold and run.cogs < unsold[0]["price"] <= run.cogs + style["save_margin"]:
+        reserve = run.cogs + 1        # nearly there: buy nothing else, save for it
     for i in sorted(range(len(o["attachments"])), key=lambda i: -MOD_VALUE.get(Mod(o["attachments"][i]["mod"]), 0)):
         item = o["attachments"][i]
         if (not item["sold"] and run.cogs - item["price"] >= reserve
@@ -125,11 +165,11 @@ def shop(run, style=DEFAULT_STYLE):
             if card and len(run.cards) > 6 and run.cogs - run.remove_price() >= reserve:
                 run.remove_card(card["id"])
                 break
-    parts = sorted(range(len(o["parts"])), key=lambda i: -PART_VALUE.get(Kind(o["parts"][i]["kind"]), 0))
+    parts = sorted(range(len(o["parts"])), key=lambda i: -part_value(run, Kind(o["parts"][i]["kind"]), style))
     for i in parts:
         item = o["parts"][i]
         if (not item["sold"] and run.cogs - item["price"] >= reserve and style["parts"] != "none"
-                and PART_VALUE.get(Kind(item["kind"]), 0) > 0):
+                and part_value(run, Kind(item["kind"]), style) > 0):
             run.buy("part", i)
     run.leave_workshop()
 
@@ -148,16 +188,16 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
         elif run.phase == "fight":
             play_fight(run, agent_name)
         elif run.phase == "reward":
-            parts = sorted(run.offer["parts"], key=lambda p: -PART_VALUE.get(Kind(p), 0))
-            best = parts[0] if PART_VALUE.get(Kind(parts[0]), 0) > 0 or style["parts"] == "all" else ""
+            parts = sorted(run.offer["parts"], key=lambda p: -part_value(run, Kind(p), style))
+            best = parts[0] if part_value(run, Kind(parts[0]), style) > 0 or style["parts"] == "all" else ""
             if style["parts"] == "none":
                 best = ""
             mods = run.offer.get("attachments", [])
-            salvage = sorted(run.offer.get("salvage", []), key=MACHINE_PRIORITY.index)
+            salvage = sorted(run.offer.get("salvage", []), key=machine_order(style).index)
             run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best,
                             salvage=salvage[0] if salvage else "")
         elif run.phase == "rest":
-            heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
+            heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < style["heal_below"] * run.max_hp())
             run.rest("heal" if heal else "tinker")
         elif run.phase == "workshop":
             shop(run, style)

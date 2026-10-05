@@ -71,7 +71,7 @@ class State:
     fresh: set = field(default_factory=set)       # uids installed this turn, not triggered since (Primer)
     installed: set = field(default_factory=set)   # uids installed this turn (Assembly)
     rust: Dict[int, int] = field(default_factory=dict)   # uid -> damage/Block lost this fight
-    echoed: set = field(default_factory=set)      # uids that already echoed this turn
+    echoed: dict = field(default_factory=dict)    # uid -> times it echoed this turn
     moved: set = field(default_factory=set)   # uids a Magnet moved this turn (Slider)
     turn: int = 0
     phase: str = "install"          # install | crank | over
@@ -112,7 +112,7 @@ class State:
         s.fresh = set(self.fresh)
         s.installed = set(self.installed)
         s.rust = dict(self.rust)
-        s.echoed = set(self.echoed)
+        s.echoed = dict(self.echoed)
         s.moved = set(self.moved)
         s.part_triggers = dict(self.part_triggers)
         st = Stats(**self.stats.__dict__)
@@ -281,7 +281,7 @@ def _start_turn(s: State) -> None:
     s.moved = set()
     s.fresh = set()
     s.installed = set()
-    s.echoed = set()
+    s.echoed = {}
     s.turn_runaway = False
     s.dead_turn, s.overheat_pending = s.overheat_pending, False
     s.locked = False
@@ -601,8 +601,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         # Clamp: each pulled part triggers, left side first (pushed last).
         for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
             stack.append(("trigger", near, d, False, uid, 0))
-    if Mod.ECHO in mods and part.uid not in s.echoed:
-        s.echoed.add(part.uid)      # triggers again right away (before its follow-ups), once per turn
+    if Mod.ECHO in mods and s.echoed.get(part.uid, 0) < r.echo_per_turn:
+        s.echoed[part.uid] = s.echoed.get(part.uid, 0) + 1   # triggers again right away (before its follow-ups)
         stack.append(("trigger", slot, direction, from_coupler, part.uid, 0))
     return True
 

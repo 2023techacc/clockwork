@@ -58,7 +58,8 @@ def mod_texts(rules=DEFAULT_RULES) -> dict:
         Mod.FEEDER: f"Loads {rules.feeder_extra_loads} more part, into the next slots to come up instead of "
                     "random ones, and the loaded parts trigger right away.",
         Mod.GOVERNOR: "Its triggers add no Heat.",
-        Mod.ECHO: "The first time it triggers each turn, it triggers again.",
+        Mod.ECHO: ("The first time it triggers each turn, it triggers again." if rules.echo_per_turn == 1 else
+                   f"The first time it triggers each turn, it triggers {rules.echo_per_turn} more times."),
     }
 
 
