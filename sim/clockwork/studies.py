@@ -4,6 +4,7 @@
     python -m clockwork.studies machine --fights 40 --runs 150
     python -m clockwork.studies styles --runs 150
     python -m clockwork.studies combos
+    python -m clockwork.studies bosses --fights 40 --runs 150
 
 attachments  what one attachment is worth on each part it fits, in single fights against every
              enemy (normal, elite and boss): win-rate points and HP kept, paired seeds against the
@@ -12,6 +13,7 @@ machine      what each machine upgrade is worth, in single fights and when a run
 styles       run strategies (elite seeking, resting, deck thinning, saving for upgrades...) and
              where runs lose their HP (per enemy, per node).
 combos       the strongest single turn attachment combos allow (loop finder).
+bosses       every boss against every test deck, and whole runs ending at each boss.
 """
 import argparse
 import os
@@ -259,6 +261,54 @@ def hp_report(out):
               f"{cogs / lost if lost else float('inf'):7.1f}")
 
 
+# ---------------------------------------------------------------- bosses
+
+def _boss_fights(args):
+    deck, boss, seeds, agent, start_hp, scale = args
+    from .enemies import ENEMIES, scaled
+    from .decks import DECKS
+    spec = scaled(ENEMIES[boss], scale)
+    wins, left = 0, []
+    for seed in seeds:
+        s = new_fight(DECKS[deck], spec, seed=seed, start_hp=start_hp)
+        a = make_agent(agent, seed)
+        while s.result is None:
+            apply(s, a.act(s, legal_actions(s)))
+        if s.result == "win":
+            wins += 1
+            left.append(s.hp)
+    return deck, boss, wins, len(seeds), left
+
+
+def study_bosses(pool, args):
+    from .decks import DECKS
+    from .enemies import BOSSES
+    from .run_mode import GROWTH
+    scale = 1 + GROWTH
+    print(f"Bosses vs test decks ({args.agent}, {args.fights} fights each, start at 36 HP, boss at x{scale:.2f} "
+          "as in a run): win rate")
+    tasks = [(d, b, range(lo, min(lo + 10, args.fights)), args.agent, 36, scale)
+             for b in BOSSES for d in DECKS for lo in range(0, args.fights, 10)]
+    cell = {}
+    for d, b, w, n, left in pool.map(_boss_fights, tasks):
+        c = cell.setdefault((b, d), [0, 0, []])
+        c[0] += w
+        c[1] += n
+        c[2] += left
+    print(f"  {'boss':14s}" + "".join(f"{d:>13s}" for d in DECKS) + f"{'mean':>8s}")
+    for b in BOSSES:
+        rates = [cell[(b, d)][0] / cell[(b, d)][1] for d in DECKS]
+        print(f"  {b:14s}" + "".join(f"{r:13.0%}" for r in rates) + f"{sum(rates) / len(rates):8.0%}", flush=True)
+    print(f"\nWhole runs ending at each boss ({args.agent}, {args.runs} runs each, same seeds):")
+    for b in BOSSES:
+        out = play_runs(pool, args.runs, args.agent, boss=b)
+        at_boss = [o for o in out if o["boss_hp"] is not None]
+        boss_wins = sum(o["won"] for o in at_boss)
+        run_line(f"boss {b}", out)
+        print(f"    reached the boss {len(at_boss)}, beat it {boss_wins} ({boss_wins / max(1, len(at_boss)):.0%})",
+              flush=True)
+
+
 # ---------------------------------------------------------------- combos
 
 COMBO_DECKS = {
@@ -298,14 +348,14 @@ def study_combos(pool, args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("study", choices=["attachments", "machine", "styles", "combos"])
+    ap.add_argument("study", choices=["attachments", "machine", "styles", "combos", "bosses"])
     ap.add_argument("--agent", default="mcts@50")
     ap.add_argument("--fights", type=int, default=40)
     ap.add_argument("--runs", type=int, default=150)
     args = ap.parse_args(argv)
     with ProcessPoolExecutor(os.cpu_count()) as pool:
         {"attachments": study_attachments, "machine": study_machine, "styles": study_styles,
-         "combos": study_combos}[args.study](pool, args)
+         "combos": study_combos, "bosses": study_bosses}[args.study](pool, args)
 
 
 if __name__ == "__main__":
