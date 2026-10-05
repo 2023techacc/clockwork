@@ -27,9 +27,11 @@ TARGETS = [
      "on target", "none above", "v12"),
     # Content
     ("Content", "One part pick (win-rate points over the starter, fights from 30 HP)",
-     "+3 to +10 (combo enablers may be slightly negative alone)", (3, 10),
-     "Magnet +15.6, Amplifier +8.5, Coolant +5.4, Primer +3.1, Slider −0.2, Assembly −2.5, Hammer −2.7, "
-     "Mirror −4.6, Coupler −6.2, Loader −7.3, Spring −8.1", "v14"),
+     "+3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone", (3, 10),
+     "Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4, "
+     "Hammer +3.8", "v15"),
+    ("Content", "One combo-enabler pick (same measure)", "−5 to +3", (-5, 3),
+     "Mirror −1.7, Loader −2.8, Spring −3.5", "v15"),
     ("Content", "One common/uncommon attachment (HP kept per fight)", "+2.5 to +4", (2.5, 4),
      "Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, "
      "Polish +2.3, Clamp +2.0", "v11/v12"),
