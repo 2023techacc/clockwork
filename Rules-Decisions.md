@@ -161,6 +161,15 @@ Measured as HP kept per fight (roadmap, Results v11/v12). Target: common and unc
 - **Coil:** 8 damage (was 4; 4 and 6 were worth +0.7 and +1.7).
 - **Feeder (reworked):** the Loader loads 1 more part, into the next slots to come up, and every part it loads triggers right away. Extra loads alone were worth nothing.
 
+### Part balance pass v15
+Measured as win-rate points over the starter deck when one copy is added, in fights from 30 HP against every enemy (`clockwork.part_pass`; roadmap Results v15). Target +3 to +10; combo enablers may be slightly negative alone.
+- **Magnet:** 3 Block, plus 2 Block per part pulled (was 6 per pull; 4 per pull stops a 7-damage attack outright and was worth +12.7).
+- **Hammer:** 10 damage, +3 Heat (was 9, +4).
+- **Coupler:** deals 2 damage itself, no extra Heat (was +2 Heat).
+- **Slider:** 7 damage (was 5); still +3 if a Magnet moved it.
+- **Assembly:** 1 damage, +3 per part installed this turn (was 0 + 3).
+- **Spring, Loader:** +3 Block when they trigger. The Spring chain Heat rule (+1, +2, +3...) is unchanged.
+
 ### Runs: HP carry-over (decided)
 - **HP carries over between fights; a small heal follows each win.** Sim placeholder: 10 HP (`heal_between_fights`).
 - **Normal enemies** are tuned to cost a casual player about 15 HP per win.

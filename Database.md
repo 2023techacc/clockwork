@@ -8,24 +8,25 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 
 | Area | Metric | Target | Latest | Status | Source |
 |---|---|---|---|---|---|
-| Runs | Casual player clears a run | 65–70% | 67% | ✅ on target | v13 (random boss) |
-| Runs | Careless player clears a run | 40–50% | 43% | ✅ on target | v12 |
-| Runs | Expert player clears a run | 85–90% (clearly above casual) | 88% | ✅ on target | v12 |
-| Runs | HP when reaching the boss (casual) | about 35 | 37 | ✅ on target | v13 |
-| Fights | HP a normal fight costs (casual) | about 15 | 12–15 | ✅ on target | v12 |
-| Fights | HP an elite costs (casual) | about 25 (high risk) | 21–25 | ✅ on target | v12 |
-| Fights | Boss beaten when reached (casual) | about 76%, every boss within ±5 | 71–78% | ✅ on target | v13 |
-| Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 72% vs 63% | ✅ on target | v12 |
-| Choices | Rest: always heal vs always tinker | within 5 points of each other | 72% vs 69% | ✅ on target | v12 |
-| Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | none above | ✅ on target | v12 |
-| Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10 (combo enablers may be slightly negative alone) | Magnet +15.6, Amplifier +8.5, Coolant +5.4, Primer +3.1, Slider −0.2, Assembly −2.5, Hammer −2.7, Mirror −4.6, Coupler −6.2, Loader −7.3, Spring −8.1 | ⚠️ partly off | v14 |
-| Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, Polish +2.3, Clamp +2.0 | ⚠️ partly off | v11/v12 |
-| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +5.5, Echo +3.5 | ⚠️ partly off | v11 |
-| Content | One machine upgrade (run clear points, started with it) | +7 to +16 by price | Extra Hands +16, Heat Housing +15, Bigger Gear +8, Flywheel +7 | ✅ on target | v12 |
-| Content | Strongest single turn (any combo) | under half the boss's HP (≤ 55) | 51 | ✅ on target | v11 |
-| Economy | Attachments per run | 2–4 | 2.0 | ✅ on target | v13 |
-| Economy | Machine upgrades per run | about 1 | 1.06 | ✅ on target | v13 |
-| Economy | Cogs unspent when reaching the boss | under 40 | 33 | ✅ on target | v13 |
+| Runs | Casual player clears a run | 65–70% | 69% | ✅ on target | v15 |
+| Runs | Careless player clears a run | 40–50% | 43% | ✅ on target | v15 |
+| Runs | Expert player clears a run | 85–90% (clearly above casual) | 87% | ✅ on target | v15 |
+| Runs | HP when reaching the boss (casual) | about 35 | 37 | ✅ on target | v15 |
+| Fights | HP a normal fight costs (casual) | about 15 | 12–14 | ✅ on target | v15 |
+| Fights | HP an elite costs (casual) | about 25 (high risk) | 19–23 | ⚠️ partly off | v15 |
+| Fights | Boss beaten when reached (casual) | about 75%, every boss within ±5 of the others | 69–74% | ✅ on target | v15 |
+| Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 68% vs 57% | ✅ on target | v15 |
+| Choices | Rest: always heal vs always tinker | within 5 points of each other | 73% vs 57% | ❌ off target | v15 |
+| Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | best: seek elites, always heal (+5) | ✅ on target | v15 |
+| Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone | Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4, Hammer +3.8 | ✅ on target | v15 |
+| Content | One combo-enabler pick (same measure) | −5 to +3 | Mirror −1.7, Loader −2.8, Spring −3.5 | ✅ on target | v15 |
+| Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, Polish +2.3, Clamp +2.0 | ⚠️ partly off | v11/v12 (before the v15 part pass) |
+| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +5.5, Echo +3.5 | ⚠️ partly off | v11 (before the v15 part pass) |
+| Content | One machine upgrade (run clear points, started with it) | +7 to +16 by price | Extra Hands +16, Heat Housing +15, Bigger Gear +8, Flywheel +7 | ✅ on target | v12 (before the v15 part pass) |
+| Content | Strongest single turn (any combo) | about half the boss's HP or less (≤ 55) | 60 | ❌ off target | v15 (Echo Coupler + Hammers) |
+| Economy | Attachments per run | 2–4 | 2.3 | ✅ on target | v15 |
+| Economy | Machine upgrades per run | about 1 | 0.93 | ✅ on target | v15 |
+| Economy | Cogs unspent when reaching the boss | under 40 | 35 | ✅ on target | v15 |
 
 ## Basics
 
@@ -49,17 +50,17 @@ Tier decides how often a part shows up as a reward and its Workshop price.
 |---|---|---|---|---|
 | **Striker** | starter | - | 1 | Deal 6 damage. |
 | **Plate** | starter | - | 1 | Gain 6 Block. |
-| **Spring** | common | 30 | 1 | Crank again for free, continuing in the direction the trigger came from. Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd... |
+| **Spring** | common | 30 | 1 | Gain 3 Block. Crank again for free, continuing in the direction the trigger came from. Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd... |
 | **Mirror** | common | 30 | 1 | Acts exactly as the part directly opposite it (attachments included). Can't copy a Mirror. |
 | **Amplifier** | uncommon | 45 | 0 | Passive: neighbours' damage and Block +30%. Never triggers. |
-| **Coupler** | uncommon | 45 | 3 | Triggers its left neighbour, then its right one. Can't trigger a Coupler. +2 Heat. |
-| **Loader** | uncommon | 45 | 1 | Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
+| **Coupler** | uncommon | 45 | 1 | Deal 2 damage. Triggers its left neighbour, then its right one. Can't trigger a Coupler. |
+| **Loader** | uncommon | 45 | 1 | Gain 3 Block. Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
 | **Coolant** | common | 30 | 1 | Remove 3 Heat. |
-| **Hammer** | rare | 65 | 5 | Deal 9 damage. +4 Heat. |
-| **Magnet** | uncommon | 45 | 1 | Pulls the parts 2 slots away into the slots next to it (swapping if occupied). 6 Block per part pulled. |
+| **Hammer** | rare | 65 | 4 | Deal 10 damage. +3 Heat. |
+| **Magnet** | uncommon | 45 | 1 | Gain 3 Block. Pulls the parts 2 slots away into the slots next to it (swapping if occupied). +2 Block per part pulled. |
 | **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
-| **Assembly** | uncommon | 45 | 1 | Deal 3 damage per part installed this turn. |
-| **Slider** | uncommon | 45 | 1 | Deal 5 damage, +3 if a Magnet moved it this turn. |
+| **Assembly** | uncommon | 45 | 1 | Deal 1 damage, +3 per part installed this turn. |
+| **Slider** | uncommon | 45 | 1 | Deal 7 damage, +3 if a Magnet moved it this turn. |
 
 ## Attachments
 
@@ -80,7 +81,7 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 
 ## Enemies
 
-In a run, enemies grow through the district: HP and attacks × (1 + 0.2 × stop/9), so the boss is ×1.20. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+In a run, enemies grow through the district: HP and attacks × (1 + 0.3 × stop/9), so the boss is ×1.30. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
 
 ### Normal
 
@@ -104,11 +105,11 @@ In a run, enemies grow through the district: HP and attacks × (1 + 0.2 × stop/
 
 | Enemy | HP | Cogs | Pattern | Tests |
 |---|---|---|---|---|
-| **clock_tower** | 98 | 60 | No regular attacks. Strikes for 12 on every 4th crank (Springs count). | No attacks; strikes on every 4th crank of the fight, after the part that comes up. Tests doing more with fewer cranks. |
-| **furnace** | 74 | 60 | Turn 1: +1 Heat to your machine, attack 6. Turn 2: +1 Heat to your machine, attack 6. Turn 3: +3 Heat to your machine, attack 9. Then repeats. | Heats your machine every turn, a big stoke every 3rd: tests Heat management. |
-| **dismantler** | 84 | 60 | Turn 1: unscrew a part, unscrew a part, attack 6. Turn 2: rust the top part (-2 damage/Block this fight), attack 8. Then repeats. | Takes your machine apart: tests rebuilding and Bracing. |
-| **iron_colossus** | 68 | 60 | Every turn: attack 7. Armor 3: every hit on it deals 3 less. | Armor on every hit: tests big single hits over many small ones. |
-| **pendulum** | 83 | 60 | Turn 1: attack 4. Turn 2: attack 10. Then repeats. Swing: odd turns must crank clockwise, even turns counter-clockwise. | Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts that work both ways. |
+| **clock_tower** | 91 | 60 | No regular attacks. Strikes for 11 on every 4th crank (Springs count). | No attacks; strikes on every 4th crank of the fight, after the part that comes up. Tests doing more with fewer cranks. |
+| **furnace** | 66 | 60 | Turn 1: +1 Heat to your machine, attack 6. Turn 2: +1 Heat to your machine, attack 6. Turn 3: +3 Heat to your machine, attack 9. Then repeats. | Heats your machine every turn, a big stoke every 3rd: tests Heat management. |
+| **dismantler** | 85 | 60 | Turn 1: unscrew a part, unscrew a part, attack 6. Turn 2: rust the top part (-2 damage/Block this fight), attack 8. Then repeats. | Takes your machine apart: tests rebuilding and Bracing. |
+| **iron_colossus** | 78 | 60 | Every turn: attack 6. Armor 3: every hit on it deals 3 less. | Armor on every hit: tests big single hits over many small ones. |
+| **pendulum** | 87 | 60 | Turn 1: attack 4. Turn 2: attack 10. Then repeats. Swing: odd turns must crank clockwise, even turns counter-clockwise. | Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts that work both ways. |
 
 ## Machine upgrades
 

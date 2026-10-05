@@ -25,10 +25,10 @@ from .parts import Kind, Mod
 from .run import make_agent
 from .run_mode import Run
 
-# Rough value of one copy, from the partial-deck probes (win-rate points over the starter).
-PART_VALUE = {Kind.PRIMER: 17, Kind.COUPLER: 8, Kind.HAMMER: 9, Kind.AMPLIFIER: 6, Kind.MAGNET: 4,
-              Kind.SLIDER: 2, Kind.ASSEMBLY: 2, Kind.COOLANT: -1, Kind.MIRROR: -7, Kind.LOADER: -8,
-              Kind.SPRING: -14}
+# Value of one copy: win-rate points over the starter in fights from 30 HP (part pass v15).
+PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBLY: 6.7, Kind.AMPLIFIER: 5.5,
+              Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
+              Kind.SPRING: -3.5}
 # HP kept per fight on the best host (studies, Results v11/v12), and the hosts in order of preference.
 MOD_VALUE = {Mod.GOVERNOR: 5.5, Mod.BRACING: 5.0, Mod.COUNTERWEIGHT: 4.1, Mod.SHARPENED: 3.6, Mod.ECHO: 3.5,
              Mod.COIL: 3.2, Mod.HEAT_SINK: 2.9, Mod.FEEDER: 2.5, Mod.POLISH: 2.3, Mod.CLAMP: 2.0}

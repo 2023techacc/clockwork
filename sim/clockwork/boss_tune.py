@@ -70,6 +70,8 @@ def main(argv=None):
     ap.add_argument("--agent", default="mcts@50")
     ap.add_argument("--runs", type=int, default=150)
     ap.add_argument("--reference", default="clock_tower")
+    ap.add_argument("--target", type=float, default=None,
+                    help="fixed win-rate target (e.g. 0.76) instead of matching the reference boss")
     ap.add_argument("--bosses", nargs="+", default=[b for b in BOSSES if b != "clock_tower"])
     ap.add_argument("--steps", type=int, default=5)
     ap.add_argument("--knob", choices=["both", "hp"], default="both")
@@ -80,8 +82,12 @@ def main(argv=None):
         snaps = [s for s in pool.map(run_to_boss, [(seed, args.agent) for seed in range(args.runs)]) if s]
         print(f"{len(snaps)} of {args.runs} runs reached the boss "
               f"(mean HP {sum(s['hp'] for s in snaps) / len(snaps):.1f})", flush=True)
-        target = win_rate(pool, snaps, args.reference, 1.0, args.agent)
-        print(f"reference {args.reference}: wins {target:.0%} from those states", flush=True)
+        if args.target is None:
+            target = win_rate(pool, snaps, args.reference, 1.0, args.agent)
+            print(f"reference {args.reference}: wins {target:.0%} from those states", flush=True)
+        else:
+            target = args.target
+            print(f"target: {target:.0%}", flush=True)
         for boss in args.bosses:
             base = ENEMIES[boss]
             lo, hi, best = args.lo, args.hi, None
