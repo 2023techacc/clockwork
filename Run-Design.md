@@ -162,13 +162,14 @@ Elites are needed because normal fights almost never kill (a casual player reach
 
 ### Prototype numbers (simulator / playtest page)
 - **District:** 9 stops; stops 1–2 are fights; stops 3–8 offer 3 doors weighted fight 4 / elite 2 / Workshop 1.5 / rest 1.5; stop 9 offers a rest site or a Workshop; then the boss.
+- **Boss (v13):** each run's boss is picked at the start from Clock Tower, Furnace, Dismantler, Iron Colossus and Pendulum, and shown all run so players can build against it. All five are tuned to the same win rate from the states real runs reach the boss with (Database.md lists them).
 - **Enemy growth:** HP and attacks × (1 + 0.20 × stop/9) (v12; was 0.11). Heal 5 HP after each win.
 - **Cogs:** normal 12–16, elite 30–36, boss 60 (±10%). Scrapping a part reward pays 10.
 - **Part rewards:** pick 1 of 3. Tiers: common (Spring, Coolant, Mirror), uncommon (Amplifier, Coupler, Loader, Magnet, Slider, Primer, Assembly), rare (Hammer).
 - **Rest site:** heal 15, or tinker: take both offered common attachments (v12; was 1 of 2).
-- **Elites (v12, high risk, high return):** fought at 90% strength. Loot: a part reward from the uncommon and rare tiers, 1 of 3 uncommon or rare attachments (rares 3× as likely as before), and a 50% chance to salvage a free machine upgrade from the wreck.
+- **Elites (v12, high risk, high return):** fought at 90% strength. Loot: a part reward from the uncommon and rare tiers, 1 of 3 uncommon or rare attachments (rares 3× as likely as before), and a 50% chance to salvage a free machine upgrade from the wreck (v13: choose 1 of 2 you don't have).
 - **Workshop prices:** parts 30/45/65 by tier; attachments 30/55/90 by rarity; repair 15 HP for 25; removal 40, then +15 each time; selling an attachment pays half its price.
-- **Machine upgrades** (every Workshop stocks one you don't have; v12 prices, were 110–130):
+- **Machine upgrades** (v13: every Workshop sells all the ones you don't have, so they can be planned and saved for, instead of one random upgrade; v12 prices, were 110–130):
   - Flywheel (+1 Crank Power), 70;
   - Bigger Gear (8 slots and +1 Crank Power; reworked in v12, 8 slots alone was useless), 75;
   - Heat Housing (+2 Heat capacity), 85;
