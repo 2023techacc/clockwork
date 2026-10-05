@@ -9,7 +9,7 @@ the roadmap results named in `source`. Update it whenever a study re-measures th
 # latest value (number or text), source
 TARGETS = [
     # Whole runs (starter deck, random boss)
-    ("Runs", "Casual player clears a run", "65–70%", (65, 70), "69%", "v15"),
+    ("Runs", "Casual player clears a run", "65–70%", (65, 70), "64–65%", "v16"),
     ("Runs", "Careless player clears a run", "40–50%", (40, 50), "43%", "v15"),
     ("Runs", "Expert player clears a run", "85–90% (clearly above casual)", (85, 90), "87%", "v15"),
     ("Runs", "HP when reaching the boss (casual)", "about 35", (32, 40), 37, "v15"),
@@ -21,8 +21,8 @@ TARGETS = [
     # Choices
     ("Choices", "Fighting elites when healthy vs avoiding them", "elites at least as good (high return)",
      "on target", "68% vs 57%", "v15"),
-    ("Choices", "Rest: always heal vs always tinker", "within 5 points of each other", "off target",
-     "73% vs 57%", "v15"),
+    ("Choices", "Rest: always heal vs always tinker", "within 5 points of each other", "on target",
+     "66% vs 63%", "v16 (300 runs each)"),
     ("Choices", "Run styles (route, rest, Workshop)", "no style more than 5 points above the base",
      "on target", "best: seek elites, always heal (+5)", "v15"),
     # Content
@@ -33,12 +33,13 @@ TARGETS = [
     ("Content", "One combo-enabler pick (same measure)", "−5 to +3", (-5, 3),
      "Mirror −1.7, Loader −2.8, Spring −3.5", "v15"),
     ("Content", "One common/uncommon attachment (HP kept per fight)", "+2.5 to +4", (2.5, 4),
-     "Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, "
-     "Polish +2.3, Clamp +2.0", "v11/v12 (before the v15 part pass)"),
-    ("Content", "One rare attachment (HP kept per fight)", "+4 to +6", (4, 6), "Governor +5.5, Echo +3.5",
-     "v11 (before the v15 part pass)"),
-    ("Content", "One machine upgrade (run clear points, started with it)", "+7 to +16 by price", (7, 16),
-     "Extra Hands +16, Heat Housing +15, Bigger Gear +8, Flywheel +7", "v12 (before the v15 part pass)"),
+     "Coil +5.4, Heat Sink +3.6, Bracing +3.5, Counterweight +3.3, Sharpened +3.0, Clamp +2.8, Feeder +2.8, "
+     "Polish +2.3", "v16"),
+    ("Content", "One rare attachment (HP kept per fight)", "+4 to +6", (4, 6), "Governor +6.5, Echo +3.0",
+     "v16"),
+    ("Content", "One machine upgrade (run clear points, started with it)",
+     "+7 to +16, rising with price (Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90)", (7, 16),
+     "Bigger Gear +18, Flywheel +16, Extra Hands +14, Heat Housing +11", "v16"),
     ("Content", "Strongest single turn (any combo)", "about half the boss's HP or less (≤ 55)", (0, 55), 60,
      "v15 (Echo Coupler + Hammers)"),
     # Economy

@@ -171,7 +171,7 @@ Measured as win-rate points over the starter deck when one copy is added, in fig
 - **Spring, Loader:** +3 Block when they trigger. The Spring chain Heat rule (+1, +2, +3...) is unchanged.
 
 ### Runs: HP carry-over (decided)
-- **HP carries over between fights; a small heal follows each win.** Sim placeholder: 10 HP (`heal_between_fights`).
+- **HP carries over between fights; a small heal follows each win.** Current value: 7 HP (`heal_between_fights`; was 10, then 5). Rest sites heal 8.
 - **Normal enemies** are tuned to cost a casual player about 15 HP per win.
 - **The boss** is tuned for a casual player arriving with about 35 HP to win roughly 70%.
 - **Current enemies (v7):** dummy 55 HP / attack 7; spiker 58 / 3-3-14; enrager 60 / 3 +1 per turn; saboteur 56 / 7-5; Clock Tower 98 HP, strikes every 4 cranks for 12.
