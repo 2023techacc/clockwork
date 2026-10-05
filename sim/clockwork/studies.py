@@ -14,6 +14,8 @@ styles       run strategies (elite seeking, resting, deck thinning, saving for u
              where runs lose their HP (per enemy, per node).
 combos       the strongest single turn attachment combos allow (loop finder).
 bosses       every boss against every test deck, and whole runs ending at each boss.
+fun          simulator proxies for fun: fight length, close wins, combo turns, how much each turn's
+             choice matters, and build variety (human ratings come from playtests/).
 """
 import argparse
 import os
@@ -308,6 +310,95 @@ def study_bosses(pool, args):
               flush=True)
 
 
+# ---------------------------------------------------------------- fun proxies
+
+def _turn_choice(state):
+    """How much this turn's choice matters, scored with the greedy heuristic over every distinct
+    outcome (damage, Block, Heat, HP): (best - median score, outcomes within 3 points of the best)."""
+    from .agents.greedy_agent import GreedyAgent
+    from .search import turn_outcomes
+    world = state.clone()
+    world.log = None
+    scorer = GreedyAgent()
+    seen = {}
+    for _, end in turn_outcomes(world):
+        if end.result == "win":
+            return None                       # a winning turn: nothing to weigh
+        key = (end.enemy_hp, end.hp, end.block, end.heat, end.overheat_pending)   # distinct outcomes
+        seen[key] = scorer.score(world, end)
+    scores = sorted(v for v in seen.values() if v > -1e4)   # ignore plans that die to the attack
+    if len(scores) < 2:
+        return 0.0, 1
+    best = scores[-1]
+    return best - statistics.median(scores), sum(v >= best - 3 for v in scores)
+
+
+def _fun_runs(args):
+    seeds, agent = args
+    from . import run_policy
+    from .engine import summary
+    fights = []
+
+    def observed_fight(run, agent_name):
+        s = new_fight(run.fight_deck(), run.enemy_spec(), seed=run.fight_seed(), rules=run.rules(), start_hp=run.hp)
+        a = make_agent(agent_name, run.fight_seed())
+        choices = []
+        while s.result is None:
+            if s.phase == "install" and not s.dead_turn and s.installs_left == s.rules.installs_per_turn:
+                c = _turn_choice(s)
+                if c is not None:
+                    choices.append(c)
+            apply(s, a.act(s, legal_actions(s)))
+        run.finish_fight(s.result, s.hp, s.turn)
+        fights.append({"node": run.node, "won": s.result == "win", "hp": s.hp, "max_hp": s.rules.player_hp,
+                       "turns": s.turn, "triggers": list(s.stats.triggers_by_turn), "overheats": s.stats.overheats,
+                       "choices": choices})
+
+    saved = run_policy.play_fight
+    run_policy.play_fight = observed_fight
+    try:
+        builds = []
+        for seed in seeds:
+            run = simulate_run("starter", seed, agent)
+            added = [c["kind"].value for c in run.cards[8:]]
+            builds.append(max(set(added), key=added.count) if added else "none")
+    finally:
+        run_policy.play_fight = saved
+    return fights, builds
+
+
+def study_fun(pool, args):
+    import math
+    tasks = [(range(lo, min(lo + 3, args.runs)), args.agent) for lo in range(0, args.runs, 3)]
+    fights, builds = [], []
+    for f, b in pool.map(_fun_runs, tasks):
+        fights += f
+        builds += b
+    print(f"Fun proxies ({args.agent}, {args.runs} runs, {len(fights)} fights)")
+    for node in ("fight", "elite", "boss"):
+        fs = [f for f in fights if f["node"] == node]
+        won = [f for f in fs if f["won"]]
+        close = sum(f["hp"] <= 0.25 * f["max_hp"] for f in won)
+        print(f"  {node:6s}: {statistics.mean(f['turns'] for f in fs):4.1f} turns per fight | "
+              f"close wins (<= 25% HP) {close / max(1, len(won)):4.0%} of {len(won)} wins | "
+              f"overheats per fight {statistics.mean(f['overheats'] for f in fs):.2f}")
+    turns = [t for f in fights for t in f["triggers"]]
+    print(f"  combo turns (4+ triggers): {sum(t >= 4 for t in turns) / len(turns):.0%} of {len(turns)} turns")
+    choices = [c for f in fights for c in f["choices"]]
+    spreads = [c[0] for c in choices]
+    forced = sum(c[1] == 1 for c in choices)
+    print(f"  turn choices: best plan beats the median plan by {statistics.mean(spreads):.1f} "
+          f"(median {statistics.median(spreads):.1f}) | one good option only: {forced / len(choices):.0%} | "
+          f"good options per turn (within 3 points): median {statistics.median(c[1] for c in choices)}")
+    counts = {}
+    for b in builds:
+        counts[b] = counts.get(b, 0) + 1
+    ent = -sum(n / len(builds) * math.log(n / len(builds)) for n in counts.values())
+    norm = ent / math.log(len(counts)) if len(counts) > 1 else 0.0
+    print(f"  build variety (most-copied added part): entropy {norm:.2f} of 1 | "
+          + ", ".join(f"{k} {v}" for k, v in sorted(counts.items(), key=lambda kv: -kv[1])))
+
+
 # ---------------------------------------------------------------- combos
 
 COMBO_DECKS = {
@@ -347,14 +438,14 @@ def study_combos(pool, args):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("study", choices=["attachments", "machine", "styles", "combos", "bosses"])
+    ap.add_argument("study", choices=["attachments", "machine", "styles", "combos", "bosses", "fun"])
     ap.add_argument("--agent", default="mcts@50")
     ap.add_argument("--fights", type=int, default=40)
     ap.add_argument("--runs", type=int, default=150)
     args = ap.parse_args(argv)
     with ProcessPoolExecutor(os.cpu_count()) as pool:
         {"attachments": study_attachments, "machine": study_machine, "styles": study_styles,
-         "combos": study_combos, "bosses": study_bosses}[args.study](pool, args)
+         "combos": study_combos, "bosses": study_bosses, "fun": study_fun}[args.study](pool, args)
 
 
 if __name__ == "__main__":

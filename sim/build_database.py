@@ -27,9 +27,10 @@ def table(header, rows):
 
 
 def targets_table():
+    from clockwork.playtests import target_rows
     from clockwork.targets import TARGETS, status
     rows = []
-    for area, metric, target, rng, latest, source in TARGETS:
+    for area, metric, target, rng, latest, source in TARGETS + target_rows():
         st = status(rng, latest)
         mark = {"on target": "✅ on target", "partly off": "⚠️ partly off", "off target": "❌ off target"}.get(st, "")
         rows.append((area, metric, target, latest, mark, source))

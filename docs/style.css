@@ -136,3 +136,8 @@ main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); g
 footer { font-size: 12px; text-align: center; margin: 10px 0 20px; }
 #result-title.win { color: var(--good); }
 #result-title.loss { color: var(--danger); }
+.survey { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; margin-bottom: 10px; }
+.survey .scale { display: inline-flex; gap: 4px; }
+.survey .scale button { min-width: 34px; padding: 4px 8px; }
+.survey .scale button:not(.chosen) { background: transparent; color: var(--accent); }
+@media (max-width: 560px) { .survey { grid-template-columns: 1fr; } }

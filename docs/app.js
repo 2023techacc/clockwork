@@ -18,6 +18,18 @@ let selected = null;          // index of the selected hand part
 let logHistory = [];          // [{text, fresh}]
 let pickedAttachment = null;  // elite reward: chosen attachment
 let pickedSalvage = null;     // elite reward: chosen salvaged machine upgrade
+// Fun survey, shown when a run or a single fight ends; answers go into the report (playtests/README.md).
+const SURVEY = [
+  ["fun", "How fun was it?"],
+  ["tension", "How tense were the fights?"],
+  ["agency", "Did your choices matter?"],
+  ["clarity", "Was it clear what happened and why?"],
+  ["variety", "Did it feel different from your earlier runs?"],
+  ["again", "How much do you want to play again right now?"],
+];
+let ratings = {};
+let startedAt = Date.now();
+let decisions = 0;
 let attachItem = null;        // inventory index being attached
 let gearSize = 0;
 
@@ -102,6 +114,7 @@ function setupScreen() {
   $("start").onclick = () => {
     const seed = Number($("seed").value) || 0;
     logHistory = [];
+    ratings = {}; startedAt = Date.now(); decisions = 0;
     if (mode() === "run") update(play.start_run($("deck").value, seed, $("boss").value));
     else update(play.start($("deck").value, $("enemy").value, seed));
   };
@@ -111,6 +124,7 @@ function mode() { return document.querySelector("input[name=mode]:checked").valu
 function randomSeed() { $("seed").value = Math.floor(Math.random() * 1e6); }
 
 function call(fn, ...args) {
+  decisions += 1;
   try {
     update(fn(...args));
   } catch (err) {
@@ -558,6 +572,7 @@ function renderResult() {
     $("scrap-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", true, pickedSalvage || "");
     $("skip-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", false, pickedSalvage || "");
   }
+  renderSurvey(screen === "won" || screen === "lost" || (!r && !!(f && f.result)));
   $("run-history").textContent = r ? r.history.map((h) => h.enemy
     ? `${h.stop >= r.stops ? "Boss" : h.stop + 1}. ${h.enemy}: ${h.result === "win" ? "won" : "lost"}, HP ${h.hp_start} → ${h.hp_end}` +
       (h.cogs ? `, +${h.cogs} cogs` : "") + (h.reward ? `, ${h.reward === "scrapped" ? "scrapped" : "took " + h.reward}` : "") +
@@ -568,13 +583,38 @@ function renderResult() {
 
 function report() {
   const notes = $("notes").value.trim(), r = view.run, f = view.fight;
+  const extra = { ratings: { ...ratings }, minutes: Math.round((Date.now() - startedAt) / 6000) / 10, decisions };
   if (r) {
     return { version, mode: "run", setup: view.setup, status: r.phase, stop: r.stop, hp: r.hp, cogs: r.cogs,
       deck: r.cards.map((c) => c.kind + c.mods.map((m) => "+" + m).join("")),
-      inventory: r.inventory.map((i) => i.mod), machine: r.machine.map((m) => m.key), history: r.history, notes };
+      inventory: r.inventory.map((i) => i.mod), machine: r.machine.map((m) => m.key), history: r.history,
+      notes, ...extra };
   }
   return { version, mode: "fight", setup: view.setup, result: f.result, reason: f.reason, summary: f.summary,
-    notes, actions: f.actions };
+    notes, actions: f.actions, ...extra };
+}
+
+function renderSurvey(ended) {
+  show("survey", ended);
+  if (!ended) return;
+  const box = $("survey-questions");
+  box.innerHTML = "";
+  for (const [key, question] of SURVEY) {
+    const label = document.createElement("span");
+    label.textContent = question;
+    const scale = document.createElement("span");
+    scale.className = "scale";
+    for (let v = 1; v <= 5; v++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = v;
+      b.className = ratings[key] === v ? "chosen" : "";
+      b.setAttribute("aria-label", `${question} ${v} of 5`);
+      b.onclick = () => { ratings[key] = v; renderSurvey(true); updateIssueLink(); };
+      scale.appendChild(b);
+    }
+    box.append(label, scale);
+  }
 }
 
 function updateIssueLink() {
@@ -593,6 +633,7 @@ function updateIssueLink() {
 }
 
 function newGame() {
+  ratings = {};
   for (const id of ["result", "game", "run-banner", "map", "rest", "shop", "deck-panel"]) show(id, false);
   show("setup", true);
   randomSeed();
@@ -605,7 +646,7 @@ $("copy-report").onclick = async () => {
   $("copied").hidden = false;
   setTimeout(() => { $("copied").hidden = true; }, 2000);
 };
-$("again").onclick = () => { logHistory = []; update(play.start(view.setup.deck, view.setup.enemy, view.setup.seed)); };
+$("again").onclick = () => { logHistory = []; ratings = {}; startedAt = Date.now(); decisions = 0; update(play.start(view.setup.deck, view.setup.enemy, view.setup.seed)); };
 $("new-fight").onclick = newGame;
 $("abandon").onclick = () => { if (confirm("Abandon this game?")) newGame(); };
 $("go-cw").onclick = () => call(play.end_install, "cw");

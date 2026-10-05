@@ -27,6 +27,14 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Economy | Attachments per run | 2–4 | 2.3 | ✅ on target | v15 |
 | Economy | Machine upgrades per run | about 1 | 0.93 | ✅ on target | v15 |
 | Economy | Cogs unspent when reaching the boss | under 40 | 35 | ✅ on target | v15 |
+| Fun (playtests) | “How fun was it?” (1–5) | 4.0 or more | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | “How tense were the fights?” (1–5) | 3.5–4.5 (tense, not stressful) | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | “Did your choices matter?” (1–5) | 4.0 or more | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | “Was it clear what happened and why?” (1–5) | 3.5 or more | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | “Did it feel different from your earlier runs?” (1–5) | 3.5 or more | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | “How much do you want to play again right now?” (1–5) | 3.5 or more | no playtests yet |  | 0 reports in playtests/ |
+| Fun (playtests) | Human players clear a run | close to the casual AI (65–70%) | no playtests yet |  | 0 finished runs |
+| Fun (playtests) | Minutes per run | 20–40 | no playtests yet |  | page timer |
 
 ## Basics
 
