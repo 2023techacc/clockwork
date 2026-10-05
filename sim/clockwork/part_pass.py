@@ -53,15 +53,14 @@ def rules_for(setting):
 
 # part, label, setting (RulesConfig fields; "part" entries become part_overrides)
 SWEEP = [
-    # Round 2 (after round 1 set Hammer 10/+3, Loader +3 Block, Spring +3 Block)
-    (K.STRIKER, "extra Striker (reference)", {}),
-    (K.MAGNET, "Block per pull 3", {"magnet_block_per_pull": 3}),
-    (K.MAGNET, "Block per pull 2", {"magnet_block_per_pull": 2}),
-    (K.COUPLER, "+0 Heat, 2 dmg", {"part": [("Coupler", "extra_heat", 0), ("Coupler", "damage", 2)]}),
-    (K.COUPLER, "+0 Heat, 3 Block", {"part": [("Coupler", "extra_heat", 0), ("Coupler", "block", 3)]}),
-    (K.SLIDER, "8 dmg", {"part": [("Slider", "damage", 8)]}),
-    (K.ASSEMBLY, "1 + 3 per install", {"part": [("Assembly", "damage", 1)]}),
-    (K.ASSEMBLY, "4 per install", {"part": [("Assembly", "per_install_damage", 4)]}),
+    # Round 3 (after rounds 1-2: Hammer 10/+3, Loader and Spring +3 Block, Coupler 2 dmg no extra Heat,
+    # Assembly 1 + 3 per install). Magnet's value jumps between 3 and 4 Block per pull (two pulls stop
+    # a 7-damage attack), so split its Block between pulls and a flat amount.
+    (K.MAGNET, "3 per pull + 1", {"magnet_block_per_pull": 3, "part": [("Magnet", "block", 1)]}),
+    (K.MAGNET, "3 per pull + 2", {"magnet_block_per_pull": 3, "part": [("Magnet", "block", 2)]}),
+    (K.MAGNET, "2 per pull + 3", {"magnet_block_per_pull": 2, "part": [("Magnet", "block", 3)]}),
+    (K.SLIDER, "7 dmg", {"part": [("Slider", "damage", 7)]}),
+    (K.SLIDER, "6 dmg", {"part": [("Slider", "damage", 6)]}),
 ]
 
 

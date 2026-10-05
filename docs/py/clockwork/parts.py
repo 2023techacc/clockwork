@@ -64,7 +64,7 @@ SPECS = {
     Kind.SPRING: PartSpec(block=3),          # extra Heat depends on its place in the chain; +3 Block (v15)
     Kind.MIRROR: PartSpec(),
     Kind.AMPLIFIER: PartSpec(triggers=False),
-    Kind.COUPLER: PartSpec(extra_heat=2),                  # balance pass v5 (was +0)
+    Kind.COUPLER: PartSpec(damage=2),                      # v5: +2 Heat; v15: no extra Heat, 2 damage
     Kind.LOADER: PartSpec(block=3),                        # +3 Block (v15)
     Kind.COOLANT: PartSpec(cooling=3),
     Kind.HAMMER: PartSpec(damage=10, extra_heat=3),    # Rules.md: 15/+2; v3: 9/+4; v15: 10/+3
@@ -73,7 +73,7 @@ SPECS = {
     # Primer: fresh_damage only if it triggers on the turn it was installed.
     # Balance pass v5 values; first proposals were Primer 4/18 and Assembly 2 per part.
     Kind.PRIMER: PartSpec(damage=2, fresh_damage=8),       # pairs with Loader (Feeder) / placement
-    Kind.ASSEMBLY: PartSpec(per_install_damage=3),         # pairs with Loader
+    Kind.ASSEMBLY: PartSpec(damage=1, per_install_damage=3),  # pairs with Loader; +1 base damage (v15)
     Kind.SLIDER: PartSpec(damage=5, moved_bonus=3),        # pairs with Magnet (moved bonus was 6)
 }
 

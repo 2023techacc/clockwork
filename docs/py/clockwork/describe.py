@@ -9,26 +9,37 @@ def _pct(x):
     return f"{round(x * 100)}%"
 
 
+def _also(spec) -> str:
+    """'Deal 2 damage. ' / 'Gain 3 Block. ' for parts whose main effect is something else."""
+    out = ""
+    if spec.damage:
+        out += f"Deal {spec.damage} damage. "
+    if spec.block:
+        out += f"Gain {spec.block} Block. "
+    return out
+
+
 def part_texts(rules=DEFAULT_RULES) -> dict:
     s = specs_for(rules.part_overrides)
     return {
         Kind.STRIKER: f"Deal {s[Kind.STRIKER].damage} damage.",
         Kind.PLATE: f"Gain {s[Kind.PLATE].block} Block.",
-        Kind.SPRING: "Crank again for free, continuing in the direction the trigger came from. "
-                     "Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd...",
+        Kind.SPRING: _also(s[Kind.SPRING]) + "Crank again for free, continuing in the direction the trigger "
+                     "came from. Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd...",
         Kind.MIRROR: "Acts exactly as the part directly opposite it (attachments included). Can't copy a Mirror.",
         Kind.AMPLIFIER: f"Passive: neighbours' damage and Block +{_pct(rules.amplifier_bonus)}. Never triggers.",
-        Kind.COUPLER: f"Triggers its left neighbour, then its right one. Can't trigger a Coupler. "
-                      f"+{s[Kind.COUPLER].extra_heat} Heat.",
-        Kind.LOADER: f"Installs the next {rules.loader_loads} queue parts into empty slots. If the gear is full, "
-                     "one replaces the part opposite the Loader.",
+        Kind.COUPLER: _also(s[Kind.COUPLER]) + "Triggers its left neighbour, then its right one. Can't trigger "
+                      "a Coupler." + (f" +{s[Kind.COUPLER].extra_heat} Heat." if s[Kind.COUPLER].extra_heat else ""),
+        Kind.LOADER: _also(s[Kind.LOADER]) + f"Installs the next {rules.loader_loads} queue parts into empty "
+                     "slots. If the gear is full, one replaces the part opposite the Loader.",
         Kind.COOLANT: f"Remove {s[Kind.COOLANT].cooling} Heat.",
         Kind.HAMMER: f"Deal {s[Kind.HAMMER].damage} damage. +{s[Kind.HAMMER].extra_heat} Heat.",
         Kind.MAGNET: f"Pulls the parts 2 slots away into the slots next to it (swapping if occupied). "
                      f"{rules.magnet_block_per_pull} Block per part pulled.",
         Kind.PRIMER: f"Deal {s[Kind.PRIMER].damage} damage, or {s[Kind.PRIMER].fresh_damage} if it was "
                      "installed this turn.",
-        Kind.ASSEMBLY: f"Deal {s[Kind.ASSEMBLY].per_install_damage} damage per part installed this turn.",
+        Kind.ASSEMBLY: (f"Deal {s[Kind.ASSEMBLY].damage} damage, +" if s[Kind.ASSEMBLY].damage else "Deal ")
+                       + f"{s[Kind.ASSEMBLY].per_install_damage} per part installed this turn.",
         Kind.SLIDER: f"Deal {s[Kind.SLIDER].damage} damage, +{s[Kind.SLIDER].moved_bonus} if a Magnet moved "
                      "it this turn.",
     }

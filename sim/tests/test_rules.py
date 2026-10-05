@@ -23,7 +23,8 @@ MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, 
     ("Slider", "moved_bonus", 6),
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
-    ("Coupler", "extra_heat", 0), ("Spring", "block", 0), ("Loader", "block", 0)))
+    ("Coupler", "extra_heat", 0), ("Spring", "block", 0), ("Loader", "block", 0),
+    ("Coupler", "damage", 0), ("Assembly", "damage", 0)))
 
 
 def mech(**kw):
