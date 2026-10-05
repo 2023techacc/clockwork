@@ -134,7 +134,8 @@ class RunMode(unittest.TestCase):
         run.choose_door(0)
         run.hp = 20
         run.rest("heal")
-        self.assertEqual(run.hp, 35)
+        from clockwork.run_mode import REST_HEAL
+        self.assertEqual(run.hp, 20 + REST_HEAL)
 
     def test_simulated_runs_finish(self):
         for seed in range(3):
