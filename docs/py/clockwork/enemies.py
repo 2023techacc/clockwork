@@ -58,14 +58,14 @@ ENEMIES = {
     # the states 285 casual runs reached the boss with) to the Clock Tower's 78% win rate there.
     # Furnace: heats your machine every turn, a big stoke every 3rd. Tests Heat management.
     "furnace": EnemySpec("furnace", 75, (
-        (("overclock", 1), ("attack", 5)),
-        (("overclock", 1), ("attack", 5)),
+        (("overclock", 1), ("attack", 6)),
+        (("overclock", 1), ("attack", 6)),
         (("overclock", 3), ("attack", 9)),
     ), cogs=60),
     # Dismantler: takes your machine apart. Tests rebuilding and Bracing.
     "dismantler": EnemySpec("dismantler", 94, (
-        (("unscrew",), ("unscrew",), ("attack", 5)),
-        (("rust", 2), ("attack", 7)),
+        (("unscrew",), ("unscrew",), ("attack", 6)),
+        (("rust", 2), ("attack", 8)),
     ), cogs=60),
     # Iron Colossus: armor 3 on every hit, slow heavy attacks. Tests big single hits.
     "iron_colossus": EnemySpec("iron_colossus", 68, ((("attack", 7),),), armor=3, cogs=60),

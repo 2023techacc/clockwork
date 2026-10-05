@@ -5,6 +5,9 @@ Plays whole runs (clockwork.run_policy) up to the boss door and keeps each run's
 states, and each boss's scale is bisected until its win rate matches the reference boss's.
 
     python -m clockwork.boss_tune --runs 150 --bosses furnace dismantler iron_colossus pendulum
+
+Print the scaled base values and set them in enemies.py. Attacks are rounded again when a run scales
+the boss, so after a "both" pass, fix the attacks and finish with --knob hp.
 """
 import argparse
 import os
@@ -47,8 +50,9 @@ def run_to_boss(args):
 
 
 def boss_fight(args):
-    snap, boss, f, agent = args
-    spec = scaled(ENEMIES[boss], snap["scale"] * f)
+    snap, boss, f, agent, knob = args
+    # knob "both": HP and attacks x f; "hp": HP only (attacks keep their base values).
+    spec = scaled(ENEMIES[boss], snap["scale"] * f, snap["scale"] * (f if knob == "both" else 1))
     s = new_fight(snap["deck"], spec, seed=snap["seed"] * 100 + 99, rules=snap["rules"], start_hp=snap["hp"])
     a = make_agent(agent, snap["seed"])
     while s.result is None:
@@ -56,8 +60,8 @@ def boss_fight(args):
     return s.result == "win"
 
 
-def win_rate(pool, snaps, boss, f, agent):
-    res = list(pool.map(boss_fight, [(sn, boss, f, agent) for sn in snaps], chunksize=4))
+def win_rate(pool, snaps, boss, f, agent, knob="both"):
+    res = list(pool.map(boss_fight, [(sn, boss, f, agent, knob) for sn in snaps], chunksize=4))
     return sum(res) / len(res)
 
 
@@ -68,6 +72,7 @@ def main(argv=None):
     ap.add_argument("--reference", default="clock_tower")
     ap.add_argument("--bosses", nargs="+", default=[b for b in BOSSES if b != "clock_tower"])
     ap.add_argument("--steps", type=int, default=5)
+    ap.add_argument("--knob", choices=["both", "hp"], default="both")
     ap.add_argument("--lo", type=float, default=0.7)
     ap.add_argument("--hi", type=float, default=1.1)
     args = ap.parse_args(argv)
@@ -82,8 +87,8 @@ def main(argv=None):
             lo, hi, best = args.lo, args.hi, None
             for _ in range(args.steps):
                 f = (lo + hi) / 2
-                rate = win_rate(pool, snaps, boss, f, args.agent)
-                spec = scaled(base, f)
+                rate = win_rate(pool, snaps, boss, f, args.agent, args.knob)
+                spec = scaled(base, f, f if args.knob == "both" else 1)
                 print(f"  {boss} x{f:.3f}: hp {spec.hp}, pattern {spec.pattern} | wins {rate:.0%}", flush=True)
                 if best is None or abs(rate - target) < abs(best[1] - target):
                     best = (f, rate, spec)
