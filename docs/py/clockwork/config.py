@@ -43,6 +43,7 @@ class RulesConfig:
     feeder_extra_loads: int = 1      # a Loader with Feeder installs this many more parts per trigger
     feeder_triggers: int = 3         # ... and the first this-many parts it loads trigger right away (v12)
     polish_bonus: float = 0.2        # Polish attachment, added to the Amplifier bonus (was 0.5)
+    echo_per_turn: int = 1           # Echo: how many of the part's triggers each turn are repeated
     clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     loader_loads: int = 2            # parts a Loader installs per trigger (was 1)
     loader_replaces: bool = True     # with the gear full, one load replaces the part opposite the Loader
