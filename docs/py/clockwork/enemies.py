@@ -29,6 +29,8 @@ class EnemySpec:
     chime_damage: int = 0                     # ... for this much damage, hitting your current Block
     cogs: int = 0                             # cogs looted on a win (harder enemies carry more)
     elite: bool = False
+    armor: int = 0                            # every hit on it deals this much less (min 0)
+    swing: bool = False                       # forces the turn direction: odd turns clockwise, even counter-clockwise
 
 
 # Tuned v7 for runs where HP carries over (clockwork.tune; MCTS@50 = casual player stand-in):
@@ -52,6 +54,24 @@ ENEMIES = {
     # Boss. v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
     "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12, cogs=60),
+    # Other bosses (v13, to compare with the Clock Tower). Tuned in run conditions (clockwork.boss_tune:
+    # the states 285 casual runs reached the boss with) to the Clock Tower's 78% win rate there.
+    # Furnace: heats your machine every turn, a big stoke every 3rd. Tests Heat management.
+    "furnace": EnemySpec("furnace", 74, (
+        (("overclock", 1), ("attack", 6)),
+        (("overclock", 1), ("attack", 6)),
+        (("overclock", 3), ("attack", 9)),
+    ), cogs=60),
+    # Dismantler: takes your machine apart. Tests rebuilding and Bracing.
+    "dismantler": EnemySpec("dismantler", 84, (
+        (("unscrew",), ("unscrew",), ("attack", 6)),
+        (("rust", 2), ("attack", 8)),
+    ), cogs=60),
+    # Iron Colossus: armor 3 on every hit, slow heavy attacks. Tests big single hits.
+    "iron_colossus": EnemySpec("iron_colossus", 68, ((("attack", 7),),), armor=3, cogs=60),
+    # Pendulum: forces the turn direction (odd turns clockwise, even counter-clockwise); a light
+    # swing then a heavy one. Tests layouts that work both ways.
+    "pendulum": EnemySpec("pendulum", 83, ((("attack", 4),), (("attack", 10),)), swing=True, cogs=60),
     # Elites (machine attackers), tuned so a casual player (MCTS@50) loses ~25 HP per win.
     "overclocker": EnemySpec("overclocker", 80, (
         (("attack", 7),),
@@ -69,14 +89,14 @@ ENEMIES = {
 }
 NORMAL = ["dummy", "spiker", "enrager", "saboteur"]
 ELITES = ["overclocker", "rust_golem", "pickpocket", "jammer_prime"]
-BOSSES = ["clock_tower"]
+BOSSES = ["clock_tower", "furnace", "dismantler", "iron_colossus", "pendulum"]
 
 
 def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
     """Materialize the intent for `turn` (1-based), picking random targets now."""
     template = spec.pattern[(turn - 1) % len(spec.pattern)]
     occupied = [i for i, p in enumerate(gear) if p is not None]
-    jammed = set()
+    jammed, unscrewed = set(), set()
     out = []
     for act in template:
         if act[0] == "attack":
@@ -87,8 +107,11 @@ def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
             jammed.add(slot)
             out.append(("jam", slot, act[1]))
         elif act[0] == "unscrew":
-            if occupied:
-                out.append(("unscrew", rng.choice(occupied)))
+            free = [i for i in occupied if i not in unscrewed]
+            if free:
+                slot = rng.choice(free)
+                unscrewed.add(slot)
+                out.append(("unscrew", slot))
         else:
             out.append(act)
     return tuple(out)
@@ -104,4 +127,5 @@ def scaled(spec: EnemySpec, f: float, attack_f: Optional[float] = None) -> Enemy
     return EnemySpec(spec.name, max(1, round(spec.hp * f)), pattern,
                      attack_growth=round(spec.attack_growth * a), crank_limit=spec.crank_limit,
                      chime_every=spec.chime_every, chime_damage=max(1, round(spec.chime_damage * a))
-                     if spec.chime_damage else 0, cogs=spec.cogs, elite=spec.elite)
+                     if spec.chime_damage else 0, cogs=spec.cogs, elite=spec.elite,
+                     armor=spec.armor, swing=spec.swing)

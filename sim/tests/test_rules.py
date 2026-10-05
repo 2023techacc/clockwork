@@ -676,5 +676,33 @@ class Fuzz(unittest.TestCase):
         self.assertNotEqual(engine.summary(a), engine.summary(s))
 
 
+
+class NewBosses(unittest.TestCase):
+    def test_armor_reduces_every_hit(self):
+        s, _ = setup([None, S], enemy=EnemySpec("armored", 999, ((("attack", 1),),), armor=3))
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 3)            # 6 - 3
+
+    def test_swing_forces_turn_direction(self):
+        s = new_fight(DECKS["starter"], EnemySpec("swinger", 99, ((("attack", 1),),), swing=True), seed=0)
+        ends = [a for a in legal_actions(s) if a[0] == "end_install"]
+        self.assertEqual(ends, [("end_install", engine.CW)])     # turn 1: clockwise
+        with self.assertRaises(ValueError):
+            apply(s, ("end_install", engine.CCW))
+        apply(s, ("end_install", engine.CW))
+        apply(s, ("end_turn",))
+        ends = [a for a in legal_actions(s) if a[0] == "end_install"]
+        self.assertTrue(s.dead_turn or ends == [("end_install", engine.CCW)])
+
+    def test_dismantler_unscrews_two_different_parts(self):
+        from clockwork.enemies import reveal_intent
+        import random
+        gear = [Part(i, S) for i in range(6)]
+        for seed in range(20):
+            intent = reveal_intent(ENEMIES["dismantler"], 1, gear, random.Random(seed))
+            slots = [a[1] for a in intent if a[0] == "unscrew"]
+            self.assertEqual(len(set(slots)), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

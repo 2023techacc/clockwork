@@ -1,0 +1,124 @@
+# Clockwork database
+
+Every part, attachment, enemy and machine upgrade with its current numbers. **Generated** from the simulator by `python sim/build_database.py`; don't edit by hand (a test fails when it is stale). Rules and reasoning: Rules.md, Rules-Decisions.md, Run-Design.md; measurements: AI-Playtesting-Roadmap.md.
+
+## Basics
+
+| Rule | Value |
+|---|---|
+| Player HP | 55 |
+| Gear slots | 6 |
+| Parts offered per turn / visible in the queue | 3 / 5 |
+| Installs per turn | 2 |
+| Crank Power per turn (after the free crank) | 2 |
+| Heat per trigger | 1 |
+| Overheat at | 10 Heat: the turn stops, Heat goes to 0, next turn is dead; Heat past the limit is forgiven |
+| Crank direction | one direction per turn, chosen when installing ends |
+| Max attachments per part | 2 |
+
+## Parts
+
+Tier decides how often a part shows up as a reward and its Workshop price.
+
+| Part | Tier | Price | Heat per trigger | Effect |
+|---|---|---|---|---|
+| **Striker** | starter | - | 1 | Deal 6 damage. |
+| **Plate** | starter | - | 1 | Gain 6 Block. |
+| **Spring** | common | 30 | 1 | Crank again for free, continuing in the direction the trigger came from. Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd... |
+| **Mirror** | common | 30 | 1 | Acts exactly as the part directly opposite it (attachments included). Can't copy a Mirror. |
+| **Amplifier** | uncommon | 45 | 0 | Passive: neighbours' damage and Block +30%. Never triggers. |
+| **Coupler** | uncommon | 45 | 3 | Triggers its left neighbour, then its right one. Can't trigger a Coupler. +2 Heat. |
+| **Loader** | uncommon | 45 | 1 | Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
+| **Coolant** | common | 30 | 1 | Remove 3 Heat. |
+| **Hammer** | rare | 65 | 5 | Deal 9 damage. +4 Heat. |
+| **Magnet** | uncommon | 45 | 1 | Pulls the parts 2 slots away into the slots next to it (swapping if occupied). 6 Block per part pulled. |
+| **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
+| **Assembly** | uncommon | 45 | 1 | Deal 3 damage per part installed this turn. |
+| **Slider** | uncommon | 45 | 1 | Deal 5 damage, +3 if a Magnet moved it this turn. |
+
+## Attachments
+
+Items with a rarity. Attached permanently to one part copy (up to 2 per part, no duplicates); unattached ones can be sold for half price. Value = HP kept per fight on its best host (studies, Results v11/v12).
+
+| Attachment | Rarity | Fits | Price | Effect | Value |
+|---|---|---|---|---|---|
+| **Sharpened** | common | any part | 30 | +2 damage when it triggers. | +3.6 (Plate) |
+| **Counterweight** | common | any part | 30 | +2 Block when it triggers. | +4.1 (Plate) |
+| **Bracing** | common | any part | 30 | +1 damage and +1 Block when it triggers. Immune to Jam, Rust and Unscrew. | +5.0 (Plate) |
+| **Heat Sink** | uncommon | any part | 55 | Its triggers cost 1 less Heat. | +2.9 (Striker) |
+| **Coil** | uncommon | Spring | 55 | The part this Spring's crank triggers also deals 8 damage. | +3.2 |
+| **Polish** | uncommon | Mirror | 55 | The copy's damage and Block +20%. | +2.3 |
+| **Clamp** | uncommon | Magnet | 55 | The first part it pulls is triggered. | +2.0 |
+| **Feeder** | uncommon | Loader | 55 | Loads 1 more part, into the next slots to come up instead of random ones, and the loaded parts trigger right away. | +2.5 |
+| **Governor** | rare | any part | 90 | Its triggers add no Heat. | +5.5 (Hammer) |
+| **Echo** | rare | any part | 90 | The first time it triggers each turn, it triggers again. | +3.5 (Plate) |
+
+## Enemies
+
+In a run, enemies grow through the district: HP and attacks × (1 + 0.2 × stop/9), so the boss is ×1.20. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+
+### Normal
+
+| Enemy | HP | Cogs | Pattern | Tests |
+|---|---|---|---|---|
+| **dummy** | 55 | 12 | Every turn: attack 7. | Plain attacker: the baseline. |
+| **spiker** | 58 | 15 | Turn 1: attack 3. Turn 2: attack 3. Turn 3: attack 14. Then repeats. | Telegraphed big hit every 3rd turn: tests Block timing. |
+| **enrager** | 60 | 14 | Every turn: attack 3 (+1 per turn). | Attacks grow every turn: tests burst damage. |
+| **saboteur** | 56 | 16 | Turn 1: attack 7. Turn 2: jam a part (2 turns), attack 5. Turn 3: wind back (gear turns 1 step counter-clockwise), attack 7. Turn 4: unscrew a part, attack 5. Then repeats. | Messes with the machine (jam, wind back, unscrew). |
+
+### Elites
+
+| Enemy | HP | Cogs | Pattern | Tests |
+|---|---|---|---|---|
+| **overclocker** | 80 | 32 | Turn 1: attack 7. Turn 2: +3 Heat to your machine, attack 5. Then repeats. | Adds Heat to your machine. |
+| **rust_golem** | 86 | 34 | Turn 1: rust the top part (-2 damage/Block this fight), attack 7. Turn 2: attack 7. Then repeats. | Rusts the part at the top: it deals and blocks less for the rest of the fight. |
+| **pickpocket** | 84 | 30 | Every turn: unscrew a part, attack 7. | Unscrews a part every turn. |
+| **jammer_prime** | 74 | 36 | Turn 1: jam a part (2 turns), jam a part (2 turns), attack 7. Turn 2: attack 7. Then repeats. | Jams 2 parts every other turn. |
+
+### Bosses
+
+| Enemy | HP | Cogs | Pattern | Tests |
+|---|---|---|---|---|
+| **clock_tower** | 98 | 60 | No regular attacks. Strikes for 12 on every 4th crank (Springs count). | No attacks; strikes on every 4th crank of the fight, after the part that comes up. Tests doing more with fewer cranks. |
+| **furnace** | 74 | 60 | Turn 1: +1 Heat to your machine, attack 6. Turn 2: +1 Heat to your machine, attack 6. Turn 3: +3 Heat to your machine, attack 9. Then repeats. | Heats your machine every turn, a big stoke every 3rd: tests Heat management. |
+| **dismantler** | 84 | 60 | Turn 1: unscrew a part, unscrew a part, attack 6. Turn 2: rust the top part (-2 damage/Block this fight), attack 8. Then repeats. | Takes your machine apart: tests rebuilding and Bracing. |
+| **iron_colossus** | 68 | 60 | Every turn: attack 7. Armor 3: every hit on it deals 3 less. | Armor on every hit: tests big single hits over many small ones. |
+| **pendulum** | 83 | 60 | Turn 1: attack 4. Turn 2: attack 10. Then repeats. Swing: odd turns must crank clockwise, even turns counter-clockwise. | Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts that work both ways. |
+
+## Machine upgrades
+
+Permanent upgrades to the machine. Every Workshop sells all the ones you don't have; elites have a 50% chance to let you salvage 1 of 2 for free.
+
+| Upgrade | Price | Effect |
+|---|---|---|
+| **Flywheel** | 70 | +1 Crank Power per turn |
+| **Heat Housing** | 85 | +2 Heat before Overheat |
+| **Extra Hands** | 90 | +1 install per turn |
+| **Bigger Gear** | 75 | 8 gear slots instead of 6, and +1 Crank Power to turn it |
+
+Candidates (simulator only, not sold): Reinforced Frame: +10 max HP; Wide Hopper: 4 parts offered each turn instead of 3; Bigger Gear (old): 8 gear slots instead of 6.
+
+## Run
+
+| Rule | Value |
+|---|---|
+| Stops | 9 door choices, then the boss (picked at the start from: clock_tower, furnace, dismantler, iron_colossus, pendulum) |
+| Doors | stops 1-2 are fights; then 3 doors weighted fight 4, elite 2, workshop 1.5, rest 1.5; the last stop offers a rest site or a Workshop |
+| After a win | heal 5 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
+| Part reward tiers | common 5, uncommon 4, rare 1 (weights) |
+| Elite loot | a part from the uncommon/rare tiers, 1 of 3 uncommon/rare attachments, 50% chance of a free machine upgrade (1 of 2) |
+| Rest site | heal 15, or tinker: take both offered common attachments |
+| Workshop | 3 parts, 2 uncommon/rare attachments, every machine upgrade you lack; repair 15 HP for 25; remove a part for 40 (+15 each time) |
+
+## Test decks
+
+`starter` is the run's starting deck; the others are fixed test decks (the starter plus 4 parts).
+
+| Deck | Parts |
+|---|---|
+| **starter** | 4× Striker, 3× Plate, 1× Spring |
+| **spring_chain** | 4× Striker, 3× Plate, 3× Spring, 1× Coolant, 1× Hammer |
+| **copy_loop** | 4× Striker, 3× Plate, 1× Spring, 2× Coupler, 2× Mirror |
+| **big_hit** | 4× Striker, 3× Plate, 1× Spring, 2× Hammer, 2× Amplifier |
+| **sustain** | 4× Striker, 3× Plate, 2× Spring, 2× Coolant, 1× Coupler |
+| **utility** | 4× Striker, 3× Plate, 1× Spring, 2× Loader, 2× Magnet |

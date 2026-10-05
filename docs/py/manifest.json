@@ -3,11 +3,12 @@
     "clockwork/__init__.py",
     "clockwork/config.py",
     "clockwork/decks.py",
+    "clockwork/describe.py",
     "clockwork/enemies.py",
     "clockwork/engine.py",
     "clockwork/parts.py",
     "clockwork/rng.py",
     "clockwork/run_mode.py"
   ],
-  "version": "2f6585f4a03d"
+  "version": "cad750028000"
 }

@@ -40,6 +40,9 @@ MOD_HOSTS = {
     Mod.ECHO: [Kind.PLATE, Kind.STRIKER, Kind.PRIMER],
     Mod.HEAT_SINK: [Kind.STRIKER, Kind.HAMMER],
 }
+# Runs started with each machine upgrade (Results v12): Extra Hands +16, Heat Housing +15,
+# Bigger Gear +8, Flywheel +7 points.
+MACHINE_PRIORITY = ["extra_hands", "heat_housing", "bigger_gear", "flywheel"]
 CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLIDER, Kind.COUPLER,
                  Kind.PLATE, Kind.SPRING, Kind.MIRROR, Kind.MAGNET, Kind.LOADER, Kind.AMPLIFIER, Kind.COOLANT]
 
@@ -105,9 +108,11 @@ def shop(run, style=DEFAULT_STYLE):
     if run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
-    machine = o.get("machine")
-    if machine and not machine["sold"] and run.cogs >= machine["price"]:
-        run.buy("machine")
+    machines = sorted(range(len(o["machines"])), key=lambda i: MACHINE_PRIORITY.index(o["machines"][i]["key"]))
+    for i in machines:
+        if not o["machines"][i]["sold"] and run.cogs >= o["machines"][i]["price"]:
+            run.buy("machine", i)
+            break
     reserve = 90 if style["machine_first"] and len(run.machine) < 2 else 0
     for i in sorted(range(len(o["attachments"])), key=lambda i: -MOD_VALUE.get(Mod(o["attachments"][i]["mod"]), 0)):
         item = o["attachments"][i]
@@ -129,11 +134,11 @@ def shop(run, style=DEFAULT_STYLE):
     run.leave_workshop()
 
 
-def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=()):
+def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=(), boss=None):
     """Play a whole run. `style` overrides DEFAULT_STYLE keys; `machine` starts the run with
     those machine upgrades already installed."""
     style = {**DEFAULT_STYLE, **(style or {})}
-    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth)
+    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth, boss=boss)
     run.machine = list(machine)
     run.hp = run.max_hp()
     while run.phase not in ("won", "lost"):
@@ -148,8 +153,9 @@ def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, styl
             if style["parts"] == "none":
                 best = ""
             mods = run.offer.get("attachments", [])
+            salvage = sorted(run.offer.get("salvage", []), key=MACHINE_PRIORITY.index)
             run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best,
-                            salvage=bool(run.offer.get("salvage")))
+                            salvage=salvage[0] if salvage else "")
         elif run.phase == "rest":
             heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < 0.6 * run.max_hp())
             run.rest("heal" if heal else "tinker")
