@@ -26,9 +26,10 @@ TARGETS = [
     ("Choices", "Run styles (route, rest, Workshop)", "no style more than 5 points above the base",
      "on target", "none above", "v12"),
     # Content
-    ("Content", "One part pick (win-rate points over the starter)", "+10 to +25", (10, 25),
-     "Primer +17; Hammer +9, Coupler +8, Amplifier +6, Magnet +4, Slider/Assembly +2, Coolant −1, "
-     "Mirror −7, Loader −8, Spring −14", "v6, before run mode"),
+    ("Content", "One part pick (win-rate points over the starter, fights from 30 HP)",
+     "+3 to +10 (combo enablers may be slightly negative alone)", (3, 10),
+     "Magnet +15.6, Amplifier +8.5, Coolant +5.4, Primer +3.1, Slider −0.2, Assembly −2.5, Hammer −2.7, "
+     "Mirror −4.6, Coupler −6.2, Loader −7.3, Spring −8.1", "v14"),
     ("Content", "One common/uncommon attachment (HP kept per fight)", "+2.5 to +4", (2.5, 4),
      "Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, "
      "Polish +2.3, Clamp +2.0", "v11/v12"),

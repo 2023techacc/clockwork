@@ -18,7 +18,7 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 72% vs 63% | ✅ on target | v12 |
 | Choices | Rest: always heal vs always tinker | within 5 points of each other | 72% vs 69% | ✅ on target | v12 |
 | Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | none above | ✅ on target | v12 |
-| Content | One part pick (win-rate points over the starter) | +10 to +25 | Primer +17; Hammer +9, Coupler +8, Amplifier +6, Magnet +4, Slider/Assembly +2, Coolant −1, Mirror −7, Loader −8, Spring −14 | ⚠️ partly off | v6, before run mode |
+| Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10 (combo enablers may be slightly negative alone) | Magnet +15.6, Amplifier +8.5, Coolant +5.4, Primer +3.1, Slider −0.2, Assembly −2.5, Hammer −2.7, Mirror −4.6, Coupler −6.2, Loader −7.3, Spring −8.1 | ⚠️ partly off | v14 |
 | Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, Polish +2.3, Clamp +2.0 | ⚠️ partly off | v11/v12 |
 | Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +5.5, Echo +3.5 | ⚠️ partly off | v11 |
 | Content | One machine upgrade (run clear points, started with it) | +7 to +16 by price | Extra Hands +16, Heat Housing +15, Bigger Gear +8, Flywheel +7 | ✅ on target | v12 |

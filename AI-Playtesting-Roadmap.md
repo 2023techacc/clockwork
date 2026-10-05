@@ -687,3 +687,26 @@ At the boss setting, players block about 46% of strike damage.
 **Reading:**
 - The Clock Tower punishes Spring-heavy and slow decks; the Iron Colossus punishes Coupler/Mirror chains of small hits. These two give real counter-play.
 - **The Furnace, Dismantler and Pendulum hit every deck about evenly:** their themes don't bite yet. To sharpen them, shift difficulty from attacks to the theme (more Heat for the Furnace, more unscrews for the Dismantler, a harsher swing for the Pendulum) and retune.
+
+## Results v14 (balance targets; part picks re-measured)
+
+**Balance targets** now live in `sim/clockwork/targets.py` and at the top of Database.md: each metric's target, its latest measurement, and whether it's on target. Most are on target. The two content rows that aren't are part picks and some attachments.
+
+**Part picks, re-measured.** The old part values (v6) came from win rates at full HP against the pre-run enemies; with HP carry-over tuning, nearly every single fight from full HP is now won. So they're re-measured as **win-rate points from 30 HP** (typical mid-run HP): the starter plus one copy of the part, against all 13 enemies, 40 fights each (520 fights per deck, same seeds). The starter wins 81%.
+
+| Part | Win pts | | Part | Win pts |
+|---|---|---|---|---|
+| Magnet | **+15.6** | | Assembly | −2.5 |
+| Amplifier | +8.5 | | Hammer | −2.7 |
+| Coolant | +5.4 | | Mirror | −4.6 |
+| Primer | +3.1 | | Coupler | −6.2 |
+| Slider | −0.2 | | Loader | −7.3 |
+| | | | Spring | −8.1 |
+
+(From full HP the same probes measure −1.7 to +0.6 HP kept per fight for everything but Magnet, which keeps +6.0: one extra part in an 8-part deck rarely matters when the fight is safe.)
+
+**Reading:**
+- **Magnet is now the outlier.** Its 6 Block per pulled part made it the best pick by far.
+- **Hammer and Coupler have slipped below zero** since v6. The Heat-based elites and bosses, and the HP carry-over tuning, punish their Heat.
+- Spring, Mirror and Loader stay negative alone, as before (enablers that need partners). The proposed target allows enablers to be slightly negative.
+- Proposed target: **+3 to +10 points per pick**. A part balance pass would bring Magnet down (e.g. 4–5 Block per pull) and Hammer/Coupler up (less Heat).
