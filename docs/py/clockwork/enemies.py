@@ -54,24 +54,24 @@ ENEMIES = {
     # Boss. v2 (chime): no regular attack; every 4th crank of the fight it strikes at once.
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
     "clock_tower": EnemySpec("clock_tower", 98, ((),), chime_every=4, chime_damage=12, cogs=60),
-    # Other bosses (v13, to compare with the Clock Tower). Tuned (clockwork.tune, MCTS@50, start at 36 HP)
-    # to the Clock Tower's 73% win rate over the test decks.
+    # Other bosses (v13, to compare with the Clock Tower). Tuned in run conditions (clockwork.boss_tune:
+    # the states 285 casual runs reached the boss with) to the Clock Tower's 78% win rate there.
     # Furnace: heats your machine every turn, a big stoke every 3rd. Tests Heat management.
-    "furnace": EnemySpec("furnace", 82, (
-        (("overclock", 1), ("attack", 6)),
-        (("overclock", 1), ("attack", 6)),
-        (("overclock", 3), ("attack", 10)),
+    "furnace": EnemySpec("furnace", 75, (
+        (("overclock", 1), ("attack", 5)),
+        (("overclock", 1), ("attack", 5)),
+        (("overclock", 3), ("attack", 9)),
     ), cogs=60),
     # Dismantler: takes your machine apart. Tests rebuilding and Bracing.
-    "dismantler": EnemySpec("dismantler", 103, (
-        (("unscrew",), ("unscrew",), ("attack", 6)),
-        (("rust", 2), ("attack", 8)),
+    "dismantler": EnemySpec("dismantler", 94, (
+        (("unscrew",), ("unscrew",), ("attack", 5)),
+        (("rust", 2), ("attack", 7)),
     ), cogs=60),
     # Iron Colossus: armor 3 on every hit, slow heavy attacks. Tests big single hits.
-    "iron_colossus": EnemySpec("iron_colossus", 73, ((("attack", 7),),), armor=3, cogs=60),
+    "iron_colossus": EnemySpec("iron_colossus", 68, ((("attack", 7),),), armor=3, cogs=60),
     # Pendulum: forces the turn direction (odd turns clockwise, even counter-clockwise); a light
     # swing then a heavy one. Tests layouts that work both ways.
-    "pendulum": EnemySpec("pendulum", 88, ((("attack", 4),), (("attack", 11),)), swing=True, cogs=60),
+    "pendulum": EnemySpec("pendulum", 83, ((("attack", 4),), (("attack", 10),)), swing=True, cogs=60),
     # Elites (machine attackers), tuned so a casual player (MCTS@50) loses ~25 HP per win.
     "overclocker": EnemySpec("overclocker", 80, (
         (("attack", 7),),

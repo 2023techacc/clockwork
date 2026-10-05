@@ -283,10 +283,9 @@ def _boss_fights(args):
 def study_bosses(pool, args):
     from .decks import DECKS
     from .enemies import BOSSES
-    from .run_mode import GROWTH
-    scale = 1 + GROWTH
-    print(f"Bosses vs test decks ({args.agent}, {args.fights} fights each, start at 36 HP, boss at x{scale:.2f} "
-          "as in a run): win rate")
+    scale = 1.0     # fixed test decks have no attachments or upgrades, so base strength (not x1+GROWTH)
+    print(f"Bosses vs test decks ({args.agent}, {args.fights} fights each, start at 36 HP, base strength): "
+          "win rate")
     tasks = [(d, b, range(lo, min(lo + 10, args.fights)), args.agent, 36, scale)
              for b in BOSSES for d in DECKS for lo in range(0, args.fights, 10)]
     cell = {}
