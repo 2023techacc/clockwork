@@ -22,7 +22,7 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Content | One combo-enabler pick (same measure) | −5 to +3 | Mirror −1.7, Loader −2.8, Spring −3.5 | ✅ on target | v15 |
 | Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Coil +5.4, Heat Sink +3.6, Bracing +3.5, Counterweight +3.3, Sharpened +3.0, Clamp +2.8, Feeder +2.8, Polish +2.3 | ⚠️ partly off | v16 |
 | Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +6.5, Echo +3.0 | ❌ off target | v16 |
-| Content | One machine upgrade (run clear points, started with it) | +7 to +16 by price | Bigger Gear +18 (75 cogs), Flywheel +16 (70), Extra Hands +14 (90), Heat Housing +11 (85) | ⚠️ partly off | v16 |
+| Content | One machine upgrade (run clear points, started with it) | +7 to +16, rising with price (Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90) | Bigger Gear +18, Flywheel +16, Extra Hands +14, Heat Housing +11 | ⚠️ partly off | v16 |
 | Content | Strongest single turn (any combo) | about half the boss's HP or less (≤ 55) | 60 | ❌ off target | v15 (Echo Coupler + Hammers) |
 | Economy | Attachments per run | 2–4 | 2.3 | ✅ on target | v15 |
 | Economy | Machine upgrades per run | about 1 | 0.93 | ✅ on target | v15 |
