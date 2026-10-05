@@ -11,7 +11,9 @@ from clockwork.config import DEFAULT_RULES as R
 from clockwork.decks import DECKS, deck_list
 from clockwork.enemies import ENEMIES
 from clockwork.engine import CCW, CW, apply, legal_actions, new_fight
-from clockwork.parts import COUNTERWEIGHT_BLOCK, MOD_RARITY, SHARPENED_DAMAGE, SPECS, Kind, Mod
+from clockwork.describe import ENEMY_NOTES, enemy_pattern_text, mod_fits_text, mod_texts, part_texts
+from clockwork.enemies import BOSSES
+from clockwork.parts import MOD_RARITY
 from clockwork.run_mode import MACHINE, STOPS, Run
 
 MODE = None         # "fight" (single fight) or "run"
@@ -25,58 +27,29 @@ FIGHT_RECORDED = False
 NODE_TEXT = {
     "fight": "Fight: an ordinary enemy. Loot cogs, then pick a part.",
     "elite": "Elite: a dangerous machine-wrecker. High risk, high return: more cogs, a better part, "
-             "1 of 3 attachments, and a 50% chance to salvage a free machine upgrade.",
+             "1 of 3 attachments, and a 50% chance to salvage a free machine upgrade (1 of 2).",
     "workshop": "Workshop: buy parts, attachments and machine upgrades; remove parts; repair.",
     "rest": "Rest: heal, or tinker for two common attachments.",
-    "boss": "Boss: the Clock Tower.",
+    "boss": "Boss: the end of the district.",
 }
 
 
 def _describe_parts():
-    s = {k: SPECS[k] for k in Kind}
-    pct = lambda x: f"{round(x * 100)}%"
-    return {
-        "Striker": f"Deal {s[Kind.STRIKER].damage} damage.",
-        "Plate": f"Gain {s[Kind.PLATE].block} Block.",
-        "Spring": "Crank again for free, continuing in the direction the trigger came from. "
-                  "Extra Heat: +1 for the 1st Spring in a chain, +2 for the 2nd, +3 for the 3rd...",
-        "Mirror": "Acts exactly as the part directly opposite it (attachments included). Can't copy a Mirror.",
-        "Amplifier": f"Passive: neighbours' damage and Block +{pct(R.amplifier_bonus)}. Never triggers.",
-        "Coupler": f"Triggers its left neighbour, then its right one. Can't trigger a Coupler. "
-                   f"+{s[Kind.COUPLER].extra_heat} Heat.",
-        "Loader": f"Installs the next {R.loader_loads} queue parts into empty slots. If the gear is full, "
-                  "one replaces the part opposite the Loader.",
-        "Coolant": f"Remove {s[Kind.COOLANT].cooling} Heat.",
-        "Hammer": f"Deal {s[Kind.HAMMER].damage} damage. +{s[Kind.HAMMER].extra_heat} Heat.",
-        "Magnet": f"Pulls the parts 2 slots away into the slots next to it (swapping if occupied). "
-                  f"{R.magnet_block_per_pull} Block per part pulled.",
-        "Primer": f"Deal {s[Kind.PRIMER].damage} damage, or {s[Kind.PRIMER].fresh_damage} if it was "
-                  "installed this turn.",
-        "Assembly": f"Deal {s[Kind.ASSEMBLY].per_install_damage} damage per part installed this turn.",
-        "Slider": f"Deal {s[Kind.SLIDER].damage} damage, +{s[Kind.SLIDER].moved_bonus} if a Magnet moved "
-                  "it this turn.",
-        "+Sharpened": f"(any part) +{SHARPENED_DAMAGE} damage when it triggers.",
-        "+Counterweight": f"(any part) +{COUNTERWEIGHT_BLOCK} Block when it triggers.",
-        "+Bracing": f"(any part) +{R.bracing_damage} damage and +{R.bracing_block} Block when it triggers. "
-                    "Immune to Jam, Rust and Unscrew.",
-        "+Heat Sink": "(any part) Its triggers cost 1 less Heat.",
-        "+Coil": f"(Spring) The part this Spring's crank triggers also deals {R.coil_damage} damage.",
-        "+Polish": f"(Mirror) The copy's damage and Block +{pct(R.polish_bonus)}.",
-        "+Clamp": "(Magnet) The first part it pulls is triggered.",
-        "+Feeder": f"(Loader) Loads {R.feeder_extra_loads} more part, into the next slots to come up instead of "
-                   "random ones, and the loaded parts trigger right away.",
-        "+Governor": "(any part) Its triggers add no Heat.",
-        "+Echo": "(any part) The first time it triggers each turn, it triggers again.",
-    }
+    out = {k.value: t for k, t in part_texts(R).items()}
+    out.update({"+" + m.value: f"({mod_fits_text(m)}) {t}" for m, t in mod_texts(R).items()})
+    return out
 
 
 def options():
     decks = {name: [k.value + "".join("+" + m.value for m in mods) for k, mods in deck_list(d)]
              for name, d in DECKS.items()}
     enemies = {name: {"hp": e.hp, "crank_limit": e.crank_limit, "chime_every": e.chime_every,
-                      "chime_damage": e.chime_damage, "elite": e.elite, "cogs": e.cogs}
+                      "chime_damage": e.chime_damage, "elite": e.elite, "cogs": e.cogs, "boss": name in BOSSES,
+                      "armor": e.armor, "swing": e.swing, "pattern": enemy_pattern_text(e),
+                      "note": ENEMY_NOTES.get(name, "")}
                for name, e in ENEMIES.items()}
-    return json.dumps({"decks": decks, "enemies": enemies, "parts": _describe_parts(), "nodes": NODE_TEXT,
+    return json.dumps({"decks": decks, "enemies": enemies, "bosses": BOSSES, "parts": _describe_parts(),
+                       "nodes": NODE_TEXT,
                        "rarity": {m.value: r for m, r in MOD_RARITY.items()},
                        "rules": {"overheat_at": R.overheat_at, "crank_power": R.crank_power,
                                  "installs": R.installs_per_turn, "player_hp": R.player_hp,
@@ -102,10 +75,10 @@ def _begin_fight(deck, enemy, seed, rules, start_hp):
 
 # ---------------------------------------------------------------- run
 
-def start_run(deck, seed):
+def start_run(deck, seed, boss=""):
     global MODE, RUN, STATE, SETUP
-    MODE, RUN, STATE = "run", Run(deck, int(seed)), None
-    SETUP = {"mode": "run", "deck": deck, "seed": int(seed)}
+    MODE, RUN, STATE = "run", Run(deck, int(seed), boss=boss or None), None
+    SETUP = {"mode": "run", "deck": deck, "seed": int(seed), "boss": RUN.boss}
     return view()
 
 
@@ -116,9 +89,8 @@ def choose_door(index):
     return view()
 
 
-def take_reward(part="", attachment="", scrap=False):
-    # A salvaged machine upgrade is free, so it is always taken with the reward.
-    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap), salvage=bool(RUN.offer.get("salvage")))
+def take_reward(part="", attachment="", scrap=False, salvage=""):
+    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap), salvage=salvage)
     return view()
 
 
@@ -233,7 +205,8 @@ def _fight_view():
         "enemy": {"name": s.enemy.name, "hp": max(0, s.enemy_hp), "max_hp": s.enemy_max_hp,
                   "intent": [_intent_text(a) for a in s.intent], "elite": s.enemy.elite,
                   "crank_limit": s.enemy.crank_limit, "cranks_used": s.cranks_used,
-                  "chime_every": s.enemy.chime_every, "chime_damage": s.enemy.chime_damage},
+                  "chime_every": s.enemy.chime_every, "chime_damage": s.enemy.chime_damage,
+                  "armor": s.enemy.armor, "swing": s.enemy.swing},
         "gear": [_part(p, i) for i, p in enumerate(s.gear)],
         "top": s.top,
         "arrival": [(s.top - k) % n for k in range(n)],
@@ -241,7 +214,8 @@ def _fight_view():
         "next": [_part(p) for p in s.visible_queue()],
         "queue_size": len(s.queue), "discard_size": len(s.discard),
         "can_install": any(a[0] == "install" for a in legal),
-        "can_pick_direction": ("end_install", CW) in legal,
+        "can_pick_direction": ("end_install", CW) in legal or ("end_install", CCW) in legal,
+        "can_cw": ("end_install", CW) in legal, "can_ccw": ("end_install", CCW) in legal,
         "can_end_install": any(a[0] == "end_install" for a in legal),
         "can_crank": ("crank",) in legal,
         "can_end_turn": ("end_turn",) in legal,

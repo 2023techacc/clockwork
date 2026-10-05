@@ -17,6 +17,7 @@ let play, opts, view, version = "";
 let selected = null;          // index of the selected hand part
 let logHistory = [];          // [{text, fresh}]
 let pickedAttachment = null;  // elite reward: chosen attachment
+let pickedSalvage = null;     // elite reward: chosen salvaged machine upgrade
 let attachItem = null;        // inventory index being attached
 let gearSize = 0;
 
@@ -62,9 +63,12 @@ function setupScreen() {
   for (const name of Object.keys(opts.decks)) $("deck").add(new Option(name, name));
   for (const [name, e] of Object.entries(opts.enemies)) {
     const extra = e.chime_every ? `, strikes for ${e.chime_damage} every ${e.chime_every} cranks`
-      : e.crank_limit ? `, ${e.crank_limit} cranks max` : "";
-    $("enemy").add(new Option(`${e.elite ? "Elite: " : ""}${name} (${e.hp}±${opts.rules.hp_jitter} HP${extra})`, name));
+      : e.crank_limit ? `, ${e.crank_limit} cranks max` : e.armor ? `, armor ${e.armor}` : e.swing ? ", swing" : "";
+    const group = e.elite ? "Elite: " : e.boss ? "Boss: " : "";
+    $("enemy").add(new Option(`${group}${name} (${e.hp}±${opts.rules.hp_jitter} HP${extra})`, name));
   }
+  $("boss").add(new Option("random (shown at the start)", ""));
+  for (const name of opts.bosses) $("boss").add(new Option(name, name));
   document.querySelectorAll("[data-rule]").forEach((el) => { el.textContent = opts.rules[el.dataset.rule]; });
   const dl = $("parts");
   for (const [name, text] of Object.entries(opts.parts)) {
@@ -88,8 +92,9 @@ function setupScreen() {
   const syncMode = () => {
     const run = mode() === "run";
     $("enemy-label").hidden = run;
+    $("boss-label").hidden = !run;
     $("mode-text").textContent = run
-      ? `${opts.rules.stops} stops of door choices (fight, elite, Workshop, rest), then the Clock Tower. ` +
+      ? `${opts.rules.stops} stops of door choices (fight, elite, Workshop, rest), then the district's boss. ` +
         `HP carries over; heal ${opts.rules.heal} after each win.` : "One fight at full HP.";
   };
   document.querySelectorAll("input[name=mode]").forEach((r) => { r.onchange = syncMode; });
@@ -97,7 +102,7 @@ function setupScreen() {
   $("start").onclick = () => {
     const seed = Number($("seed").value) || 0;
     logHistory = [];
-    if (mode() === "run") update(play.start_run($("deck").value, seed));
+    if (mode() === "run") update(play.start_run($("deck").value, seed, $("boss").value));
     else update(play.start($("deck").value, $("enemy").value, seed));
   };
 }
@@ -244,7 +249,7 @@ function update(json) {
       buildGear(f.gear.length);
     }
   }
-  if (view.screen !== prevScreen) { pickedAttachment = null; attachItem = null; }
+  if (view.screen !== prevScreen) { pickedAttachment = null; pickedSalvage = null; attachItem = null; }
   render();
 }
 
@@ -281,13 +286,14 @@ function drawBanner() {
   const mach = r.machine.map((m) => m.name).join(", ");
   b_html(`<b>Run</b><span class="steps">${steps.join("")}</span>` +
     `<span><b>HP</b> ${r.hp}/${r.max_hp}</span><span><b>Cogs</b> ${r.cogs}</span>` +
-    `<span><b>Deck</b> ${r.cards.length} parts</span>` + (mach ? `<span><b>Machine</b> ${mach}</span>` : ""));
+    `<span><b>Deck</b> ${r.cards.length} parts</span>` + (mach ? `<span><b>Machine</b> ${mach}</span>` : "") +
+    `<span title="${opts.enemies[r.boss].pattern}"><b>Boss</b> ${r.boss}: ${opts.enemies[r.boss].note}</span>`);
 }
 function b_html(html) { $("run-banner").innerHTML = html; }
 
 function renderDoors() {
   const r = view.run;
-  $("map-title").textContent = r.stop >= r.stops ? "The Clock Tower awaits" : `Stop ${r.stop + 1} of ${r.stops}: choose a door`;
+  $("map-title").textContent = r.stop >= r.stops ? `The ${r.boss} awaits` : `Stop ${r.stop + 1} of ${r.stops}: choose a door`;
   const box = $("doors");
   box.innerHTML = "";
   r.doors.forEach((d, i) => {
@@ -325,11 +331,11 @@ function renderShop() {
     atts.appendChild(shopCard(`<b>${it.mod} <span class="rarity" style="color:${RARITY_COLOR[rar]}">${rar}</span></b>` +
       `<small>${opts.parts["+" + it.mod]}</small>`, it.price, it.sold, () => call(play.buy, "attachment", i), RARITY_COLOR[rar]));
   });
-  show("shop-machine-wrap", !!o.machine);
+  show("shop-machine-wrap", o.machines.length > 0);
   const mach = $("shop-machine");
   mach.innerHTML = "";
-  if (o.machine) mach.appendChild(shopCard(`<b>${o.machine.name}</b><small>${o.machine.text}</small>`,
-    o.machine.price, o.machine.sold, () => call(play.buy, "machine", 0), "#795548"));
+  o.machines.forEach((it, i) => mach.appendChild(shopCard(`<b>${it.name}</b><small>${it.text}</small>`,
+    it.price, it.sold, () => call(play.buy, "machine", i), "#795548")));
   $("shop-repair").textContent = `Repair +${r.repair.hp} HP (${r.repair.price} cogs)`;
   $("shop-repair").disabled = r.cogs < r.repair.price || r.hp >= r.max_hp;
   $("shop-repair").onclick = () => call(play.buy, "repair", 0);
@@ -429,7 +435,9 @@ function renderFight(f) {
       `after the part that comes up. Next strike in ${left} crank${left === 1 ? "" : "s"} (Springs count).`;
   } else {
     $("crank-limit").textContent = e.crank_limit
-      ? `Clock Tower: ${e.cranks_used}/${e.crank_limit} cranks used (every crank counts, Springs too)` : "";
+      ? `Clock Tower: ${e.cranks_used}/${e.crank_limit} cranks used (every crank counts, Springs too)`
+      : e.armor ? `Armor ${e.armor}: every hit on it deals ${e.armor} less.`
+      : e.swing ? `Swing: this turn must crank ${f.turn % 2 ? "clockwise ↻" : "counter-clockwise ↺"} (odd turns clockwise, even counter-clockwise).` : "";
   }
 
   let status = "";
@@ -441,7 +449,8 @@ function renderFight(f) {
     status = f.locked ? "No more cranks this turn." : f.crank_power ? `Cranking ${dir}.` : "Out of Crank Power.";
   }
   $("status").textContent = status;
-  $("go-cw").hidden = $("go-ccw").hidden = !f.can_pick_direction;
+  $("go-cw").hidden = !f.can_cw;
+  $("go-ccw").hidden = !f.can_ccw;
   $("go-dead").hidden = !(f.can_end_install && !f.can_pick_direction);
   $("crank").hidden = f.phase !== "crank";
   $("crank").disabled = !f.can_crank;
@@ -516,9 +525,21 @@ function renderResult() {
   $("again").hidden = !!r;
   if (rewarding) {
     const atts = r.offer.attachments || [];
-    const salvage = r.offer.salvage ? v.machine_all[r.offer.salvage] : null;
-    show("reward-salvage", !!salvage);
-    if (salvage) $("reward-salvage").textContent = `Salvaged from the elite: ${salvage.name} (${salvage.text}). Installed when you take your reward.`;
+    const salvage = r.offer.salvage || [];
+    show("reward-salvage-wrap", salvage.length > 0);
+    if (salvage.length && pickedSalvage === null) pickedSalvage = salvage[0];
+    const sb = $("reward-salvage");
+    sb.innerHTML = "";
+    for (const key of salvage) {
+      const m = v.machine_all[key];
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "card" + (pickedSalvage === key ? " selected" : "");
+      b.style.borderLeft = "6px solid #795548";
+      b.innerHTML = `<b>${m.name}</b><small>${m.text}</small>`;
+      b.onclick = () => { pickedSalvage = key; render(); };
+      sb.appendChild(b);
+    }
     show("reward-att-wrap", atts.length > 0);
     if (atts.length && pickedAttachment === null) pickedAttachment = atts[0];
     const ab = $("reward-attachments");
@@ -530,12 +551,12 @@ function renderResult() {
       const c = partCard({ kind, mods: [] }, null, false);
       c.classList.remove("static");
       c.tabIndex = 0;
-      c.onclick = () => call(play.take_reward, kind, pickedAttachment || "", false);
+      c.onclick = () => call(play.take_reward, kind, pickedAttachment || "", false, pickedSalvage || "");
       cards.appendChild(c);
     }
     $("scrap-reward").textContent = `Scrap the part for ${r.scrap} cogs`;
-    $("scrap-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", true);
-    $("skip-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", false);
+    $("scrap-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", true, pickedSalvage || "");
+    $("skip-reward").onclick = () => call(play.take_reward, "", pickedAttachment || "", false, pickedSalvage || "");
   }
   $("run-history").textContent = r ? r.history.map((h) => h.enemy
     ? `${h.stop >= r.stops ? "Boss" : h.stop + 1}. ${h.enemy}: ${h.result === "win" ? "won" : "lost"}, HP ${h.hp_start} → ${h.hp_end}` +

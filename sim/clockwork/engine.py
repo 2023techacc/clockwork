@@ -169,7 +169,8 @@ def legal_actions(s: State) -> List[tuple]:
                 seen.add((part.kind, part.mods))
                 acts.extend(("install", i, slot) for slot in range(len(s.gear)))
         if s.rules.crank_direction_lock and not s.dead_turn:
-            acts += [("end_install", CW), ("end_install", CCW)]
+            forced = swing_direction(s)
+            acts += [("end_install", d) for d in (CW, CCW) if forced in (None, d)]
         else:
             acts.append(("end_install",))
         return acts
@@ -182,6 +183,21 @@ def legal_actions(s: State) -> List[tuple]:
     return acts
 
 
+def swing_direction(s: State):
+    """The turn direction a swinging boss forces this turn (None if it doesn't)."""
+    if not s.enemy.swing:
+        return None
+    return CW if s.turn % 2 == 1 else CCW
+
+
+def _deal(s: State, dmg: int) -> int:
+    """Damage the enemy (armor reduces every hit). Returns the damage dealt."""
+    dmg = max(0, dmg - s.enemy.armor)
+    s.enemy_hp -= dmg
+    s.damage_turn += dmg
+    return dmg
+
+
 def apply(s: State, action: tuple) -> None:
     """Apply one action in place."""
     kind = action[0]
@@ -191,10 +207,12 @@ def apply(s: State, action: tuple) -> None:
         _install(s, action[1], action[2])
     elif kind == "end_install":
         _require(s.phase == "install", action)
+        direction = action[1] if len(action) > 1 else CW
+        _require(direction in (CW, CCW), action)
+        _require(direction == CW or s.rules.crank_direction_lock, action)
+        _require(s.dead_turn or swing_direction(s) in (None, direction), action)
         s.phase = "crank"
-        s.turn_direction = action[1] if len(action) > 1 else CW
-        _require(s.turn_direction in (CW, CCW), action)
-        _require(s.turn_direction == CW or s.rules.crank_direction_lock, action)
+        s.turn_direction = direction
         if s.dead_turn:
             s.locked = True
             _log(s, "overheated: no cranks this turn")
@@ -532,9 +550,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     if part.kind == Kind.MIRROR and Mod.POLISH in part.mods:
         mult += r.polish_bonus
     if base:
-        dmg = int(base * mult)
-        s.enemy_hp -= dmg
-        s.damage_turn += dmg
+        dmg = _deal(s, int(base * mult))
         notes.append(f"{dmg} damage")
     if block:
         blk = int(block * mult)
@@ -544,9 +560,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         s.heat = max(0, s.heat - spec.cooling)
         notes.append(f"-{spec.cooling} Heat")
     if bonus:
-        s.enemy_hp -= bonus
-        s.damage_turn += bonus
-        notes.append(f"+{bonus} damage (Coil)")
+        notes.append(f"+{_deal(s, bonus)} damage (Coil)")
     loaded = []
     if kind == Kind.LOADER:
         note, loaded = _load(s, slot, feeder=Mod.FEEDER in mods)
@@ -560,10 +574,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
             s.block += blk
             notes.append(f"{blk} Block")
         if pulled and r.magnet_damage_per_pull:
-            dmg = int(r.magnet_damage_per_pull * len(pulled) * mult)
-            s.enemy_hp -= dmg
-            s.damage_turn += dmg
-            notes.append(f"{dmg} damage")
+            notes.append(f"{_deal(s, int(r.magnet_damage_per_pull * len(pulled) * mult))} damage")
     _log(s, f"  {label} triggers ({direction}): {', '.join(notes)} -> Heat {s.heat}")
 
     if s.enemy_hp <= 0:

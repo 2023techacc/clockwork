@@ -27,6 +27,7 @@
     <div class="row">
       <label>Deck <select id="deck"></select></label>
       <label id="enemy-label">Enemy <select id="enemy"></select></label>
+      <label id="boss-label">Boss <select id="boss"></select></label>
       <label>Seed <input id="seed" type="number" min="0" step="1"></label>
       <button id="random-seed" type="button" class="secondary">Random seed</button>
       <button id="start" type="button">Start</button>
@@ -41,7 +42,7 @@
         <li><b>Crank</b> more steps in the same direction for 1 Crank Power each (<span data-rule="crank_power"></span> per turn).</li>
         <li>Every trigger adds 1 Heat (some parts add more). At <span data-rule="overheat_at"></span> Heat the machine <b>overheats</b>: the turn stops, Heat resets to 0, and next turn nothing can crank. Heat past the limit is forgiven.</li>
         <li>Block resets every turn. The enemy acts at the end of your turn — its intent is shown. Win by bringing its HP to 0.</li>
-        <li><b>Runs:</b> choose a door at each stop (fight, elite, Workshop, rest), then face the Clock Tower. Enemies drop cogs. Attachments go to your inventory; attach them to a part between fights (permanent, up to <span data-rule="max_attachments"></span> per part).</li>
+        <li><b>Runs:</b> choose a door at each stop (fight, elite, Workshop, rest), then face the district's boss (shown from the start). Enemies drop cogs. Attachments go to your inventory; attach them to a part between fights (permanent, up to <span data-rule="max_attachments"></span> per part).</li>
       </ol>
     </details>
   </section>
@@ -68,7 +69,7 @@
     <h3>Attachments</h3>
     <div id="shop-attachments" class="cards"></div>
     <div id="shop-machine-wrap" hidden>
-      <h3>Machine upgrade</h3>
+      <h3>Machine upgrades</h3>
       <div id="shop-machine" class="cards"></div>
     </div>
     <h3>Services</h3>
@@ -128,7 +129,10 @@
     <h2 id="result-title"></h2>
     <p id="result-text"></p>
     <div id="reward" hidden>
-      <p id="reward-salvage" class="status" hidden></p>
+      <div id="reward-salvage-wrap" hidden>
+        <h3>Salvaged from the elite: choose a machine upgrade (free)</h3>
+        <div id="reward-salvage" class="cards"></div>
+      </div>
       <div id="reward-att-wrap" hidden>
         <h3>Elite loot: choose an attachment</h3>
         <div id="reward-attachments" class="cards"></div>

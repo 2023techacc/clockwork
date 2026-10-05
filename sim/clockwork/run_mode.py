@@ -50,6 +50,8 @@ MACHINE = {
     "extra_hands": ("Extra Hands", "+1 install per turn", 90),
     "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6, and +1 Crank Power to turn it", 75),
 }
+BOSS_POOL = list(BOSSES)        # bosses a run can roll
+
 # Candidate machine upgrades, testable with simulate_run(machine=[...]) but not sold.
 MACHINE_CANDIDATES = {
     "frame": ("Reinforced Frame", "+10 max HP"),
@@ -63,10 +65,13 @@ class RunError(ValueError):
 
 
 class Run:
-    def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None):
+    def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None,
+                 boss=None):
         self.seed, self.base_rules, self.stops = int(seed), rules, stops
         self.growth = GROWTH if growth is None else growth
         self.rng = random.Random(self.seed * 7919 + 17)
+        # The district's boss is picked (or given) up front and shown all run, so players can plan.
+        self.boss = boss or random.Random(self.seed * 31 + 5).choice(BOSS_POOL)
         self.deck_name = deck
         self.cards = [{"id": i, "kind": k, "mods": list(m)} for i, (k, m) in enumerate(deck_list(DECKS[deck]))]
         self.next_id = len(self.cards)
@@ -160,7 +165,7 @@ class Run:
 
     def _pick_enemy(self, node):
         if node == "boss":
-            return BOSSES[0]
+            return self.boss
         if node == "elite":
             fresh = [e for e in ELITES if e not in self.seen_elites] or ELITES
             e = self.rng.choice(fresh)
@@ -204,15 +209,15 @@ class Run:
                                                                            ELITE_RARE_WEIGHT)]}
             free = [k for k in MACHINE if k not in self.machine]
             if free and self.rng.random() < ELITE_SALVAGE:
-                self.offer["salvage"] = self.rng.choice(free)
+                self.offer["salvage"] = self.rng.sample(free, min(2, len(free)))   # choose 1 of 2
         else:
             self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         self.phase = "reward"
         return self
 
-    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False, salvage: bool = False):
-        """After a win: take one offered part (or scrap the reward for cogs, or skip), and for an
-        elite one offered attachment into the inventory and the salvaged machine upgrade, if any."""
+    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False, salvage: str = ""):
+        """After a win: take one offered part (or scrap the reward for cogs, or skip); after an
+        elite, one offered attachment into the inventory and one of the salvaged machine upgrades."""
         self._need("reward")
         entry = self.history[-1]
         if part:
@@ -227,11 +232,9 @@ class Run:
             self.inventory.append(Mod(attachment))
             entry["attachment"] = attachment
         if salvage:
-            key = self.offer.get("salvage")
-            if not key:
-                raise RunError("nothing to salvage")
-            self._install_machine(key)
-            entry["salvage"] = key
+            self._check_offer("salvage", salvage)
+            self._install_machine(salvage)
+            entry["salvage"] = salvage
         self._advance()
         return self
 
@@ -255,12 +258,10 @@ class Run:
         parts = [{"kind": k.value, "price": PART_PRICE[PART_TIER[k]], "sold": False} for k in self._roll_parts(3)]
         mods = [{"mod": m.value, "price": MOD_PRICE[MOD_RARITY[m]], "sold": False}
                 for m in self._roll_mods(["uncommon", "rare"], 2)]
-        free = [k for k in MACHINE if k not in self.machine]
-        machine = None
-        if free:
-            k = self.rng.choice(free)
-            machine = {"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1], "price": MACHINE[k][2], "sold": False}
-        return {"parts": parts, "attachments": mods, "machine": machine}
+        # Every machine upgrade you don't have is for sale, so players can plan and save for one.
+        machines = [{"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1], "price": MACHINE[k][2], "sold": False}
+                    for k in MACHINE if k not in self.machine]
+        return {"parts": parts, "attachments": mods, "machines": machines}
 
     def remove_price(self):
         return REMOVE_PRICE + REMOVE_STEP * self.removals
@@ -273,11 +274,10 @@ class Run:
             self.hp = min(self.max_hp(), self.hp + REPAIR[0])
             return self
         if what == "machine":
-            item = self.offer.get("machine")
-            if not item or item["sold"]:
-                raise RunError("no machine upgrade for sale")
+            item = self.offer["machines"][int(index)]
+            if item["sold"] or item["key"] in self.machine:
+                raise RunError("already installed")
             self._pay(item["price"])
-            item["sold"] = True
             self._install_machine(item["key"])
             return self
         shelf = self.offer["parts" if what == "part" else "attachments"]
@@ -358,8 +358,9 @@ class Run:
         before = self.max_hp()
         self.machine.append(key)
         self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
-        if self.phase == "workshop" and self.offer.get("machine", {}) and self.offer["machine"]["key"] == key:
-            self.offer["machine"]["sold"] = True
+        for item in self.offer.get("machines", []):
+            if item["key"] == key:
+                item["sold"] = True
 
     def _add_card(self, kind):
         self.cards.append({"id": self.next_id, "kind": kind, "mods": []})
@@ -387,7 +388,7 @@ class Run:
     # ------------------------------------------------------------------ view
     def view(self) -> dict:
         return {
-            "deck_name": self.deck_name, "seed": self.seed, "phase": self.phase, "stop": self.stop,
+            "deck_name": self.deck_name, "seed": self.seed, "boss": self.boss, "phase": self.phase, "stop": self.stop,
             "stops": self.stops, "doors": self.doors if self.phase == "doors" else [],
             "node": self.node, "enemy": self.enemy, "enemy_scale": round(self.enemy_scale(), 3),
             "hp": self.hp, "max_hp": self.max_hp(),

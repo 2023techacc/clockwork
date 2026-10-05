@@ -84,6 +84,44 @@ class RunMode(unittest.TestCase):
         run.leave_workshop()
         self.assertEqual(run.phase, "doors")
 
+    def test_workshop_sells_every_missing_machine_upgrade(self):
+        from clockwork.run_mode import MACHINE
+        run = Run("starter", 5)
+        run.machine = ["flywheel"]
+        run.phase, run.doors = "doors", ["workshop"]
+        run.choose_door(0)
+        self.assertEqual({m["key"] for m in run.offer["machines"]}, set(MACHINE) - {"flywheel"})
+        run.cogs = 500
+        i = next(i for i, m in enumerate(run.offer["machines"]) if m["key"] == "extra_hands")
+        run.buy("machine", i)
+        self.assertIn("extra_hands", run.machine)
+        with self.assertRaises(RunError):
+            run.buy("machine", i)
+
+    def test_salvage_is_a_choice_of_two(self):
+        from clockwork import run_mode
+        old, run_mode.ELITE_SALVAGE = run_mode.ELITE_SALVAGE, 1.0
+        try:
+            run = Run("starter", 4)
+            run.phase, run.doors = "doors", ["elite"]
+            run.choose_door(0)
+            run.finish_fight("win", 40)
+            offered = run.offer["salvage"]
+            self.assertEqual(len(offered), 2)
+            run.take_reward(salvage=offered[1])
+            self.assertEqual(run.machine, [offered[1]])
+        finally:
+            run_mode.ELITE_SALVAGE = old
+
+    def test_boss_is_known_from_the_start(self):
+        from clockwork.enemies import BOSSES
+        bosses = {Run("starter", seed).boss for seed in range(40)}
+        self.assertEqual(bosses, set(BOSSES))
+        run = Run("starter", 1, boss="pendulum")
+        run.stop, run.doors = run.stops, ["boss"]
+        run.choose_door(0)
+        self.assertEqual(run.enemy, "pendulum")
+
     def test_machine_upgrades_change_rules(self):
         run = Run("starter", 6)
         run.machine = ["flywheel", "heat_housing", "extra_hands", "bigger_gear"]
