@@ -130,10 +130,10 @@ Candidates (simulator only, not sold): Reinforced Frame: +10 max HP; Wide Hopper
 |---|---|
 | Stops | 9 door choices, then the boss (picked at the start from: clock_tower, furnace, dismantler, iron_colossus, pendulum) |
 | Doors | stops 1-2 are fights; then 3 doors weighted fight 4, elite 2, workshop 1.5, rest 1.5; the last stop offers a rest site or a Workshop |
-| After a win | heal 5 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
+| After a win | heal 7 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
 | Part reward tiers | common 5, uncommon 4, rare 1 (weights) |
 | Elite loot | a part from the uncommon/rare tiers, 1 of 3 uncommon/rare attachments, 50% chance of a free machine upgrade (1 of 2) |
-| Rest site | heal 10, or tinker: take both offered common attachments |
+| Rest site | heal 8, or tinker: take both offered common attachments |
 | Workshop | 3 parts, 2 uncommon/rare attachments, every machine upgrade you lack; repair 15 HP for 25; remove a part for 40 (+15 each time) |
 
 ## Test decks
