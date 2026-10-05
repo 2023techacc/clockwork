@@ -26,6 +26,16 @@ def table(header, rows):
     return "\n".join(out)
 
 
+def targets_table():
+    from clockwork.targets import TARGETS, status
+    rows = []
+    for area, metric, target, rng, latest, source in TARGETS:
+        st = status(rng, latest)
+        mark = {"on target": "✅ on target", "partly off": "⚠️ partly off", "off target": "❌ off target"}.get(st, "")
+        rows.append((area, metric, target, latest, mark, source))
+    return table(["Area", "Metric", "Target", "Latest", "Status", "Source"], rows)
+
+
 def build() -> str:
     specs = specs_for(R.part_overrides)
     parts = part_texts(R)
@@ -36,6 +46,13 @@ def build() -> str:
         "simulator by `python sim/build_database.py`; don't edit by hand (a test fails when it is stale). "
         "Rules and reasoning: Rules.md, Rules-Decisions.md, Run-Design.md; measurements: "
         "AI-Playtesting-Roadmap.md.",
+        "",
+        "## Balance targets",
+        "",
+        "What each number is tuned toward, and the latest measurement (from the roadmap results named in "
+        "Source; `sim/clockwork/targets.py`). Casual = MCTS@50, careless = greedy, expert = MCTS@200.",
+        "",
+        targets_table(),
         "",
         "## Basics",
         "",

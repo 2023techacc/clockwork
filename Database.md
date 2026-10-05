@@ -2,6 +2,31 @@
 
 Every part, attachment, enemy and machine upgrade with its current numbers. **Generated** from the simulator by `python sim/build_database.py`; don't edit by hand (a test fails when it is stale). Rules and reasoning: Rules.md, Rules-Decisions.md, Run-Design.md; measurements: AI-Playtesting-Roadmap.md.
 
+## Balance targets
+
+What each number is tuned toward, and the latest measurement (from the roadmap results named in Source; `sim/clockwork/targets.py`). Casual = MCTS@50, careless = greedy, expert = MCTS@200.
+
+| Area | Metric | Target | Latest | Status | Source |
+|---|---|---|---|---|---|
+| Runs | Casual player clears a run | 65–70% | 67% | ✅ on target | v13 (random boss) |
+| Runs | Careless player clears a run | 40–50% | 43% | ✅ on target | v12 |
+| Runs | Expert player clears a run | 85–90% (clearly above casual) | 88% | ✅ on target | v12 |
+| Runs | HP when reaching the boss (casual) | about 35 | 37 | ✅ on target | v13 |
+| Fights | HP a normal fight costs (casual) | about 15 | 12–15 | ✅ on target | v12 |
+| Fights | HP an elite costs (casual) | about 25 (high risk) | 21–25 | ✅ on target | v12 |
+| Fights | Boss beaten when reached (casual) | about 76%, every boss within ±5 | 71–78% | ✅ on target | v13 |
+| Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 72% vs 63% | ✅ on target | v12 |
+| Choices | Rest: always heal vs always tinker | within 5 points of each other | 72% vs 69% | ✅ on target | v12 |
+| Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | none above | ✅ on target | v12 |
+| Content | One part pick (win-rate points over the starter) | +10 to +25 | Primer +17; Hammer +9, Coupler +8, Amplifier +6, Magnet +4, Slider/Assembly +2, Coolant −1, Mirror −7, Loader −8, Spring −14 | ⚠️ partly off | v6, before run mode |
+| Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Bracing +5.0, Counterweight +4.1, Sharpened +3.6, Coil +3.2, Heat Sink +2.9, Feeder +2.5, Polish +2.3, Clamp +2.0 | ⚠️ partly off | v11/v12 |
+| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +5.5, Echo +3.5 | ⚠️ partly off | v11 |
+| Content | One machine upgrade (run clear points, started with it) | +7 to +16 by price | Extra Hands +16, Heat Housing +15, Bigger Gear +8, Flywheel +7 | ✅ on target | v12 |
+| Content | Strongest single turn (any combo) | under half the boss's HP (≤ 55) | 51 | ✅ on target | v11 |
+| Economy | Attachments per run | 2–4 | 2.0 | ✅ on target | v13 |
+| Economy | Machine upgrades per run | about 1 | 1.06 | ✅ on target | v13 |
+| Economy | Cogs unspent when reaching the boss | under 40 | 33 | ✅ on target | v13 |
+
 ## Basics
 
 | Rule | Value |

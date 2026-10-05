@@ -20,6 +20,14 @@ class Database(unittest.TestCase):
         for name in [k.value for k in Kind] + [m.value for m in Mod] + list(ENEMIES):
             self.assertIn(f"**{name}**", text)
 
+    def test_target_status(self):
+        from clockwork.targets import status
+        self.assertEqual(status((65, 70), "67%"), "on target")
+        self.assertEqual(status((65, 70), 72), "off target")
+        self.assertEqual(status((2.5, 4), "a +5.0, b +3.1"), "partly off")
+        self.assertEqual(status("on target", "72% vs 63%"), "on target")
+        self.assertIn("## Balance targets", build_database.build())
+
 
 if __name__ == "__main__":
     unittest.main()
