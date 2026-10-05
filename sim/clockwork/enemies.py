@@ -55,20 +55,20 @@ ENEMIES = {
     # Old v1 rule: 12 cranks in the whole fight, then instant loss (crank_limit=12).
     "clock_tower": EnemySpec("clock_tower", 91, ((),), chime_every=4, chime_damage=11, cogs=60),
     # Other bosses (v13). All five bosses tuned in run conditions (clockwork.boss_tune, v15: the states
-    # 289 casual runs reached the boss with at growth 0.27) to a 76% win rate there.
+    # casual runs reach the boss with, growth 0.30) to the Clock Tower's ~75% win rate there.
     # Furnace: heats your machine every turn, a big stoke every 3rd. Tests Heat management.
-    "furnace": EnemySpec("furnace", 73, (
+    "furnace": EnemySpec("furnace", 66, (
         (("overclock", 1), ("attack", 6)),
         (("overclock", 1), ("attack", 6)),
         (("overclock", 3), ("attack", 9)),
     ), cogs=60),
     # Dismantler: takes your machine apart. Tests rebuilding and Bracing.
-    "dismantler": EnemySpec("dismantler", 86, (
+    "dismantler": EnemySpec("dismantler", 85, (
         (("unscrew",), ("unscrew",), ("attack", 6)),
         (("rust", 2), ("attack", 8)),
     ), cogs=60),
     # Iron Colossus: armor 3 on every hit, slow heavy attacks. Tests big single hits.
-    "iron_colossus": EnemySpec("iron_colossus", 65, ((("attack", 6),),), armor=3, cogs=60),
+    "iron_colossus": EnemySpec("iron_colossus", 78, ((("attack", 6),),), armor=3, cogs=60),
     # Pendulum: forces the turn direction (odd turns clockwise, even counter-clockwise); a light
     # swing then a heavy one. Tests layouts that work both ways.
     "pendulum": EnemySpec("pendulum", 87, ((("attack", 4),), (("attack", 10),)), swing=True, cogs=60),
