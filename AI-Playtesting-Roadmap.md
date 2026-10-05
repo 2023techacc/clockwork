@@ -645,3 +645,45 @@ At the boss setting, players block about 46% of strike damage.
 - **Every rest choice and route style is now within a few points of the base,** except skipping parts. There's no single dominant strategy.
 - **The skill curve is wider** (43% → 72% → 88%, was 47% → 67% → 80%).
 - **Remaining weak spots:** the Loader as a part (and so Feeder), attachments on a Spring, and the boss still causing most deaths.
+
+## Results v13 (database, planned machine upgrades, five bosses)
+
+**Changes:**
+- **Database.md:** every part, attachment, enemy, boss, machine upgrade and run number, generated from the simulator (`python sim/build_database.py`; a test fails when it's stale). Descriptions live in `clockwork/describe.py`, shared with the playtest page.
+- **Machine upgrades are no longer random.** Every Workshop sells all the upgrades you don't have, so players can plan and save for one. Elite salvage stays a 50% gamble, but you choose 1 of 2.
+- **Bosses:** a run's boss is picked at the start (or chosen on the page) and shown all run. Four new bosses join the Clock Tower, with two new mechanics: **armor** (every hit deals less) and **swing** (the boss forces the turn direction).
+
+| Boss | HP | Pattern | Tests |
+|---|---|---|---|
+| Clock Tower | 98 | No attacks; strikes for 12 on every 4th crank | Doing more with fewer cranks |
+| Furnace | 74 | +1 Heat & attack 6, +1 Heat & attack 6, +3 Heat & attack 9 | Heat management |
+| Dismantler | 84 | Unscrew 2 parts & attack 6, then rust the top part & attack 8 | Rebuilding, Bracing |
+| Iron Colossus | 68 | Attack 7 every turn; armor 3 | Big single hits |
+| Pendulum | 83 | Attack 4, then 10; odd turns clockwise, even counter-clockwise | Layouts that work both ways |
+
+**Tuning.** Tuning against fixed test decks from 36 HP (`clockwork.tune`) made the attacking bosses too hard in real runs (60–66% beaten vs the Clock Tower's 76%): run growth scales their attacks, while the Clock Tower barely attacks. New tool `clockwork.boss_tune` plays 300 runs to the boss door, keeps each run's state (deck, attachments, machine, HP), and tunes every boss against those same states. Attacks get rounded again when a run scales a boss, so attacks are fixed first and HP tuned last (`--knob hp`).
+
+**Whole runs ending at each boss** (MCTS@50, 150 runs each; 139 reach the boss):
+
+| Boss | Runs cleared | Beat the boss when reached |
+|---|---|---|
+| Clock Tower | 70% | 76% |
+| Furnace | 71% | 76% |
+| Dismantler | 73% | 78% |
+| Iron Colossus | 65% | 71% |
+| Pendulum | 71% | 77% |
+| **Random boss (default)** | **67%** | |
+
+**Which decks each boss punishes** (fixed test decks, 36 HP, base strength, 40 fights each):
+
+| Boss | starter | spring_chain | copy_loop | big_hit | sustain | utility |
+|---|---|---|---|---|---|---|
+| Clock Tower | 72% | **45%** | 95% | 98% | **32%** | 100% |
+| Furnace | 100% | 92% | 92% | 92% | 88% | 100% |
+| Dismantler | 100% | 92% | 92% | 98% | 98% | 100% |
+| Iron Colossus | 78% | 95% | **50%** | 92% | 100% | 100% |
+| Pendulum | 98% | 88% | 90% | 90% | 92% | 100% |
+
+**Reading:**
+- The Clock Tower punishes Spring-heavy and slow decks; the Iron Colossus punishes Coupler/Mirror chains of small hits. These two give real counter-play.
+- **The Furnace, Dismantler and Pendulum hit every deck about evenly:** their themes don't bite yet. To sharpen them, shift difficulty from attacks to the theme (more Heat for the Furnace, more unscrews for the Dismantler, a harsher swing for the Pendulum) and retune.
