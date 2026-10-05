@@ -2,8 +2,8 @@
 
 Fights are played by an agent (default mcts@50, the casual stand-in). Map, reward, rest and
 Workshop choices follow plain heuristics:
-- doors: an elite when HP is high, a rest site when HP is low, otherwise a Workshop if it can
-  afford something, otherwise a fight;
+- doors: an elite when HP is at least half, a rest site below 60% HP, otherwise a Workshop if it
+  can afford something, otherwise a fight (thresholds from the v17 policy search);
 - part rewards: highest value in PART_VALUE (from the partial-deck probes), else scrap;
 - attachments: always taken and attached to the best part they fit;
 - rest: heal below 60% HP, otherwise tinker (both offered common attachments);
@@ -84,14 +84,14 @@ def best_mod(run, offered):
 
 # Play-style knobs for studies (clockwork.studies); the defaults are the policy described above.
 DEFAULT_STYLE = {
-    "elites": "auto",       # auto (when HP >= 70%) | seek (unless HP < 40%) | avoid
+    "elites": "auto",       # auto (when HP >= elite_hp) | seek (unless HP < 40%) | avoid
     "rest": "auto",         # auto (heal below 60%) | heal | tinker
     "parts": "value",       # value (PART_VALUE > 0) | none (always scrap) | all (best offered, always)
     "remove_basics": False,  # Workshop: remove a Plate, then a Striker, when affordable
     "machine_first": False,  # Workshop: save for machine upgrades before buying attachments
     # Tunable thresholds (v17 policy search; the values here are the chosen defaults).
-    "elite_hp": 0.7,         # auto: take an elite door at or above this HP fraction
-    "rest_door_hp": 0.5,     # prefer a rest door below this HP fraction
+    "elite_hp": 0.5,         # auto: take an elite door at or above this HP fraction (v17; was 0.7)
+    "rest_door_hp": 0.6,     # prefer a rest door below this HP fraction (v17; was 0.5)
     "heal_below": 0.6,       # at a rest site, heal below this HP fraction (else tinker)
     "workshop_cogs": 55,     # prefer a Workshop door with at least this many cogs
     "save_margin": 0,        # in a Workshop, skip other purchases if the best machine upgrade is
