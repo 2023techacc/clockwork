@@ -49,7 +49,7 @@ class RulesConfig:
                                      # (with Feeder: the next part to come up); the replaced part is discarded
     max_attachments: int = 2         # attachments per part
     rust_per_hit: int = 2            # Rust: the part loses this much damage/Block for the fight
-    magnet_block_per_pull: int = 6   # Magnet gains this much Block per part it pulls (amplifiable)
+    magnet_block_per_pull: int = 2   # Magnet gains this much Block per part it pulls (amplifiable)
     magnet_damage_per_pull: int = 0  # ... and deals this much damage per part pulled
     magnet_swaps: bool = True        # Magnet pulls into an occupied slot by swapping the two parts
 

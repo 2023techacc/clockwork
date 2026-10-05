@@ -68,13 +68,13 @@ SPECS = {
     Kind.LOADER: PartSpec(block=3),                        # +3 Block (v15)
     Kind.COOLANT: PartSpec(cooling=3),
     Kind.HAMMER: PartSpec(damage=10, extra_heat=3),    # Rules.md: 15/+2; v3: 9/+4; v15: 10/+3
-    Kind.MAGNET: PartSpec(),
+    Kind.MAGNET: PartSpec(block=3),                        # +3 Block, plus magnet_block_per_pull per pull (v15)
     # Payoff parts (sim v4 proposals)
     # Primer: fresh_damage only if it triggers on the turn it was installed.
     # Balance pass v5 values; first proposals were Primer 4/18 and Assembly 2 per part.
     Kind.PRIMER: PartSpec(damage=2, fresh_damage=8),       # pairs with Loader (Feeder) / placement
     Kind.ASSEMBLY: PartSpec(damage=1, per_install_damage=3),  # pairs with Loader; +1 base damage (v15)
-    Kind.SLIDER: PartSpec(damage=5, moved_bonus=3),        # pairs with Magnet (moved bonus was 6)
+    Kind.SLIDER: PartSpec(damage=7, moved_bonus=3),        # pairs with Magnet (moved bonus was 6; damage 5 -> 7, v15)
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}

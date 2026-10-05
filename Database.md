@@ -56,10 +56,10 @@ Tier decides how often a part shows up as a reward and its Workshop price.
 | **Loader** | uncommon | 45 | 1 | Gain 3 Block. Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
 | **Coolant** | common | 30 | 1 | Remove 3 Heat. |
 | **Hammer** | rare | 65 | 4 | Deal 10 damage. +3 Heat. |
-| **Magnet** | uncommon | 45 | 1 | Pulls the parts 2 slots away into the slots next to it (swapping if occupied). 6 Block per part pulled. |
+| **Magnet** | uncommon | 45 | 1 | Gain 3 Block. Pulls the parts 2 slots away into the slots next to it (swapping if occupied). +2 Block per part pulled. |
 | **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
 | **Assembly** | uncommon | 45 | 1 | Deal 1 damage, +3 per part installed this turn. |
-| **Slider** | uncommon | 45 | 1 | Deal 5 damage, +3 if a Magnet moved it this turn. |
+| **Slider** | uncommon | 45 | 1 | Deal 7 damage, +3 if a Magnet moved it this turn. |
 
 ## Attachments
 

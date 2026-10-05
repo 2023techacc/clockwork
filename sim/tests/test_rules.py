@@ -24,7 +24,7 @@ MECH = RulesConfig(amplifier_bonus=0.5, polish_bonus=0.5, clamp_max_triggers=2, 
     ("Primer", "damage", 4), ("Primer", "fresh_damage", 18),
     ("Assembly", "per_part_damage", 1), ("Assembly", "per_install_damage", 2),
     ("Coupler", "extra_heat", 0), ("Spring", "block", 0), ("Loader", "block", 0),
-    ("Coupler", "damage", 0), ("Assembly", "damage", 0)))
+    ("Coupler", "damage", 0), ("Assembly", "damage", 0), ("Magnet", "block", 0), ("Slider", "damage", 5)))
 
 
 def mech(**kw):
@@ -419,7 +419,7 @@ class BalanceDefaults(unittest.TestCase):
         s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
         s.gear[slot[1]] = Part(50, MG, Mod.CLAMP)
         free_crank(s)
-        self.assertEqual((999 - s.enemy_hp, s.block), (6, 12))  # only the Striker triggers; 12 Block from 2 pulls
+        self.assertEqual((999 - s.enemy_hp, s.block), (6, 7))   # only the Striker triggers; 3 + 2 pulls x 2 Block
 
     def test_part_pass_v15(self):
         from clockwork.parts import SPECS
@@ -476,7 +476,7 @@ class LoaderReplacesAndMagnetBlock(unittest.TestCase):
     def test_magnet_block_per_pull(self):
         s, slot = setup([None, MG, None, S, None, P], rules=RulesConfig())
         free_crank(s)
-        self.assertEqual(s.block, 12)                    # 2 parts pulled x 6
+        self.assertEqual(s.block, 7)                     # 3 flat + 2 parts pulled x 2 (v15)
 
 
 class ClockTowerChime(unittest.TestCase):

@@ -34,8 +34,8 @@ def part_texts(rules=DEFAULT_RULES) -> dict:
                      "slots. If the gear is full, one replaces the part opposite the Loader.",
         Kind.COOLANT: f"Remove {s[Kind.COOLANT].cooling} Heat.",
         Kind.HAMMER: f"Deal {s[Kind.HAMMER].damage} damage. +{s[Kind.HAMMER].extra_heat} Heat.",
-        Kind.MAGNET: f"Pulls the parts 2 slots away into the slots next to it (swapping if occupied). "
-                     f"{rules.magnet_block_per_pull} Block per part pulled.",
+        Kind.MAGNET: _also(s[Kind.MAGNET]) + "Pulls the parts 2 slots away into the slots next to it (swapping "
+                     f"if occupied). +{rules.magnet_block_per_pull} Block per part pulled.",
         Kind.PRIMER: f"Deal {s[Kind.PRIMER].damage} damage, or {s[Kind.PRIMER].fresh_damage} if it was "
                      "installed this turn.",
         Kind.ASSEMBLY: (f"Deal {s[Kind.ASSEMBLY].damage} damage, +" if s[Kind.ASSEMBLY].damage else "Deal ")
