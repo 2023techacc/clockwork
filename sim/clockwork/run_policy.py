@@ -29,15 +29,15 @@ from .run_mode import Run
 PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBLY: 6.7, Kind.AMPLIFIER: 5.5,
               Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
               Kind.SPRING: -3.5}
-# HP kept per fight on the best host (studies, Results v11/v12), and the hosts in order of preference.
-MOD_VALUE = {Mod.GOVERNOR: 5.5, Mod.BRACING: 5.0, Mod.COUNTERWEIGHT: 4.1, Mod.SHARPENED: 3.6, Mod.ECHO: 3.5,
-             Mod.COIL: 3.2, Mod.HEAT_SINK: 2.9, Mod.FEEDER: 2.5, Mod.POLISH: 2.3, Mod.CLAMP: 2.0}
+# HP kept per fight on the best host (studies, Results v16), and the hosts in order of preference.
+MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 5.4, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
+             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 2.3}
 MOD_HOSTS = {
     Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
-    Mod.BRACING: [Kind.PLATE, Kind.STRIKER],
+    Mod.BRACING: [Kind.STRIKER, Kind.PLATE],
     Mod.COUNTERWEIGHT: [Kind.PLATE],
     Mod.SHARPENED: [Kind.PLATE, Kind.STRIKER, Kind.HAMMER],
-    Mod.ECHO: [Kind.PLATE, Kind.STRIKER, Kind.PRIMER],
+    Mod.ECHO: [Kind.STRIKER, Kind.PLATE, Kind.PRIMER],
     Mod.HEAT_SINK: [Kind.STRIKER, Kind.HAMMER],
 }
 # Runs started with each machine upgrade (Results v12): Extra Hands +16, Heat Housing +15,
