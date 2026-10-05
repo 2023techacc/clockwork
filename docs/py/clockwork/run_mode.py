@@ -19,7 +19,7 @@ from .parts import MOD_RARITY, Kind, Mod, fits
 STOPS = 9                       # door choices before the boss
 # Enemies grow stronger through the district (players do too): HP and attacks are scaled by
 # 1 + GROWTH * stop / STOPS, so the boss gets the full 1 + GROWTH.
-GROWTH = 0.20                    # tuned (v12): casual player ~65-70%; 0.21+ rounds the boss chime up to 15
+GROWTH = 0.27                    # tuned (v15): normal fights ~15 HP; 0.2916+ rounds the Clock Tower chime up to 16
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
 PART_TIER = {

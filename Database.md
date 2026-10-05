@@ -81,7 +81,7 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 
 ## Enemies
 
-In a run, enemies grow through the district: HP and attacks × (1 + 0.2 × stop/9), so the boss is ×1.20. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+In a run, enemies grow through the district: HP and attacks × (1 + 0.27 × stop/9), so the boss is ×1.27. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
 
 ### Normal
 
