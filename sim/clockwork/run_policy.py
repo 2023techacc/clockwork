@@ -147,20 +147,40 @@ def choose_door(run, style=DEFAULT_STYLE):
         order.append("rest")
     if run.cogs >= style["workshop_cogs"]:
         order.append("workshop")
-    order += ["fight", "rest", "workshop"] + (["elite"] if style["elites"] != "avoid" else []) + ["boss"]
+    order += ["fight", "rest", "workshop"] + (["elite"] if style["elites"] != "avoid" else []) + ["wait", "boss"]
     for t in order:
         if t in doors:
             return doors.index(t)
     return 0
 
 
+def horizon(run, option="fight", after=None):
+    """(normal fights, HP of sleep) the planner assumes before the boss once `option` is taken.
+    Day map: a fight for every fight's worth of daytime hours left, and sleep through the night hours left
+    (`after`: the act's hours spent by then, default now + the option's cost)."""
+    if run.map != "day":
+        return fights_left(run, option), 0
+    from .run_mode import DAY_SLEEP_HEAL
+    after = run.hours_used + run.node_cost(option) if after is None else after
+    hours = range(after, run.total_hours())
+    night = sum(run.is_night(h) for h in hours)
+    return (len(hours) - night) // run.node_cost("fight"), DAY_SLEEP_HEAL * night
+
+
+def project(run, option, f, hp_option=None, after=None):
+    from . import planner
+    fights, sleep = horizon(run, option, after)
+    if run.map == "day" and option == "rest":
+        option = "workshop"                 # an inn's healing is the sleep already counted
+    return planner.projected_boss_hp(run, hp_option or option, fights, f, sleep_heal=sleep)
+
+
 def fights_left(run, option="fight"):
     """Normal fights the planner assumes before the boss after taking `option` now. Door map: one per
     stop (the last stop before a boss is always a rest site or a Workshop). Hours map: as many as the
     hours left after `option` allow."""
-    if run.map == "hours":
-        from .run_mode import HOUR_COST
-        return max(0, run.hours_left() - HOUR_COST.get(option, 0)) // HOUR_COST["fight"]
+    if run.map != "doors":
+        return max(0, run.hours_left() - run.node_cost(option)) // run.node_cost("fight")
     return max(0, run.stops - run.stop - 2)
 
 
@@ -174,14 +194,14 @@ def choose_door_planned(run, style):
     from . import planner
     f = planner.forecast(run)
     need = boss_need(run, style, f)
-    proj = lambda option: planner.projected_boss_hp(run, option, fights_left(run, option), f)
+    proj = lambda option: project(run, option, f)
     ok = {
         "elite": run.hp > f["elite_worst"] + 3 and proj("elite") >= need,
         "workshop": run.cogs >= style["workshop_cogs"] and proj("workshop") >= need,
         "fight": run.hp > 2 * f["fight"] and proj("fight") >= need,
     }
     order = [t for t in ("elite", "workshop", "fight") if ok[t]]
-    order += ["rest", "workshop", "fight", "elite", "boss"]
+    order += ["rest", "workshop", "wait", "fight", "elite", "boss"]    # day map: wait for an inn to open
     for t in order:
         if t in run.doors:
             return run.doors.index(t)
@@ -191,7 +211,30 @@ def choose_door_planned(run, style):
 def rest_planned(run, style):
     from . import planner
     f = planner.forecast(run)
-    return planner.projected_boss_hp(run, "tinker", fights_left(run, "rest"), f) < boss_need(run, style, f) + 5
+    return project(run, "rest", f, hp_option="tinker") < boss_need(run, style, f) + 5
+
+
+def sleep_choice(run, style):
+    """Day map: how long to sleep at an inn."""
+    from .run_mode import DAY_SLEEP_HEAL
+    options = run.sleep_options()
+    if style.get("plan"):
+        from . import planner
+        f = planner.forecast(run)
+        need = boss_need(run, style, f) + 5
+        for choice in ("nap", "sleep", "dawn"):
+            if choice in options:
+                hp = run.hp + DAY_SLEEP_HEAL * options[choice]
+                fights, _ = horizon(run, "rest", run.hours_used + options[choice])
+                if choice == "dawn" or planner.projected_boss_hp(run, f"hp:{hp}", fights, f) >= need:
+                    return choice
+        return next(iter(options))
+    frac = run.hp / run.max_hp()
+    if "dawn" in options and options["dawn"] <= 8 and frac < 0.8:
+        return "dawn"
+    if "sleep" in options and frac < style["heal_below"]:
+        return "sleep"
+    return "dawn" if "dawn" in options and frac < style["heal_below"] else next(iter(options))
 
 
 def shop(run, style=DEFAULT_STYLE):
@@ -201,8 +244,7 @@ def shop(run, style=DEFAULT_STYLE):
         from .run_mode import REPAIR
         f = planner.forecast(run)
         while (run.cogs >= REPAIR[1] and run.hp < run.max_hp() - 10
-               and planner.projected_boss_hp(run, "workshop", fights_left(run, "workshop"), f)
-               < boss_need(run, style, f)):
+               and project(run, "workshop", f) < boss_need(run, style, f)):
             run.buy("repair")
     elif run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
@@ -259,6 +301,8 @@ def step(run, agent_name, style):
         if style["parts"] == "none":
             best = ""
         run.take_reward(part=best, attachment=best_mod(run, run.offer.get("attachments", [])), scrap=not best)
+    elif run.phase == "rest" and run.map == "day":
+        run.rest(sleep_choice(run, style))
     elif run.phase == "rest":
         planned = style.get("plan") and rest_planned(run, style)
         heal = {"heal": True, "tinker": False}.get(

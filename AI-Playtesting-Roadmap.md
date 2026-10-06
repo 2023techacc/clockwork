@@ -968,3 +968,42 @@ Skill now pays off in route choices as well as fights: careless 14%, casual 41%,
 - The planner doesn't rescue it: it keeps HP but skips elites and fights, so decks stay small.
 - **If the real game uses the hours map**, it needs its own tuning before the acts' difficulty carries over: more rest sites (or rests cheaper than 2 hours), a guaranteed rest or Workshop next to the boss, or weaker veterans. Prices should be set on whichever map ships, since income differs by up to 30%.
 - The playtest page keeps the door map (decision 6: doors on the page, hours in the simulator).
+
+## Results v20 (the day map: package 1 of Hours-Map-Ideas.md)
+
+The designer picked package 1, "A Day in the Brass Quarter", for the prototype; B2 (the sweeping hour hand) and B3 (the turning district) are planned later. Built as `Run(map="day")` in the simulator (rules in Hours-Map-Ideas.md, "What was built"). The page keeps doors.
+
+**Tuning steps** (casual player, MCTS@50, 100 runs each; door map for comparison: 38–41%):
+
+| Version | Runs | Acts 1 / 2 / 3 | Notes |
+|---|---|---|---|
+| As drafted: night ×1.15 on all enemies, cogs ×1.5 at night and at dawn | 17% | 67% / 55% / 46% | a quarter of runs die before act 1's boss; 99 unspent cogs |
+| Planner on the same | 14% | 86% / 43% / 38% | |
+| Inns open all day | 3% | 59% / 22% / 23% | daytime naps keep players fighting; night elites kill |
+| Night strength on normal fights only, bonuses ×1.25 | 15% | 81% / 57% / 33% | elites (night only) had cost 24–44 HP |
+| + inns open all day | 6% | 75% / 31% / 26% | |
+| Fights 3 hours, elites 4 | 7% | 67% / 39% / 27% | fewer Workshop visits, weaker machines |
+| Same, planner | 21% | 88% / 60% / 40% | waits a lot; 2–3 fights per act in acts 2–3 |
+| Inns also open for lunch (12–14) | 7% | 80% / 41% / 21% | |
+| Enemies ×0.85 on the day map | 57% | 97% / 76% / 77% | 4 elites per run |
+| Enemies ×0.9 | 45% | 96% / 78% / 60% | |
+| **Enemies ×0.93 (final)** | **41%** | 87% / 74% / 64% | |
+
+**Reading:** the day's shape (fight by day, sleep at night) wasn't the problem; daytime healing (inns all day or at lunch) made runs worse, because players spent it on more fights. A day simply holds more fighting than a door act (about 5.8 fights and 1.3 elites per act against 3.9 and 1.6), so the door map's enemy strength was too high. With its own strength (×0.93 for normal enemies and elites) the day map matches the door map's difficulty.
+
+**Final day map, all players:**
+
+| Player | Runs | Acts 1 / 2 / 3 | Doors (v18/v19) |
+|---|---|---|---|
+| Careless (greedy, 200 runs) | 16% | 72% / 55% / 42% | 14% |
+| Casual (MCTS@50, 100) | 41% | 87% / 74% / 64% | 41% |
+| Expert (MCTS@200 + plan, 40) | 70% | 100% / 88% / 80% | 73% |
+
+Casual details: act 1 earns 148 cogs from fights (doors 108) and reaches the first boss with 110 unspent (doors 44), since Workshops close at night; HP at the bosses 41 / 42 / 42; per run 3.5 inn visits (sleep until dawn 1.9, 4 hours 1.1, nap 0.5) and 2.5 Workshops; 2.5 elites, 8.1 attachments, a 25-part deck. Bosses are beaten 89–94% when reached; the danger is in the day's fights.
+
+**Elites are back in the expert's route:** on the day map the planning expert fights 3.3 elites per run (1.8 in act 1), against 0.7 on the door map, because a night's sleep wins back the HP they cost. The day map's structure does what v19 asked for: risk now pays for a player who plans.
+
+**Open points for the day map:**
+- **Too much money:** 110 unspent at the first boss. Options: Workshops also sell repairs that take time (D3), commissions (E2), or lower day bonuses. Prices wait for the map that ships.
+- **Night is mostly for sleeping:** the casual player sleeps until dawn in about 2 of 3 acts. If the night shift should tempt more, it may need better loot rather than more cogs. (How many fights happen at night isn't measured yet.)
+- **Bosses are easy when reached** (89–94%) because players arrive after a night's sleep. Neither automated player tries the ambush (going early) on purpose, so its value is untested.

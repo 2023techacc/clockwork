@@ -15,6 +15,8 @@ TARGETS = [
     ("Runs", "Careless player clears a run", "about 10%", (5, 15), "14%", "v18 (200 runs)"),
     ("Runs", "Casual player clears a run", "about 35%", (30, 40), "41%", "v18 (150 runs)"),
     ("Runs", "Expert player clears a run", "about 70% (clearly above casual)", (65, 75), "73%", "v19 (60 runs; planned route, was 57% with the casual policy)"),
+    ("Runs", "Day map (simulator): careless / casual / expert clear a run", "same as the door map (~10 / ~35 / ~70%)",
+     "on target", "16% / 41% / 70%", "v20 (enemies ×0.93 on the day map)"),
     ("Runs", "HP when reaching each boss (casual)", "about 35", (32, 40), "37 / 36 / 37", "v18"),
     # Fights in a run
     ("Fights", "HP a normal fight costs (casual), act 1 / 2 / 3", "about 15, rising a little", (10, 17),

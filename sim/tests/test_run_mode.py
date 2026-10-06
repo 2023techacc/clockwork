@@ -2,8 +2,10 @@ import unittest
 
 from clockwork.enemies import ENEMIES
 from clockwork.parts import Kind, Mod
-from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, DISTRICT_NODES, HOUR_COST,
-                                HOURS, LEVEL_PRICE, MACHINE, MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
+from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, DAY_AMBUSH_PER_HOUR, DAY_HOURS,
+                                DAY_HURRY_COGS, DAY_NIGHT_COGS, DAY_NIGHT_SCALE, DAY_NODES, DAY_SLEEP_HEAL,
+                                DAY_SLEEP_HOURS, DISTRICT_NODES, HOUR_COST, HOURS, LEVEL_PRICE, MACHINE,
+                                MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
 from clockwork.run_policy import simulate_run
 
 
@@ -251,6 +253,65 @@ class HoursMap(unittest.TestCase):
             run = simulate_run("starter", 2, "greedy", style=style, acts=1, map="hours")
             self.assertIn(run.phase, ("won", "lost"))
 
+
+class DayMap(unittest.TestCase):
+    """Package 1 of Hours-Map-Ideas.md: a day in the Brass Quarter."""
+    def day(self, seed=3):
+        return Run("starter", seed, map="day").choose_start("")
+
+    def test_layout_and_opening_hours(self):
+        run = self.day()
+        kinds = [t for t in run.district.values() if t != "gate"]
+        self.assertEqual({t: kinds.count(t) for t in DAY_NODES}, DAY_NODES)
+        self.assertEqual((run.clock(), run.is_night()), (6, False))
+        self.assertEqual(run.doors, ["fight", "fight", "fight", "wait", "boss"])
+        self.assertTrue(run.is_open("workshop") and not run.is_open("rest") and not run.is_open("elite"))
+        self.assertEqual((run.clock(12), run.is_night(12)), (18, True))
+        self.assertTrue(run.is_open("rest", 12) and run.is_open("elite", 12) and not run.is_open("workshop", 12))
+
+    def test_night_shift_and_hurry_bonus(self):
+        run = self.day()
+        run.choose_door(0)
+        day_hp = run.enemy_spec().hp
+        self.assertAlmostEqual(run.loot_bonus(), 1 + DAY_HURRY_COGS)          # dawn
+        run.hours_used = 6
+        self.assertAlmostEqual(run.loot_bonus(), 1 + DAY_HURRY_COGS / 2)      # noon
+        run.hours_used = 13
+        self.assertEqual(run.loot_bonus(), DAY_NIGHT_COGS)
+        grown = run.enemy_spec(progress=0)
+        self.assertGreater(grown.hp, day_hp)                                 # x DAY_NIGHT_SCALE at night
+        self.assertGreater(DAY_NIGHT_SCALE, 1)
+
+    def test_sleep(self):
+        run = self.day()
+        run.hours_used = 14                                                  # 20:00
+        run.phase, run.node, run.offer = "rest", "rest", {"attachments": ["Sharpened", "Bracing"]}
+        self.assertEqual(run.sleep_options(), {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": DAY_HOURS - 14})
+        run.hp = 20
+        run.rest("sleep")
+        self.assertEqual((run.hp, run.hours_used), (20 + DAY_SLEEP_HEAL * DAY_SLEEP_HOURS, 14 + DAY_SLEEP_HOURS))
+        run.phase, run.offer = "rest", {"attachments": ["Sharpened", "Bracing"]}
+        run.rest("dawn")
+        self.assertEqual((run.hours_used, len(run.inventory), run.doors), (DAY_HOURS, 2, ["boss"]))
+        with self.assertRaises(RunError):
+            run.phase = "rest"
+            run.rest("heal")
+
+    def test_wait_and_ambush(self):
+        run = self.day()
+        run.choose_door(run.doors.index("wait"))
+        self.assertEqual((run.hours_used, run.phase), (1, "doors"))
+        run.hours_used = DAY_HOURS                                           # nothing fits: no inn, no wait
+        self.assertEqual(run._make_doors(), ["boss"])
+        run.hours_used = 1
+        run.choose_door(run.doors.index("boss"))
+        full = Run("starter", 3).enemy_spec(run.boss, "boss")
+        self.assertEqual(run.enemy_spec().hp, round(full.hp * (1 - min(0.3, DAY_AMBUSH_PER_HOUR * 23))))
+
+    def test_simulated_day_runs_finish(self):
+        for style in ({}, {"plan": True}):
+            run = simulate_run("starter", 2, "greedy", style=style, acts=1, map="day")
+            self.assertIn(run.phase, ("won", "lost"))
 
 class ExpertPlanner(unittest.TestCase):
     def test_forecast_and_projection(self):

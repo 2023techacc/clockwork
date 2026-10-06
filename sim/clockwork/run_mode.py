@@ -45,6 +45,30 @@ HOUR_COST = {"fight": 2, "elite": 3, "workshop": 1, "rest": 2}
 DISTRICT = (5, 3)               # columns, rows
 DISTRICT_NODES = {"fight": 6, "elite": 3, "rest": 2, "workshop": 3}   # 14 nodes; the gate's neighbours are fights
 
+# "A Day in the Brass Quarter" (Hours-Map-Ideas.md, package 1; simulator only, v20): the hours map as a
+# full day. The act starts at dawn (06:00) and the district's boss strikes at the next dawn.
+# - Opening hours: Workshops are open by day (06-18); inns (rest) and elites only at night (18-06).
+# - Night shift: at night, normal enemies are DAY_NIGHT_SCALE stronger; fights carry DAY_NIGHT_COGS more cogs.
+# - Hurry bonus: by day, a fight's cogs are x(1 + DAY_HURRY_COGS) at dawn, falling to x1 at dusk.
+# - Sleep: an inn costs no hours to enter; you sleep 1 hour (nap), DAY_SLEEP_HOURS, or until dawn
+#   (with a free tinker), healing DAY_SLEEP_HEAL HP per hour.
+# - Ambush: going to the boss before dawn takes DAY_AMBUSH_PER_HOUR of its HP off per hour left.
+DAY_HOURS = 24
+DAY_START = 6                   # clock hour when the act begins
+DAY_COST = {"fight": 2, "elite": 3, "workshop": 1, "rest": 0}
+DAY_DISTRICT = (6, 3)
+DAY_NODES = {"fight": 8, "elite": 3, "rest": 3, "workshop": 3}      # 17 nodes
+DAY_OPEN = {"fight": "always", "workshop": "day", "rest": "night", "elite": "night"}
+DAY_LUNCH = (12, 14)            # clock hours an inn opens by day when DAY_OPEN says "lunch+night"
+DAY_NIGHT_SCALE = 1.15
+DAY_NIGHT_COGS = 1.25
+DAY_HURRY_COGS = 0.25
+DAY_SLEEP_HEAL = 3
+DAY_SLEEP_HOURS = 4
+DAY_AMBUSH_PER_HOUR = 0.02
+DAY_AMBUSH_MAX = 0.3
+DAY_ENEMY_SCALE = 0.93          # normal enemies and elites on the day map (the door map's strength is tuned separately)
+
 PART_TIER = {
     Kind.SPRING: "common", Kind.COOLANT: "common", Kind.MIRROR: "common",
     Kind.AMPLIFIER: "uncommon", Kind.COUPLER: "uncommon", Kind.LOADER: "uncommon", Kind.MAGNET: "uncommon",
@@ -96,7 +120,7 @@ class Run:
     def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None,
                  boss=None, acts=ACTS, map="doors"):
         self.seed, self.base_rules, self.stops, self.acts = int(seed), rules, stops, acts
-        if map not in ("doors", "hours"):
+        if map not in ("doors", "hours", "day"):
             raise ValueError(f"unknown map {map!r}")
         self.map = map
         self.hours_used, self.pending_hours = 0, 0     # hours map: spent before the current node, and its cost
@@ -158,12 +182,36 @@ class Run:
 
     def progress(self) -> float:
         """How far into the act the run is, 0 at the start and 1 at the boss."""
-        if self.map == "hours":
-            return min(self.hours_used, HOURS) / HOURS
+        if self.map != "doors":
+            return min(self.hours_used, self.total_hours()) / self.total_hours()
         return min(self.stop, self.stops) / self.stops
 
+    def total_hours(self) -> int:
+        return DAY_HOURS if self.map == "day" else HOURS
+
     def hours_left(self) -> int:
-        return HOURS - self.hours_used - self.pending_hours
+        return self.total_hours() - self.hours_used - self.pending_hours
+
+    def node_cost(self, node) -> int:
+        return (DAY_COST if self.map == "day" else HOUR_COST)[node]
+
+    def clock(self, hours=None) -> int:
+        """Day map: the hour on the clock (0-23) after `hours` of the act (default: now)."""
+        return (DAY_START + (self.hours_used if hours is None else hours)) % 24
+
+    def is_night(self, hours=None) -> bool:
+        return not 6 <= self.clock(hours) < 18
+
+    def is_open(self, node, hours=None) -> bool:
+        """Day map: DAY_OPEN says 'always', 'day', 'night' or 'lunch+night' (inns serving lunch too)."""
+        if self.map != "day":
+            return True
+        when = DAY_OPEN[node]
+        if when == "always":
+            return True
+        if "lunch" in when and DAY_LUNCH[0] <= self.clock(hours) < DAY_LUNCH[1]:
+            return True
+        return when.endswith("night") == self.is_night(hours)
 
     def enemy_scale(self, node=None, progress=None) -> float:
         node = self.node if node is None else node
@@ -179,12 +227,30 @@ class Run:
         f = self.enemy_scale(node, progress)
         if spec.elite:
             f *= ELITE_SCALE
+        if self.map == "day" and node != "boss":
+            f *= DAY_ENEMY_SCALE
+            if node == "fight" and self.is_night():                    # elites are the night's danger already
+                f *= DAY_NIGHT_SCALE
         if f != 1:
             spec = scaled(spec, f)
         armor = ACT_ARMOR[min(self.act, len(ACT_ARMOR) - 1)]
         if armor and node != "boss":
             spec = replace(spec, armor=spec.armor + armor)
+        if self.map == "day" and node == "boss" and self.node == "boss" and self.ambush():   # not in forecasts
+            spec = replace(spec, hp=max(1, round(spec.hp * (1 - self.ambush()))))
         return spec
+
+    def ambush(self) -> float:
+        """Day map: the share of the boss's HP an early arrival takes off."""
+        return min(DAY_AMBUSH_MAX, DAY_AMBUSH_PER_HOUR * max(0, self.hours_left()))
+
+    def loot_bonus(self) -> float:
+        """Day map: cogs multiplier for a fight starting now (night shift or hurry bonus)."""
+        if self.map != "day" or self.node == "boss":
+            return 1.0
+        if self.is_night():
+            return DAY_NIGHT_COGS
+        return 1 + DAY_HURRY_COGS * (1 - (self.clock() - 6) / 12)
 
     def fight_seed(self) -> int:
         return self.seed * 1000 + self.act * 100 + self.stop
@@ -229,13 +295,13 @@ class Run:
     # ------------------------------------------------------------------ map
     def _new_district(self):
         """Hours map: lay out this act's district. Node ids are (column, row); the gate is (0, middle)."""
-        if self.map != "hours":
+        if self.map == "doors":
             return
-        cols, rows = DISTRICT
+        cols, rows = DAY_DISTRICT if self.map == "day" else DISTRICT
         gate = (0, rows // 2)
         cells = [(x, y) for x in range(cols) for y in range(rows) if (x, y) != gate]
         near = [c for c in cells if abs(c[0] - gate[0]) + abs(c[1] - gate[1]) == 1]
-        bag = [t for t, n in DISTRICT_NODES.items() for _ in range(n)]
+        bag = [t for t, n in (DAY_NODES if self.map == "day" else DISTRICT_NODES).items() for _ in range(n)]
         for _ in near:
             bag.remove("fight")
         self.rng.shuffle(bag)
@@ -254,11 +320,15 @@ class Run:
         return out
 
     def _make_doors(self):
-        if self.map == "hours":
-            # Every affordable frontier node, then "boss": wait for midnight (the only door when nothing fits).
-            self.door_nodes = [n for n in self.frontier() if HOUR_COST[self.district[n]] <= self.hours_left()]
-            self.door_nodes.append(None)
-            return [self.district[n] for n in self.door_nodes[:-1]] + ["boss"]
+        if self.map != "doors":
+            # Every affordable (and open) frontier node, then "boss": wait for midnight or dawn (the only door
+            # when nothing fits).
+            fits = lambda t: max(1, self.node_cost(t)) <= self.hours_left()     # an inn needs an hour to sleep
+            self.door_nodes = [n for n in self.frontier() if fits(self.district[n]) and self.is_open(self.district[n])]
+            extra = ["wait", "boss"] if self.map == "day" and self.hours_left() > 0 else ["boss"]
+            doors = [self.district[n] for n in self.door_nodes] + extra
+            self.door_nodes += [None] * len(extra)
+            return doors
         if self.stop >= self.stops:
             return ["boss"]
         if self.stop < 2:
@@ -277,11 +347,16 @@ class Run:
     def choose_door(self, index: int):
         self._need("doors")
         node = self.doors[int(index)]
+        if node == "wait":                   # day map: let an hour pass (shops and inns open on the clock)
+            self.history.append({"act": self.act, "stop": self.stop, "hours": self.hours_used, "node": "wait"})
+            self.pending_hours = 1
+            self._advance()
+            return self
         self.node = node
-        if self.map == "hours" and node != "boss":
+        if self.map != "doors" and node != "boss":
             where = self.door_nodes[int(index)]
             self.visited.add(where)
-            self.pending_hours = HOUR_COST[node]
+            self.pending_hours = self.node_cost(node)
         if node in ("fight", "elite", "boss"):
             self.enemy = self._pick_enemy(node)
             self.phase = "fight"
@@ -326,7 +401,7 @@ class Run:
             self.phase = "lost"
             return self
         spec = ENEMIES[self.enemy]
-        loot = max(1, round(spec.cogs * self.rng.uniform(0.9, 1.1)))
+        loot = max(1, round(spec.cogs * self.rng.uniform(0.9, 1.1) * self.loot_bonus()))
         self.cogs += loot
         entry["cogs"] = loot
         if self.node == "boss":
@@ -369,10 +444,26 @@ class Run:
         return self
 
     # ------------------------------------------------------------------ rest
+    def sleep_options(self) -> dict:
+        """Day map: {choice: hours} for an inn: a nap, a sleep, or until dawn (which also tinkers)."""
+        left = self.hours_left()
+        out = {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": left}
+        return {k: h for k, h in out.items() if 0 < h <= left and not (k == "sleep" and h >= left)}
+
     def rest(self, choice: str, attachment: str = ""):
-        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take both offered common attachments)."""
+        """choice 'heal' (+REST_HEAL HP) or 'tinker' (take both offered common attachments). Day map:
+        'nap', 'sleep' or 'dawn' (see sleep_options; until dawn also takes the offered attachments)."""
         self._need("rest")
-        if choice == "heal":
+        if self.map == "day":
+            hours = self.sleep_options().get(choice)
+            if hours is None:
+                raise RunError(f"can't {choice} now")
+            self.hp = min(self.max_hp(), self.hp + DAY_SLEEP_HEAL * hours)
+            self.pending_hours = hours
+            if choice == "dawn":
+                attachment = ", ".join(self.offer["attachments"])
+                self.inventory += [Mod(m) for m in self.offer["attachments"]]
+        elif choice == "heal":
             self.hp = min(self.max_hp(), self.hp + REST_HEAL)
         elif choice == "tinker":
             attachment = ", ".join(self.offer["attachments"])
@@ -522,8 +613,9 @@ class Run:
             "deck_name": self.deck_name, "seed": self.seed, "boss": self.boss, "bosses": self.bosses,
             "act": self.act, "acts": self.acts, "phase": self.phase, "stop": self.stop,
             "stops": self.stops, "doors": self.doors if self.phase == "doors" else [], "map": self.map,
-            "hours": ({"used": self.hours_used, "left": self.hours_left(), "total": HOURS}
-                      if self.map == "hours" else None),
+            "hours": ({"used": self.hours_used, "left": self.hours_left(), "total": self.total_hours(),
+                       "clock": self.clock() if self.map == "day" else None}
+                      if self.map != "doors" else None),
             "node": self.node, "enemy": self.enemy, "enemy_scale": round(self.enemy_scale(), 3),
             "hp": self.hp, "max_hp": self.max_hp(),
             "cogs": self.cogs, "offer": self.offer, "remove_price": self.remove_price(),
