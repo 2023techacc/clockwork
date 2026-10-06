@@ -13,13 +13,14 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Runs | Casual player clears act 3 (of runs that reach it) | about 55% | 58% | ✅ on target | v18 (150 runs) |
 | Runs | Careless player clears a run | about 10% | 14% | ✅ on target | v18 (200 runs) |
 | Runs | Casual player clears a run | about 35% | 41% | ❌ off target | v18 (150 runs) |
-| Runs | Expert player clears a run | about 70% (clearly above casual) | 57% | ❌ off target | v18 (60 runs; same run policy as casual) |
+| Runs | Expert player clears a run | about 70% (clearly above casual) | 73% | ✅ on target | v19 (60 runs; planned route, was 57% with the casual policy) |
 | Runs | HP when reaching each boss (casual) | about 35 | 37 / 36 / 37 | ✅ on target | v18 |
 | Fights | HP a normal fight costs (casual), act 1 / 2 / 3 | about 15, rising a little | 10.5 / 12.4 / 14.7 | ✅ on target | v18 |
 | Fights | HP an elite costs (casual), act 1 / 2 / 3 | about 25 (high risk), rising | 24.6 / 29.4 / 35.0 | ✅ on target | v18 (elites ×1.05, was ×0.9: 16 HP) |
 | Fights | Boss beaten when reached (casual) | act 1 ~93%, act 2 ~85%, act 3 ~75%; bosses of one act within ±5 | Clock Tower 93%, Pendulum 94% / Dismantler 85%, Furnace 89% / Iron Colossus 77% | ✅ on target | v18 (150 runs) |
 | Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 79% vs 70% (act 1) | ✅ on target | v18 |
 | Choices | Hunting elites at low HP (risk) | should cost runs (high risk) | elites from 50% HP: 64%, vs 79% from 70% (act 1) | ✅ on target | v18 |
+| Choices | Planning HP to the boss vs fixed HP thresholds (same casual fights) | planning clearly better (skill pays off in the route, not only in fights) | 57% vs 39% | ✅ on target | v19 (120 runs) |
 | Choices | Rest: always heal vs always tinker | within 5 points of each other | 66% vs 63% | ✅ on target | v16 (300 runs each) |
 | Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | best: seek elites, always heal (+5) | ✅ on target | v15 |
 | Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone | Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4 | ✅ on target | v15 |
@@ -159,6 +160,7 @@ Level-up prices: level 2 90 cogs, level 3 130 cogs (placeholders until the econo
 |---|---|
 | Acts | 3; each is 9 door choices, then the act's boss (all bosses shown at the start) |
 | Doors | stops 1-2 are fights; then 3 doors weighted fight 4, elite 2, workshop 1.5, rest 1.5; the last stop offers a rest site or a Workshop |
+| Hours map (simulator only) | a 5×3 district per act (6 fights, 3 elites, 2 rests, 3 workshops); 12 hours to midnight; costs fight 2, elite 3, workshop 1, rest 2; enter any node next to a visited one; the boss comes at midnight or when you wait |
 | After a win | heal 7 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
 | Between acts | the boss's exclusive reward (1 of 3 machine upgrades), then half of the missing HP heals |
 | Part reward tiers (weights) | act 1: common 5, uncommon 4, rare 1; act 2: common 3, uncommon 4, rare 2; act 3: common 2, uncommon 4, rare 3 |

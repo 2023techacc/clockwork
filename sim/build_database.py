@@ -131,6 +131,10 @@ def build() -> str:
         ("Doors", "stops 1-2 are fights; then 3 doors weighted " +
                   ", ".join(f"{k} {v:g}" for k, v in RM.DOOR_WEIGHTS.items()) +
                   "; the last stop offers a rest site or a Workshop"),
+        ("Hours map (simulator only)", f"a {RM.DISTRICT[0]}×{RM.DISTRICT[1]} district per act (" +
+                  ", ".join(f"{n} {t}s" for t, n in RM.DISTRICT_NODES.items()) + f"); {RM.HOURS} hours to midnight; "
+                  "costs " + ", ".join(f"{t} {h}" for t, h in RM.HOUR_COST.items()) +
+                  "; enter any node next to a visited one; the boss comes at midnight or when you wait"),
         ("After a win", f"heal {R.heal_between_fights} HP, loot cogs, pick 1 of 3 parts (or scrap for "
                         f"{RM.SCRAP_VALUE} cogs, or skip)"),
         ("Between acts", f"the boss's exclusive reward (1 of {RM.MACHINE_CHOICES} machine upgrades), then half of "

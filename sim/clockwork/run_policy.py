@@ -9,6 +9,9 @@ Workshop choices follow plain heuristics:
 - rest: heal below 60% HP, otherwise tinker (both offered common attachments);
 - Workshop: repair when low, then buy a machine upgrade level, then the best affordable attachments and parts.
 
+The expert's run decisions (EXPERT_STYLE, v19) replace the HP thresholds with a plan: it forecasts what
+fights cost with its current machine and keeps enough HP for the act's boss (clockwork.planner).
+
     python -m clockwork.run_policy --agent mcts@50 --runs 60
 """
 import argparse
@@ -105,7 +108,12 @@ DEFAULT_STYLE = {
     "save_margin": 0,        # in a Workshop, skip other purchases if the best machine upgrade is
                              # at most this many cogs out of reach (save for it)
     "synergy": False,        # value parts by what the deck already holds (SYNERGY)
+    "plan": False,           # expert: forecast fight costs and plan HP to the boss (clockwork.planner)
+    "boss_margin": 1.5,      # plan: arrive with this many times the boss's forecast cost...
+    "boss_extra": 5,         # ...plus this much HP
 }
+# The expert player's run decisions (with MCTS@200 fights): plans its route instead of fixed thresholds.
+EXPERT_STYLE = {"plan": True}
 
 # A part is worth more when its partner is already in the deck (or, for Spring, a Coil is held).
 SYNERGY_BONUS = 6
@@ -146,9 +154,57 @@ def choose_door(run, style=DEFAULT_STYLE):
     return 0
 
 
+def fights_left(run, option="fight"):
+    """Normal fights the planner assumes before the boss after taking `option` now. Door map: one per
+    stop (the last stop before a boss is always a rest site or a Workshop). Hours map: as many as the
+    hours left after `option` allow."""
+    if run.map == "hours":
+        from .run_mode import HOUR_COST
+        return max(0, run.hours_left() - HOUR_COST.get(option, 0)) // HOUR_COST["fight"]
+    return max(0, run.stops - run.stop - 2)
+
+
+def boss_need(run, style, f):
+    from . import planner
+    return planner.boss_need(f, run, style["boss_margin"], style["boss_extra"])
+
+
+def choose_door_planned(run, style):
+    """Expert: take the most rewarding door whose projected HP at the boss still covers it."""
+    from . import planner
+    f = planner.forecast(run)
+    need = boss_need(run, style, f)
+    proj = lambda option: planner.projected_boss_hp(run, option, fights_left(run, option), f)
+    ok = {
+        "elite": run.hp > f["elite_worst"] + 3 and proj("elite") >= need,
+        "workshop": run.cogs >= style["workshop_cogs"] and proj("workshop") >= need,
+        "fight": run.hp > 2 * f["fight"] and proj("fight") >= need,
+    }
+    order = [t for t in ("elite", "workshop", "fight") if ok[t]]
+    order += ["rest", "workshop", "fight", "elite", "boss"]
+    for t in order:
+        if t in run.doors:
+            return run.doors.index(t)
+    return 0
+
+
+def rest_planned(run, style):
+    from . import planner
+    f = planner.forecast(run)
+    return planner.projected_boss_hp(run, "tinker", fights_left(run, "rest"), f) < boss_need(run, style, f) + 5
+
+
 def shop(run, style=DEFAULT_STYLE):
     o = run.offer
-    if run.hp < 0.5 * run.max_hp():
+    if style.get("plan"):
+        from . import planner
+        from .run_mode import REPAIR
+        f = planner.forecast(run)
+        while (run.cogs >= REPAIR[1] and run.hp < run.max_hp() - 10
+               and planner.projected_boss_hp(run, "workshop", fights_left(run, "workshop"), f)
+               < boss_need(run, style, f)):
+            run.buy("repair")
+    elif run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
     machines = sorted(range(len(o["machines"])), key=lambda i: LEVEL_PRIORITY.index(o["machines"][i]["key"]))
@@ -194,7 +250,7 @@ def step(run, agent_name, style):
     elif run.phase == "boss_reward":
         run.choose_boss_reward(pick_machine(run, style))
     elif run.phase == "doors":
-        run.choose_door(choose_door(run, style))
+        run.choose_door(choose_door_planned(run, style) if style.get("plan") else choose_door(run, style))
     elif run.phase == "fight":
         play_fight(run, agent_name)
     elif run.phase == "reward":
@@ -204,18 +260,20 @@ def step(run, agent_name, style):
             best = ""
         run.take_reward(part=best, attachment=best_mod(run, run.offer.get("attachments", [])), scrap=not best)
     elif run.phase == "rest":
-        heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < style["heal_below"] * run.max_hp())
+        planned = style.get("plan") and rest_planned(run, style)
+        heal = {"heal": True, "tinker": False}.get(
+            style["rest"], planned if style.get("plan") else run.hp < style["heal_below"] * run.max_hp())
         run.rest("heal" if heal else "tinker")
     elif run.phase == "workshop":
         shop(run, style)
 
 
 def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=None, boss=None,
-                 acts=None):
+                 acts=None, map="doors"):
     """Play a whole run. `style` overrides DEFAULT_STYLE keys. `machine` replaces the starting choice
     with these machine upgrades (a list; () for none). `acts` shortens or lengthens the run."""
     style = {**DEFAULT_STYLE, **(style or {})}
-    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth, boss=boss,
+    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth, boss=boss, map=map,
               **({} if acts is None else {"acts": acts}))
     if machine is not None:
         run.choose_start("")

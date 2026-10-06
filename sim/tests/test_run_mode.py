@@ -2,8 +2,8 @@ import unittest
 
 from clockwork.enemies import ENEMIES
 from clockwork.parts import Kind, Mod
-from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, LEVEL_PRICE, MACHINE,
-                                MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
+from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, DISTRICT_NODES, HOUR_COST,
+                                HOURS, LEVEL_PRICE, MACHINE, MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
 from clockwork.run_policy import simulate_run
 
 
@@ -213,6 +213,61 @@ class Growth(unittest.TestCase):
         self.assertEqual(run.enemy_scale(), 1.5)
         self.assertGreater(run.enemy_spec().hp, ENEMIES["clock_tower"].hp)
 
+
+class HoursMap(unittest.TestCase):
+    def test_district_layout(self):
+        run = Run("starter", 3, map="hours").choose_start("")
+        kinds = [t for t in run.district.values() if t != "gate"]
+        self.assertEqual({t: kinds.count(t) for t in DISTRICT_NODES}, DISTRICT_NODES)
+        self.assertEqual(run.doors, ["fight", "fight", "fight", "boss"])     # the gate's neighbours, or wait
+
+    def test_nodes_cost_hours_and_enemies_grow(self):
+        run = Run("starter", 4, map="hours").choose_start("")
+        run.choose_door(0)
+        self.assertEqual((run.hours_used, run.hours_left()), (0, HOURS - HOUR_COST["fight"]))
+        self.assertEqual(run.enemy_scale(), 1.0)
+        run.finish_fight("win", 40)
+        run.take_reward(scrap=True)
+        self.assertEqual(run.hours_used, HOUR_COST["fight"])
+        self.assertGreater(run.enemy_scale("fight"), 1.0)
+        self.assertTrue(all(HOUR_COST[d] <= run.hours_left() for d in run.doors[:-1]))
+        run.hours_used = HOURS - 1                      # only a 1-hour Workshop could still fit
+        self.assertTrue(set(run._make_doors()) <= {"workshop", "boss"})
+        run.hours_used = HOURS
+        self.assertEqual(run._make_doors(), ["boss"])
+
+    def test_waiting_for_midnight_and_a_new_district_each_act(self):
+        run = Run("starter", 5, map="hours").choose_start("")
+        first = dict(run.district)
+        run.choose_door(len(run.doors) - 1)            # wait for the boss
+        self.assertEqual(run.node, "boss")
+        run.finish_fight("win", 30)
+        run.choose_boss_reward("")
+        self.assertEqual((run.act, run.hours_used, len(run.visited)), (1, 0, 1))
+        self.assertNotEqual(run.district, first)
+
+    def test_simulated_hours_runs_finish(self):
+        for style in ({}, {"plan": True}):
+            run = simulate_run("starter", 2, "greedy", style=style, acts=1, map="hours")
+            self.assertIn(run.phase, ("won", "lost"))
+
+
+class ExpertPlanner(unittest.TestCase):
+    def test_forecast_and_projection(self):
+        from clockwork import planner
+        run = started(3)
+        f = planner.forecast(run)
+        self.assertEqual(set(f), {"fight", "elite", "elite_worst", "boss"})
+        self.assertGreaterEqual(f["elite_worst"], f["elite"])
+        self.assertIs(planner.forecast(run), f)          # cached
+        self.assertLessEqual(planner.boss_need(f, run), run.max_hp())
+        run.hp = 30
+        self.assertEqual(planner.projected_boss_hp(run, "rest", 0, f), 30 + REST_HEAL)
+        self.assertLess(planner.projected_boss_hp(run, "elite", 2, f), planner.projected_boss_hp(run, "fight", 2, f))
+
+    def test_planned_runs_finish(self):
+        run = simulate_run("starter", 1, "greedy", style={"plan": True}, acts=1)
+        self.assertIn(run.phase, ("won", "lost"))
 
 if __name__ == "__main__":
     unittest.main()
