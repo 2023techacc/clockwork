@@ -142,6 +142,7 @@ Elites are needed because normal fights almost never kill (a casual player reach
   - **Midnight:** a node can be entered only if its hours fit. When nothing fits, or whenever the player chooses to wait, the boss arrives.
   - **Growth:** enemies grow with the hours spent, as they do with stops on the door map.
   - Not modelled: locked nodes, buying time, events.
+  - **Rework ideas** for making the hours map more immersive (time of day, sleeping, a clock-face district, the boss approaching): Hours-Map-Ideas.md.
 
 ### Money: cogs, looted from enemies
 - **Each enemy carries a set amount of cogs that fits its design.** Harder enemies carry more, and enemies of the same level stay close to each other (small variance).
