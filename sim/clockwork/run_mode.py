@@ -36,6 +36,15 @@ ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_col
 BETWEEN_ACTS_HEAL = 0.5         # share of the missing HP healed when an act ends (Acts-Design 2B)
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
+# The "twelve hours to midnight" map (Run-Design.md, map D; simulator only, v19). Each act is a district:
+# a 5 x 3 grid of nodes with the gate at the left middle. From the gate you may enter any unvisited node
+# next to one you've visited, if its hours fit in what's left; the boss strikes at midnight, or earlier
+# when you choose to wait for it. Enemies grow with the hours spent (as with stops on the door map).
+HOURS = 12
+HOUR_COST = {"fight": 2, "elite": 3, "workshop": 1, "rest": 2}
+DISTRICT = (5, 3)               # columns, rows
+DISTRICT_NODES = {"fight": 6, "elite": 3, "rest": 2, "workshop": 3}   # 14 nodes; the gate's neighbours are fights
+
 PART_TIER = {
     Kind.SPRING: "common", Kind.COOLANT: "common", Kind.MIRROR: "common",
     Kind.AMPLIFIER: "uncommon", Kind.COUPLER: "uncommon", Kind.LOADER: "uncommon", Kind.MAGNET: "uncommon",
@@ -85,8 +94,13 @@ class RunError(ValueError):
 
 class Run:
     def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None,
-                 boss=None, acts=ACTS):
+                 boss=None, acts=ACTS, map="doors"):
         self.seed, self.base_rules, self.stops, self.acts = int(seed), rules, stops, acts
+        if map not in ("doors", "hours"):
+            raise ValueError(f"unknown map {map!r}")
+        self.map = map
+        self.hours_used, self.pending_hours = 0, 0     # hours map: spent before the current node, and its cost
+        self.district, self.visited, self.door_nodes = {}, set(), []
         self.growth = GROWTH if growth is None else growth
         self.rng = random.Random(self.seed * 7919 + 17)
         # Every act's boss is picked up front and shown, so players can plan; `boss` fixes act 1's.
@@ -142,21 +156,33 @@ class Run:
             deck[key] = deck.get(key, 0) + 1
         return deck
 
-    def enemy_scale(self) -> float:
-        table = ACT_BOSS_SCALE if self.node == "boss" else ACT_SCALE
-        return table[min(self.act, len(table) - 1)] * (1 + self.growth * min(self.stop, self.stops) / self.stops)
+    def progress(self) -> float:
+        """How far into the act the run is, 0 at the start and 1 at the boss."""
+        if self.map == "hours":
+            return min(self.hours_used, HOURS) / HOURS
+        return min(self.stop, self.stops) / self.stops
 
-    def enemy_spec(self):
-        """The current enemy, grown for the act and how far into it the run is. In acts 2 and 3, normal
-        enemies and elites are veterans: scaled and armored."""
-        spec = ENEMIES[self.enemy]
-        f = self.enemy_scale()
+    def hours_left(self) -> int:
+        return HOURS - self.hours_used - self.pending_hours
+
+    def enemy_scale(self, node=None, progress=None) -> float:
+        node = self.node if node is None else node
+        table = ACT_BOSS_SCALE if node == "boss" else ACT_SCALE
+        p = 1.0 if node == "boss" else self.progress() if progress is None else progress
+        return table[min(self.act, len(table) - 1)] * (1 + self.growth * p)
+
+    def enemy_spec(self, enemy=None, node=None, progress=None):
+        """The current enemy (or `enemy` met at a `node` of this act), grown for the act and how far into
+        it the run is. In acts 2 and 3, normal enemies and elites are veterans: scaled and armored."""
+        node = self.node if node is None else node
+        spec = ENEMIES[self.enemy if enemy is None else enemy]
+        f = self.enemy_scale(node, progress)
         if spec.elite:
             f *= ELITE_SCALE
         if f != 1:
             spec = scaled(spec, f)
         armor = ACT_ARMOR[min(self.act, len(ACT_ARMOR) - 1)]
-        if armor and self.node != "boss":
+        if armor and node != "boss":
             spec = replace(spec, armor=spec.armor + armor)
         return spec
 
@@ -180,6 +206,7 @@ class Run:
         self.history.append({"act": self.act, "stop": -1, "node": "start", "machine": key or None})
         self.offer = {}
         self.phase = "doors"
+        self._new_district()
         self.doors = self._make_doors()
         return self
 
@@ -194,11 +221,44 @@ class Run:
         self.hp += int((self.max_hp() - self.hp) * BETWEEN_ACTS_HEAL)
         self.act += 1
         self.stop = -1
+        self.hours_used = self.pending_hours = 0
+        self._new_district()
         self._advance()
         return self
 
     # ------------------------------------------------------------------ map
+    def _new_district(self):
+        """Hours map: lay out this act's district. Node ids are (column, row); the gate is (0, middle)."""
+        if self.map != "hours":
+            return
+        cols, rows = DISTRICT
+        gate = (0, rows // 2)
+        cells = [(x, y) for x in range(cols) for y in range(rows) if (x, y) != gate]
+        near = [c for c in cells if abs(c[0] - gate[0]) + abs(c[1] - gate[1]) == 1]
+        bag = [t for t, n in DISTRICT_NODES.items() for _ in range(n)]
+        for _ in near:
+            bag.remove("fight")
+        self.rng.shuffle(bag)
+        far = [c for c in cells if c not in near]
+        self.district = {gate: "gate", **{c: "fight" for c in near}, **dict(zip(far, bag))}
+        self.visited = {gate}
+
+    def frontier(self):
+        """Hours map: the unvisited nodes next to a visited one."""
+        out = []
+        for (x, y), t in sorted(self.district.items()):
+            if (x, y) in self.visited:
+                continue
+            if any((x + dx, y + dy) in self.visited for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.append((x, y))
+        return out
+
     def _make_doors(self):
+        if self.map == "hours":
+            # Every affordable frontier node, then "boss": wait for midnight (the only door when nothing fits).
+            self.door_nodes = [n for n in self.frontier() if HOUR_COST[self.district[n]] <= self.hours_left()]
+            self.door_nodes.append(None)
+            return [self.district[n] for n in self.door_nodes[:-1]] + ["boss"]
         if self.stop >= self.stops:
             return ["boss"]
         if self.stop < 2:
@@ -218,6 +278,10 @@ class Run:
         self._need("doors")
         node = self.doors[int(index)]
         self.node = node
+        if self.map == "hours" and node != "boss":
+            where = self.door_nodes[int(index)]
+            self.visited.add(where)
+            self.pending_hours = HOUR_COST[node]
         if node in ("fight", "elite", "boss"):
             self.enemy = self._pick_enemy(node)
             self.phase = "fight"
@@ -241,6 +305,8 @@ class Run:
         return self.rng.choice([e for e in NORMAL if e != last])
 
     def _advance(self):
+        self.hours_used += self.pending_hours
+        self.pending_hours = 0
         self.stop += 1
         self.node, self.enemy, self.offer = None, None, {}
         self.doors = self._make_doors()
@@ -251,7 +317,8 @@ class Run:
         """Record the fight played with fight_deck()/rules()/fight_seed() against self.enemy."""
         self._need("fight")
         entry = {"act": self.act, "stop": self.stop, "node": self.node, "enemy": self.enemy, "result": result,
-                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns, "cogs_held": self.cogs}
+                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns, "cogs_held": self.cogs,
+                 "hours": self.hours_used}
         if actions is not None:
             entry["actions"] = actions
         self.history.append(entry)
@@ -312,8 +379,8 @@ class Run:
             self.inventory += [Mod(m) for m in self.offer["attachments"]]
         else:
             raise RunError(f"unknown rest choice {choice}")
-        self.history.append({"act": self.act, "stop": self.stop, "node": "rest", "choice": choice,
-                             "attachment": attachment or None})
+        self.history.append({"act": self.act, "stop": self.stop, "hours": self.hours_used, "node": "rest",
+                             "choice": choice, "attachment": attachment or None})
         self._advance()
         return self
 
@@ -375,7 +442,8 @@ class Run:
 
     def leave_workshop(self):
         self._need("workshop")
-        self.history.append({"act": self.act, "stop": self.stop, "node": "workshop", "cogs_left": self.cogs})
+        self.history.append({"act": self.act, "stop": self.stop, "hours": self.hours_used, "node": "workshop",
+                             "cogs_left": self.cogs})
         self._advance()
         return self
 
@@ -453,7 +521,9 @@ class Run:
         return {
             "deck_name": self.deck_name, "seed": self.seed, "boss": self.boss, "bosses": self.bosses,
             "act": self.act, "acts": self.acts, "phase": self.phase, "stop": self.stop,
-            "stops": self.stops, "doors": self.doors if self.phase == "doors" else [],
+            "stops": self.stops, "doors": self.doors if self.phase == "doors" else [], "map": self.map,
+            "hours": ({"used": self.hours_used, "left": self.hours_left(), "total": HOURS}
+                      if self.map == "hours" else None),
             "node": self.node, "enemy": self.enemy, "enemy_scale": round(self.enemy_scale(), 3),
             "hp": self.hp, "max_hp": self.max_hp(),
             "cogs": self.cogs, "offer": self.offer, "remove_price": self.remove_price(),

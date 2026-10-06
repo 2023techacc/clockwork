@@ -14,7 +14,7 @@ TARGETS = [
     ("Runs", "Casual player clears act 3 (of runs that reach it)", "about 55%", (50, 60), "58%", "v18 (150 runs)"),
     ("Runs", "Careless player clears a run", "about 10%", (5, 15), "14%", "v18 (200 runs)"),
     ("Runs", "Casual player clears a run", "about 35%", (30, 40), "41%", "v18 (150 runs)"),
-    ("Runs", "Expert player clears a run", "about 70% (clearly above casual)", (65, 75), "57%", "v18 (60 runs; same run policy as casual)"),
+    ("Runs", "Expert player clears a run", "about 70% (clearly above casual)", (65, 75), "73%", "v19 (60 runs; planned route, was 57% with the casual policy)"),
     ("Runs", "HP when reaching each boss (casual)", "about 35", (32, 40), "37 / 36 / 37", "v18"),
     # Fights in a run
     ("Fights", "HP a normal fight costs (casual), act 1 / 2 / 3", "about 15, rising a little", (10, 17),
@@ -29,6 +29,9 @@ TARGETS = [
      "on target", "79% vs 70% (act 1)", "v18"),
     ("Choices", "Hunting elites at low HP (risk)", "should cost runs (high risk)", "on target",
      "elites from 50% HP: 64%, vs 79% from 70% (act 1)", "v18"),
+    ("Choices", "Planning HP to the boss vs fixed HP thresholds (same casual fights)",
+     "planning clearly better (skill pays off in the route, not only in fights)", "on target", "57% vs 39%",
+     "v19 (120 runs)"),
     ("Choices", "Rest: always heal vs always tinker", "within 5 points of each other", "on target",
      "66% vs 63%", "v16 (300 runs each)"),
     ("Choices", "Run styles (route, rest, Workshop)", "no style more than 5 points above the base",

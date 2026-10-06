@@ -147,3 +147,7 @@ The playtest uses door choices (C in Run-Design.md); the real game is planned as
 - **Elite loot:** a part from the uncommon/rare tiers with rares twice as likely, and 1 of 3 uncommon/rare attachments. No machine upgrades.
 - **New rare content:** **Overdrive** (attachment: damage and Block +75%), **Kickback** (attachment: after it triggers, the next 2 parts that would come up this turn trigger too, without turning the gear) and **Boiler** (part: 5 damage, +2 per point of Heat, +1 Heat). The **Hammer** (rare) becomes 12 damage, +1 Heat (was 10, +3). Measured values are in AI-Playtesting-Roadmap.md, Results v18.
 - **Elite risk:** elites are at 105% strength (was 90%), so they cost about 26 HP; fighting them when healthy still pays, hunting them when hurt costs runs.
+
+### What was built (v19)
+- **Expert run planning:** the expert forecasts fight costs and keeps enough HP for the act's boss (`sim/clockwork/planner.py`). The expert clears 73% (target ~70%).
+- **Hours map in the simulator** (decision 6, step D): `Run(map="hours")`, rules in Run-Design.md. With today's enemies it is much harder than doors (casual 9–15% vs 38%), mainly from fewer rests; results and options are in AI-Playtesting-Roadmap.md, Results v19.

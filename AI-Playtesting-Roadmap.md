@@ -927,3 +927,44 @@ Casual details: bosses when reached Clock Tower 93%, Pendulum 94%, Dismantler 85
 - Unspent cogs (43) are just over the target; prices wait for the full run economy, as decided.
 - **The expert is below target** (57% vs ~70%; the 95% range is 44–68% with 60 runs). Expert and casual clear act 2 at the same rate (76%) because both use the same run policy: routes, rewards and the Workshop don't get smarter with search. Next step: a smarter run policy for the expert (for example, routes planned by remaining HP and the act's boss) before changing the difficulty.
 - Wide Hopper is a weak start choice (+7 against +15 to +26) and Flywheel level 2 adds little (+2).
+
+## Results v19 (expert run planning; the hours map in the simulator)
+
+**Expert run planning.** Until v18 the expert used the casual run policy (fixed HP thresholds) and only fought better, so it cleared act 2 no more often than the casual player. The expert now plans its route (`clockwork/planner.py`, `run_policy.EXPERT_STYLE`):
+- **Forecasts:** every 3 stops it plays quick greedy fights in its head (4 normal enemies, 3 elites, 3 of the act's boss) with its current deck and machine, and scales their HP cost by 0.7 (the expert loses about 70% of what greedy loses).
+- **HP plan:** for each door it projects the HP left when the boss arrives, assuming the remaining stops are normal fights. It takes an elite, a Workshop or a fight only while that projection covers the boss: the boss's forecast cost × 1.5 + 5 HP (at most 85% of max HP). Otherwise it rests. Rest sites heal when the plan falls short (else tinker), and Workshops repair until it doesn't.
+
+Same casual fights (MCTS@50), 120 runs, paired seeds:
+
+| Run policy | Runs | Acts 1 / 2 / 3 | HP at the bosses | Elites | Rests |
+|---|---|---|---|---|---|
+| Fixed thresholds (casual) | 39% | 94% / 75% / 55% | 37 / 36 / 37 | 2.9 | 6.9 |
+| Plan, margin 1.0 × boss cost | 32% | 88% / 62% / 58% | 32 / 31 / 33 | 2.3 | 5.2 |
+| Plan, 1.25 × + 5 | 50% | 99% / 72% / 70% | 46 / 43 / 48 | 0.8 | 7.8 |
+| **Plan, 1.5 × + 5** | **57%** | 100% / 82% / 70% | 51 / 50 / 55 | 0.4 | 9.4 |
+| Plan, 1.25 × + 10 | 56% | 100% / 83% / 67% | 50 / 49 / 55 | 0.5 | 9.2 |
+| Plan, 2.0 × + 5 | 58% | 100% / 81% / 72% | 53 / 53 / 59 | 0.3 | 9.8 |
+
+**Expert (MCTS@200 + plan, 60 runs): 73%** (target ~70%; was 57%), acts 100% / 93% / 79%, HP at the bosses 51 / 50 / 56, 0.7 elites and 9.7 rests per run.
+
+Skill now pays off in route choices as well as fights: careless 14%, casual 41%, expert 73%.
+
+**Reading:** the best route skips elites and rests often. Arriving at the boss with 50+ HP is worth more than an elite's loot, and a rest stop (+8 HP and no fight) beats a fight stop (about −11 + 7 HP plus loot) whenever HP is short. Elites passed the act-1 check in v18 (fighting them when healthy beat avoiding them), but over three acts a planning player avoids them. If elites should be part of the expert's route, their reward or the rest site's value needs another look; playtests should show whether people play this way.
+
+**The hours map ("twelve hours to midnight", simulator only).** Each act is a 5 × 3 district (6 fights, 3 elites, 2 rest sites, 3 Workshops; the gate's neighbours are fights). The player enters any unvisited node next to a visited one if its hours fit (fight 2, elite 3, Workshop 1, rest 2), and the boss strikes at midnight or when the player chooses to wait. Rules are in Run-Design.md. Same enemies and acts as the door map; MCTS@50 fights, 100 runs per row:
+
+| Map | Runs | Acts 1 / 2 / 3 | Act 1: fights + elites, cogs | HP at the bosses | Rests | Attachments | Machine levels |
+|---|---|---|---|---|---|---|---|
+| Doors (casual policy) | 38% | 93% / 76% / 54% | 3.9 + 1.6, 108 | 37 / 36 / 36 | 6.9 | 5.8 | 3.8 |
+| Hours 12 | 9% | 86% / 37% / 28% | 3.5 + 0.8, 77 | 38 / 34 / 37 | 1.5 | 2.2 | 2.6 |
+| Hours 12, planner | 12% | 95% / 48% / 26% | 4.0 + 0.1, 60 | 47 / 41 / 38 | 2.1 | 1.0 | 2.6 |
+| Hours 16 | 10% | 88% / 48% / 24% | 4.3 + 1.2, 101 | 34 / 35 / 29 | 2.4 | 4.0 | 2.8 |
+| Hours 16, 3 rest sites | 15% | 84% / 52% / 34% | 3.9 + 1.1, 92 | 33 / 36 / 31 | 3.8 | 4.6 | 2.9 |
+| Hours 16, 3 rest sites, planner | 15% | 93% / 45% / 36% | 4.2 + 0.2, 68 | 46 / 38 / 38 | 4.8 | 2.4 | 2.7 |
+
+**Reading:**
+- **12 hours buys about 25% less than a door act** (act-1 cogs 77 vs 108). 16 hours matches the door map's income and fight count.
+- **Even with door-level income the hours map is much harder** (10–15% vs 38%). The door map hands out healing: rest doors are common and the stop before every boss is a rest site or a Workshop, so the casual player rests about 7 times a run. A district has 2–3 rest sites, often out of the way, so runs rest 2–4 times, tinker less (fewer attachments) and reach acts 2–3 weaker.
+- The planner doesn't rescue it: it keeps HP but skips elites and fights, so decks stay small.
+- **If the real game uses the hours map**, it needs its own tuning before the acts' difficulty carries over: more rest sites (or rests cheaper than 2 hours), a guaranteed rest or Workshop next to the boss, or weaker veterans. Prices should be set on whichever map ships, since income differs by up to 30%.
+- The playtest page keeps the door map (decision 6: doors on the page, hours in the simulator).

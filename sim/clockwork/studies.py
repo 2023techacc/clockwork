@@ -31,7 +31,7 @@ from .experiment import wilson
 from .parts import Kind as K, Mod as M
 from .run import make_agent
 from .run_mode import MACHINE, Run
-from .run_policy import simulate_run
+from .run_policy import EXPERT_STYLE, simulate_run
 
 
 def plus(extra, base=STARTER):
@@ -147,14 +147,14 @@ def study_attachments(pool, args):
 # ---------------------------------------------------------------- runs
 
 def _runs(args):
-    seeds, agent, style, machine, rules, patch, boss, acts = args
+    seeds, agent, style, machine, rules, patch, boss, acts, map_ = args
     from . import run_mode
     saved = {name: getattr(run_mode, name) for name in patch}
     for name, value in patch.items():        # module-level run constants, e.g. ELITE_COG_BONUS
         setattr(run_mode, name, value)
     try:
         return [summarise(simulate_run("starter", seed, agent, rules=rules, style=style, machine=machine, boss=boss,
-                                       acts=acts))
+                                       acts=acts, map=map_))
                 for seed in seeds]
     finally:
         for name, value in saved.items():
@@ -179,10 +179,15 @@ def summarise(run):
             "shops": sum(h.get("node") == "workshop" for h in run.history)}
 
 
-def play_runs(pool, runs, agent, style=None, machine=None, rules=None, block=3, patch=None, boss=None, acts=None):
-    """`machine`: None lets the policy pick the starting upgrade; a list starts with exactly those."""
+def play_runs(pool, runs, agent, style=None, machine=None, rules=None, block=3, patch=None, boss=None, acts=None,
+              map="doors"):
+    """`machine`: None lets the policy pick the starting upgrade; a list starts with exactly those.
+    With no `style`, the expert (MCTS@200) plans its route (run_policy.EXPERT_STYLE, v19); the casual and
+    careless players use the fixed-threshold policy."""
+    if style is None and agent == "mcts@200":
+        style = EXPERT_STYLE
     tasks = [(range(lo, min(lo + block, runs)), agent, style or {}, None if machine is None else tuple(machine),
-              rules, patch or {}, boss, acts)
+              rules, patch or {}, boss, acts, map)
              for lo in range(0, runs, block)]
     return [o for chunk in pool.map(_runs, tasks) for o in chunk]
 

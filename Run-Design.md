@@ -136,6 +136,12 @@ Elites are needed because normal fights almost never kill (a casual player reach
   - whether some nodes can be seen but are locked behind others;
   - whether parts or attachments can buy time.
 - **Playtest prototype: C, door choices.** About 9 stops per district, then the boss. Each stop offers 2–3 doors, each showing its node type.
+- **Simulator version of D (v19, `Run(map="hours")`).** How it answers the open questions for now:
+  - **District:** a 5 × 3 grid with the gate at the left middle: 6 fights, 3 elites, 2 rest sites and 3 Workshops, all visible. The gate's neighbours are fights.
+  - **Moving:** enter any unvisited node next to one already visited (free roam; walking back through visited nodes is free). A node costs its hours when entered: fight 2, elite 3, Workshop 1, rest 2.
+  - **Midnight:** a node can be entered only if its hours fit. When nothing fits, or whenever the player chooses to wait, the boss arrives.
+  - **Growth:** enemies grow with the hours spent, as they do with stops on the door map.
+  - Not modelled: locked nodes, buying time, events.
 
 ### Money: cogs, looted from enemies
 - **Each enemy carries a set amount of cogs that fits its design.** Harder enemies carry more, and enemies of the same level stay close to each other (small variance).
