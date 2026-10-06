@@ -8,26 +8,31 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 
 | Area | Metric | Target | Latest | Status | Source |
 |---|---|---|---|---|---|
-| Runs | Casual player clears a run | 65–70% | 77% | ❌ off target | v17 (smarter run policy) |
-| Runs | Careless player clears a run | 40–50% | 44% | ✅ on target | v17 |
-| Runs | Expert player clears a run | 85–90% (clearly above casual) | 90% | ✅ on target | v17 |
-| Runs | HP when reaching the boss (casual) | about 35 | 36 | ✅ on target | v17 |
-| Fights | HP a normal fight costs (casual) | about 15 | 12–14 | ✅ on target | v15 |
-| Fights | HP an elite costs (casual) | about 25 (high risk) | 19–23 | ⚠️ partly off | v15 |
-| Fights | Boss beaten when reached (casual) | about 75%, every boss within ±5 of the others | Clock Tower 66%, others 84–86% | ❌ off target | v17 |
-| Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 68% vs 57% | ✅ on target | v15 |
-| Choices | Hunting elites at low HP (risk) | should cost runs (high risk) | elites from 50% HP beat 60% and 70% (76% vs 70% vs 58%) | ❌ off target | v17 policy search |
+| Runs | Casual player clears act 1 (of runs that start it) | about 90% | 93% | ✅ on target | v18 (150 runs) |
+| Runs | Casual player clears act 2 (of runs that reach it) | about 75% | 76% | ✅ on target | v18 (150 runs) |
+| Runs | Casual player clears act 3 (of runs that reach it) | about 55% | 58% | ✅ on target | v18 (150 runs) |
+| Runs | Careless player clears a run | about 10% | 14% | ✅ on target | v18 (200 runs) |
+| Runs | Casual player clears a run | about 35% | 41% | ❌ off target | v18 (150 runs) |
+| Runs | Expert player clears a run | about 70% (clearly above casual) | 57% | ❌ off target | v18 (60 runs; same run policy as casual) |
+| Runs | HP when reaching each boss (casual) | about 35 | 37 / 36 / 37 | ✅ on target | v18 |
+| Fights | HP a normal fight costs (casual), act 1 / 2 / 3 | about 15, rising a little | 10.5 / 12.4 / 14.7 | ✅ on target | v18 |
+| Fights | HP an elite costs (casual), act 1 / 2 / 3 | about 25 (high risk), rising | 24.6 / 29.4 / 35.0 | ✅ on target | v18 (elites ×1.05, was ×0.9: 16 HP) |
+| Fights | Boss beaten when reached (casual) | act 1 ~93%, act 2 ~85%, act 3 ~75%; bosses of one act within ±5 | Clock Tower 93%, Pendulum 94% / Dismantler 85%, Furnace 89% / Iron Colossus 77% | ✅ on target | v18 (150 runs) |
+| Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 79% vs 70% (act 1) | ✅ on target | v18 |
+| Choices | Hunting elites at low HP (risk) | should cost runs (high risk) | elites from 50% HP: 64%, vs 79% from 70% (act 1) | ✅ on target | v18 |
 | Choices | Rest: always heal vs always tinker | within 5 points of each other | 66% vs 63% | ✅ on target | v16 (300 runs each) |
 | Choices | Run styles (route, rest, Workshop) | no style more than 5 points above the base | best: seek elites, always heal (+5) | ✅ on target | v15 |
-| Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone | Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4, Hammer +3.8 | ✅ on target | v15 |
+| Content | One part pick (win-rate points over the starter, fights from 30 HP) | +3 to +10; combo enablers (Spring, Mirror, Loader) may be slightly negative alone | Magnet +9.5, Slider +8.1, Primer +7.7, Assembly +6.7, Amplifier +5.5, Coupler +5.4, Coolant +4.4 | ✅ on target | v15 |
 | Content | One combo-enabler pick (same measure) | −5 to +3 | Mirror −1.7, Loader −2.8, Spring −3.5 | ✅ on target | v15 |
 | Content | One common/uncommon attachment (HP kept per fight) | +2.5 to +4 | Heat Sink +3.6, Coil +3.5, Bracing +3.5, Polish +3.4, Counterweight +3.3, Sharpened +3.0, Echo +3.0, Clamp +2.8, Feeder +2.8 | ✅ on target | v16/v17 (Coil 6, Polish +40%, Echo now uncommon) |
-| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +6.5 | ❌ off target | v16 |
-| Content | One machine upgrade (run clear points, started with it) | +7 to +16, rising with price (Flywheel 70, Bigger Gear 75, Heat Housing 85, Extra Hands 90) | Bigger Gear +18, Flywheel +16, Extra Hands +14, Heat Housing +11 | ⚠️ partly off | v16 |
-| Content | Strongest single turn (any combo) | about half the boss's HP (≤ 55; a few over is accepted) | 60 | ✅ on target | v15 (Echo Coupler + Hammers) |
-| Economy | Attachments per run | 2–4 | 3.9 | ✅ on target | v17 |
-| Economy | Machine upgrades per run | about 1 | 2.0 | ❌ off target | v17 |
-| Economy | Cogs unspent when reaching the boss | under 40 | 63 | ❌ off target | v17 |
+| Content | One rare attachment (HP kept per fight) | +4 to +6 | Governor +6.5, Kickback +5.0 (Plate +5.7, Striker +4.4), Overdrive +4.9 | ⚠️ partly off | v16 / v18 |
+| Content | One rare part pick (win-rate points, as above) | +4 to +10 (elite loot should feel good) | Boiler +5.7, Hammer +4.8 | ✅ on target | v18 (Hammer 12/+1, Boiler 5 + 2/Heat) |
+| Content | One machine upgrade (act-1 clear points, started with it vs none) | +15 to +25, each a real choice | Cooling Fins +26, Flywheel +25, Extra Hands +21, Frame +19, Heat Housing +18, Bigger Gear +15, Wide Hopper +7 | ⚠️ partly off | v18 (act 1, 200 runs) |
+| Content | Strongest single turn, builds without rare attachments | about half an act-1 boss's HP (≤ 55; a few over is accepted) | 50 | ✅ on target | v18 (Heat Sink everything) |
+| Content | Strongest single turn, builds with rare attachments | about half an act-3 boss's HP (≤ 90) | 84 | ✅ on target | v18 (Kickback + Overdrive Hammers; Echo Coupler + 3 Hammers 76) |
+| Economy | Attachments per run (3 acts) | 4–8 | 6.0 | ✅ on target | v18 |
+| Economy | Machine upgrade levels per run | 3–5 (start, boss rewards, a level-up or two) | 3.8 | ✅ on target | v18 (all runs, won or lost) |
+| Economy | Cogs unspent when reaching the first boss | under 40 | 43 | ❌ off target | v18 |
 | Fun (simulator) | Fight length (turns): normal / boss | 4–8 / 6–12 | 6.3 / 7.6 | ✅ on target | v17 |
 | Fun (simulator) | Close wins (≤ 25% HP left): normal fights | 5–15% (rarely a scare) | 3% | ❌ off target | v17 |
 | Fun (simulator) | Close wins: elites / bosses | 15–30% / 30–50% | 20% / 45% | ✅ on target | v17 |
@@ -72,12 +77,12 @@ Tier decides how often a part shows up as a reward and its Workshop price.
 | **Coupler** | uncommon | 45 | 1 | Deal 2 damage. Triggers its left neighbour, then its right one. Can't trigger a Coupler. |
 | **Loader** | uncommon | 45 | 1 | Gain 3 Block. Installs the next 2 queue parts into empty slots. If the gear is full, one replaces the part opposite the Loader. |
 | **Coolant** | common | 30 | 1 | Remove 3 Heat. |
-| **Hammer** | rare | 65 | 4 | Deal 10 damage. +3 Heat. |
+| **Hammer** | rare | 65 | 2 | Deal 12 damage. +1 Heat. |
 | **Magnet** | uncommon | 45 | 1 | Gain 3 Block. Pulls the parts 2 slots away into the slots next to it (swapping if occupied). +2 Block per part pulled. |
 | **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
 | **Assembly** | uncommon | 45 | 1 | Deal 1 damage, +3 per part installed this turn. |
 | **Slider** | uncommon | 45 | 1 | Deal 7 damage, +3 if a Magnet moved it this turn. |
-| **Boiler** | rare | 65 | 2 | Deal 3 damage, +2 per point of Heat (after its own). +1 Heat. |
+| **Boiler** | rare | 65 | 2 | Deal 5 damage, +2 per point of Heat (after its own). +1 Heat. |
 
 ## Attachments
 
@@ -95,12 +100,12 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 | **Feeder** | uncommon | Loader | 55 | Loads 1 more part, into the next slots to come up instead of random ones, and the loaded parts trigger right away. | +2.8 |
 | **Echo** | uncommon | any part | 55 | The first time it triggers each turn, it triggers again. | +3.0 (Striker) |
 | **Governor** | rare | any part | 90 | Its triggers add no Heat. | +6.5 (Hammer) |
-| **Overdrive** | rare | any part | 90 | Its damage and Block +50% (adds to Amplifiers). | +5.0 (Hammer) |
-| **Kickback** | rare | any part | 90 | After it triggers, the part that would come up next this turn triggers too (the gear doesn't turn). | +4.0 (Hammer) |
+| **Overdrive** | rare | any part | 90 | Its damage and Block +75% (adds to Amplifiers). | +4.9 (Hammer) |
+| **Kickback** | rare | any part | 90 | After it triggers, the next 2 parts that would come up this turn trigger too (the gear doesn't turn). | +5.0 (Hammer) |
 
 ## Enemies
 
-A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength × (1 + 0.3 × stop/9). Act strength: act 1 ×1.0, act 2 ×1.35, act 3 ×1.7. In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts exist): the act-1 enemies at that strength with extra armor (act 1 +0, act 2 +1, act 3 +2). Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength × (1 + 0.2 × stop/9). Act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5. In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts exist): the act-1 enemies at that strength with extra armor (act 1 +0, act 2 +1, act 3 +2). Bosses have their own act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5, times the act's full growth. Elites are fought at ×1.05 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
 
 ### Normal
 

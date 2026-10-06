@@ -844,3 +844,86 @@ New defaults: elites from 50% HP, rest door below 60%. The other behaviours stay
 - **Magnet dominates builds** (the most-copied part in 59% of runs), partly because the policy ranks parts by fixed values. Real players pick more variously; the playtest "variety" rating will tell.
 - **Normal fights are rarely close** (3%): a quiet act until elites and bosses. That fits a first act; acts 2–3 can raise it.
 - Difficulty is not retuned to 65–70% here: the acts 2–3 targets (Acts-Design.md, question 1) will change act 1's target anyway.
+
+## Results v18 (3 acts, boss rewards, machine levels, elites re-tuned, rare content)
+
+Structure (Acts-Design.md, decisions of 2026-10-06): 3 acts with veteran enemies in acts 2–3, one boss per act (Clock Tower or Pendulum / Furnace or Dismantler / Iron Colossus), a start choice and boss rewards of 1 of 3 machine upgrades, Workshop level-ups, half the missing HP healed between acts. Elites no longer give machine upgrades.
+
+**Deck growth (question 4).** Win rate from 30 HP with the same key parts, adding cards:
+
+| Deck | Win rate |
+|---|---|
+| 12 parts | 97.3% |
+| + 6 basics | 96.3% |
+| + 12 basics | 94.8% |
+| + 6 weak filler (Coolant / Mirror / Spring) | 92.3% |
+| + 12 weak filler | 88.3% |
+
+Size alone costs little; weak filler costs more. No new rule needed (option A stays), and Workshop removal keeps its value.
+
+**Rare content** (elite loot). Attachments: HP kept per fight on the host; parts: win-rate points over the starter from 30 HP.
+
+| Content | First version | Final | Value |
+|---|---|---|---|
+| Overdrive (attachment) | +50%: +3.9 | **+75%** (+100% measured +6.9) | +4.9 |
+| Kickback (attachment) | next part triggers too: Striker +2.0, Plate +3.6 | **next 2 parts trigger too** | Striker +4.4, Plate +5.7 |
+| Hammer (rare part) | 10 / +3 Heat: −0.4 to +3.8 | **12 / +1 Heat** (14 / +2 measured +5.1) | +4.8 |
+| Boiler (rare part) | 3 + 2 per Heat: +4.4 | **5 + 2 per Heat** (3 + 3 per Heat measured +4.8) | +5.7 |
+
+Hammer 14 / +2 raised the strongest turns to 78–88, so 12 / +1 was chosen (76–84). Loop finder with the final numbers: builds without rare attachments top out at 50; the biggest are Kickback + Overdrive Hammers 84, Echo Coupler + 3 Hammers 76, Boilers + Hammers 71. These need 2–4 rare pieces, so they are act-3 builds; the strongest-turn target is now split: ≤ 55 for builds without rare attachments, ≤ 90 (half an act-3 boss) with them.
+
+**Elites: risk was wrong, not return.** Act-1 runs, casual player, 200 runs per row:
+
+| Elite strength | Avoid elites | Elites from 70% HP | from 50% | from 30% | HP per elite |
+|---|---|---|---|---|---|
+| ×0.9 (v17) | 70% | 84% | **89%** | 68% | 16 (won 100%) |
+| ×1.0 | – | **82%** | 70% | 46% | 22 |
+| **×1.05** | – | **79%** | 64% | – | 26–27 |
+| ×1.15 | – | 64% | 38% | 8% | 33–34 |
+
+At ×0.9 elites cost no more than a normal fight, so hunting them was always right. At ×1.05 fighting them when healthy still pays (+9 over avoiding) but hunting them hurt costs runs. The policy now takes elites from 70% HP (was 50%). The response is steep: +10% strength roughly doubles the HP cost.
+
+**Machine upgrades** (act-1 runs started with exactly one, 200 runs, paired; none: 57%):
+
+| Upgrade | Clear | Level 2 |
+|---|---|---|
+| Cooling Fins | 83% (+26) | – |
+| Flywheel | 82% (+25) | 84% (+2 more) |
+| Extra Hands | 78% (+21) | – |
+| Reinforced Frame | 76% (+19) | 88% (+12 more) |
+| Heat Housing | 75% (+18) | 79% (+4 more) |
+| Bigger Gear | 72% (+15) | – |
+| Wide Hopper | 64% (+7) | – |
+
+The policy picks by this order and buys level-ups Frame first. Wide Hopper is a weak start choice and Flywheel's second level adds little; both are candidates for a rework once prices are set.
+
+**Act difficulty** (3-act runs, casual player; acts = clear rate of the runs that reach each act):
+
+| Setting | Runs | Acts 1 / 2 / 3 |
+|---|---|---|
+| First build: growth 0.3, act strength ×1.35 / ×1.7, armor +1 / +2 (200 runs) | 4% | 80% / 27% / 20% |
+| Growth 0.2, ×1.15 / ×1.3, armor +1 / +1 (200) | 82% | 92% / 94% / 95% |
+| Growth 0.2, ×1.25 / ×1.45, armor +1 / +1 (120) | 55% | 94% / 73% / 80% |
+| Growth 0.2, ×1.3 / ×1.55, armor +1 / +2 (120) | 32% | 94% / 75% / 45% |
+| **Final: growth 0.2, ×1.3 / ×1.5, armor +1 / +2** (150) | **41%** | **93% / 76% / 58%** |
+| Target | ~35% | ~90% / ~75% / ~55% |
+
+Bosses got their own act strength table (same values for now), so bosses and veterans can be tuned apart later. Within an act, enemies still grow; the first act now grows 20% (was 30%).
+
+Final setting, all players:
+
+| Player | Runs | Acts 1 / 2 / 3 | Target |
+|---|---|---|---|
+| Careless (greedy, 200 runs) | 14% | 78% / 48% / 36% | ~10% |
+| Casual (MCTS@50, 150) | 41% | 93% / 76% / 58% | ~35% |
+| Expert (MCTS@200, 60) | 57% | 97% / 76% / 77% | ~70% |
+
+Casual details: bosses when reached Clock Tower 93%, Pendulum 94%, Dismantler 85%, Furnace 89%, Iron Colossus 77%; HP at each boss 37 / 36 / 37; a normal fight costs 10.5 / 12.4 / 14.7 HP by act, an elite 24.6 / 29.4 / 35.0. A run ends with 20.7 parts, 6.0 attachments and 3.8 machine upgrade levels, and reaches the first boss with 43 unspent cogs.
+
+**Reading:**
+- The difficulty curve is very steep in act strength: ×1.15 → ×1.3 in act 2 moved its clear rate from 94% to 75%. Small steps from here.
+- Iron Colossus is the most common killer (armor punishes many small hits); act 3 has only one boss until more are added.
+- Dismantler is a little harder than the Furnace (85% vs 89%; was 72% vs 86% at ×1.25), within noise now.
+- Unspent cogs (43) are just over the target; prices wait for the full run economy, as decided.
+- **The expert is below target** (57% vs ~70%; the 95% range is 44–68% with 60 runs). Expert and casual clear act 2 at the same rate (76%) because both use the same run policy: routes, rewards and the Workshop don't get smarter with search. Next step: a smarter run policy for the expert (for example, routes planned by remaining HP and the act's boss) before changing the difficulty.
+- Wide Hopper is a weak start choice (+7 against +15 to +26) and Flywheel level 2 adds little (+2).

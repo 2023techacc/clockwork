@@ -140,9 +140,10 @@ The playtest uses door choices (C in Run-Design.md); the real game is planned as
 
 ### What was built (v18)
 - **3 acts.** Bosses by act: act 1 Clock Tower or Pendulum, act 2 Furnace or Dismantler, act 3 Iron Colossus. All three are rolled and shown at the start.
-- **Veterans** in acts 2 and 3: the act-1 normal enemies and elites at act strength (×1.35, ×1.7 to start) with +1 / +2 armor.
+- **Veterans** in acts 2 and 3: the act-1 normal enemies and elites at act strength (×1.3, ×1.5; tuned in v18) with +1 / +2 armor. Bosses have their own act strength table (same values for now). Enemies grow 20% within each act.
 - **Between acts:** the boss's exclusive reward is 1 of 3 machine upgrades you don't have; then half the missing HP heals.
 - **Machine upgrades:** a pool of 7 with levels: Flywheel (2 levels), Heat Housing (2), Extra Hands (2), Bigger Gear (1), Reinforced Frame (+8 max HP, 3), Wide Hopper (+1 part offered, 2) and the new **Cooling Fins** (1 Heat drains each turn, 2). Start: choose 1 of 3. Workshops sell level-ups only (placeholder prices 90 / 130).
 - **Rarity across acts:** part reward weights common/uncommon/rare go 5/4/1, 3/4/2, 2/4/3.
 - **Elite loot:** a part from the uncommon/rare tiers with rares twice as likely, and 1 of 3 uncommon/rare attachments. No machine upgrades.
-- **New rare content:** **Overdrive** (attachment: damage and Block +50%), **Kickback** (attachment: after triggering, the gear cranks once more, like a Spring on any part) and **Boiler** (part: 3 damage, +2 per point of Heat, +1 Heat).
+- **New rare content:** **Overdrive** (attachment: damage and Block +75%), **Kickback** (attachment: after it triggers, the next 2 parts that would come up this turn trigger too, without turning the gear) and **Boiler** (part: 5 damage, +2 per point of Heat, +1 Heat). The **Hammer** (rare) becomes 12 damage, +1 Heat (was 10, +3). Measured values are in AI-Playtesting-Roadmap.md, Results v18.
+- **Elite risk:** elites are at 105% strength (was 90%), so they cost about 26 HP; fighting them when healthy still pays, hunting them when hurt costs runs.

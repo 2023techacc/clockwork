@@ -72,7 +72,7 @@ SPECS = {
     Kind.COUPLER: PartSpec(damage=2),                      # v5: +2 Heat; v15: no extra Heat, 2 damage
     Kind.LOADER: PartSpec(block=3),                        # +3 Block (v15)
     Kind.COOLANT: PartSpec(cooling=3),
-    Kind.HAMMER: PartSpec(damage=10, extra_heat=3),    # Rules.md: 15/+2; v3: 9/+4; v15: 10/+3
+    Kind.HAMMER: PartSpec(damage=12, extra_heat=1),    # Rules.md: 15/+2; v3: 9/+4; v15: 10/+3; v18: 12/+1 (rare)
     Kind.MAGNET: PartSpec(block=3),                        # +3 Block, plus magnet_block_per_pull per pull (v15)
     # Payoff parts (sim v4 proposals)
     # Primer: fresh_damage only if it triggers on the turn it was installed.
@@ -80,7 +80,7 @@ SPECS = {
     Kind.PRIMER: PartSpec(damage=2, fresh_damage=8),       # pairs with Loader (Feeder) / placement
     Kind.ASSEMBLY: PartSpec(damage=1, per_install_damage=3),  # pairs with Loader; +1 base damage (v15)
     Kind.SLIDER: PartSpec(damage=7, moved_bonus=3),        # pairs with Magnet (moved bonus was 6; damage 5 -> 7, v15)
-    Kind.BOILER: PartSpec(damage=3, heat_damage=2, extra_heat=1),   # rare (v18): pairs with Hammer, Coupler
+    Kind.BOILER: PartSpec(damage=5, heat_damage=2, extra_heat=1),   # rare (v18): pairs with Hammer, Coupler
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}

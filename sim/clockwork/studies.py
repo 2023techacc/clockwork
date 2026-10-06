@@ -163,8 +163,9 @@ def _runs(args):
 
 def summarise(run):
     fights = [h for h in run.history if "enemy" in h]
-    boss_loot = sum(h.get("cogs", 0) for h in fights if h["node"] == "boss")
-    return {"won": run.phase == "won", "stop": run.stop, "cogs": run.cogs - boss_loot,   # unspent before the boss
+    first_boss = next((h for h in fights if h["node"] == "boss"), None)
+    return {"won": run.phase == "won", "stop": run.stop,       # cogs unspent when reaching the first boss
+            "cogs": first_boss["cogs_held"] if first_boss else run.cogs,
             "elites": sum(h["node"] == "elite" for h in fights),
             "attachments": sum(len(c["mods"]) for c in run.cards) + len(run.inventory),
             "machine": len(run.machine), "deck": len(run.cards),
@@ -432,6 +433,12 @@ COMBO_DECKS = {
                                            K.STRIKER: 2},
     "Heat Sink everything": {(K.HAMMER, M.HEAT_SINK): 2, (K.STRIKER, M.HEAT_SINK): 3, (K.SPRING, M.HEAT_SINK): 2,
                              K.COUPLER: 1},
+    # Rare content (v18).
+    "Overdrive Hammers + Amplifier": {(K.HAMMER, M.OVERDRIVE): 2, K.AMPLIFIER: 1, K.COOLANT: 1, K.STRIKER: 3},
+    "Kickback Coupler + Hammers": {(K.COUPLER, M.KICKBACK): 1, K.HAMMER: 2, K.AMPLIFIER: 1, K.STRIKER: 3},
+    "Kickback Hammer + Overdrive Hammer": {(K.HAMMER, M.KICKBACK): 1, (K.HAMMER, M.OVERDRIVE): 1, K.AMPLIFIER: 1,
+                                           K.HAMMER: 1, K.STRIKER: 3},
+    "Boilers + Hammers": {K.BOILER: 2, K.HAMMER: 2, K.COUPLER: 1, K.STRIKER: 2},
 }
 
 

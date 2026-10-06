@@ -2,12 +2,12 @@
 
 Fights are played by an agent (default mcts@50, the casual stand-in). Map, reward, rest and
 Workshop choices follow plain heuristics:
-- doors: an elite when HP is at least half, a rest site below 60% HP, otherwise a Workshop if it
-  can afford something, otherwise a fight (thresholds from the v17 policy search);
+- doors: an elite at 70% HP or more, a rest site below 60% HP, otherwise a Workshop if it can
+  afford something, otherwise a fight (thresholds from the v17 policy search; elites v18);
 - part rewards: highest value in PART_VALUE (from the partial-deck probes), else scrap;
 - attachments: always taken and attached to the best part they fit;
 - rest: heal below 60% HP, otherwise tinker (both offered common attachments);
-- Workshop: repair when low, then buy the machine upgrade, then the best affordable attachments and parts.
+- Workshop: repair when low, then buy a machine upgrade level, then the best affordable attachments and parts.
 
     python -m clockwork.run_policy --agent mcts@50 --runs 60
 """
@@ -25,14 +25,16 @@ from .parts import Kind, Mod
 from .run import make_agent
 from .run_mode import Run
 
-# Value of one copy: win-rate points over the starter in fights from 30 HP (part pass v15).
+# Value of one copy: win-rate points over the starter in fights from 30 HP (part pass v15; Hammer and
+# Boiler re-measured after the v18 rare buffs).
 PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBLY: 6.7, Kind.AMPLIFIER: 5.5,
-              Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
-              Kind.SPRING: -3.5, Kind.BOILER: 5.0}       # Boiler (v18): first guess until measured
-# HP kept per fight on the best host (studies, Results v16), and the hosts in order of preference.
+              Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 4.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
+              Kind.SPRING: -3.5, Kind.BOILER: 5.7}
+# HP kept per fight on the best host (studies, Results v16; Overdrive and Kickback v18), and the hosts in
+# order of preference.
 MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 3.5, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
              Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 3.4,
-             Mod.OVERDRIVE: 5.0, Mod.KICKBACK: 4.0}   # v18 additions: first guesses until measured
+             Mod.OVERDRIVE: 4.9, Mod.KICKBACK: 5.0}
 MOD_HOSTS = {
     Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
     Mod.BRACING: [Kind.STRIKER, Kind.PLATE],
@@ -41,12 +43,16 @@ MOD_HOSTS = {
     Mod.ECHO: [Kind.STRIKER, Kind.PLATE, Kind.PRIMER],
     Mod.HEAT_SINK: [Kind.STRIKER, Kind.HAMMER],
     Mod.OVERDRIVE: [Kind.HAMMER, Kind.SLIDER, Kind.STRIKER, Kind.PLATE],
-    Mod.KICKBACK: [Kind.HAMMER, Kind.STRIKER, Kind.SLIDER],
+    Mod.KICKBACK: [Kind.HAMMER, Kind.PLATE, Kind.STRIKER, Kind.SLIDER],
 }
 # Runs started with each machine upgrade (Results v12): Extra Hands +16, Heat Housing +15,
 # Bigger Gear +8, Flywheel +7 points.
 # Order to pick machine upgrades in (at the start, as boss rewards, and level-ups in the Workshop).
-MACHINE_PRIORITY = ["bigger_gear", "flywheel", "extra_hands", "heat_housing", "frame", "cooling_fins", "hopper"]
+# By run clear points when started with it (act-1 runs, Results v18): Cooling Fins +26, Flywheel +25,
+# Extra Hands +21, Frame +19, Heat Housing +18, Bigger Gear +15, Wide Hopper +7.
+MACHINE_PRIORITY = ["cooling_fins", "flywheel", "extra_hands", "frame", "heat_housing", "bigger_gear", "hopper"]
+# Workshop level-ups by the second level's gain (v18): Frame +12, Heat Housing +4, Flywheel +2.
+LEVEL_PRIORITY = ["frame", "heat_housing", "cooling_fins", "extra_hands", "flywheel", "hopper", "bigger_gear"]
 
 
 def machine_order(style=None):
@@ -92,7 +98,7 @@ DEFAULT_STYLE = {
     "remove_basics": False,  # Workshop: remove a Plate, then a Striker, when affordable
     "machine_first": False,  # Workshop: save for machine upgrades before buying attachments
     # Tunable thresholds (v17 policy search; the values here are the chosen defaults).
-    "elite_hp": 0.5,         # auto: take an elite door at or above this HP fraction (v17; was 0.7)
+    "elite_hp": 0.7,         # auto: take an elite door at or above this HP fraction (v18: harder elites; v17 0.5)
     "rest_door_hp": 0.6,     # prefer a rest door below this HP fraction (v17; was 0.5)
     "heal_below": 0.6,       # at a rest site, heal below this HP fraction (else tinker)
     "workshop_cogs": 55,     # prefer a Workshop door with at least this many cogs
@@ -145,8 +151,7 @@ def shop(run, style=DEFAULT_STYLE):
     if run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
-    order = machine_order(style)
-    machines = sorted(range(len(o["machines"])), key=lambda i: order.index(o["machines"][i]["key"]))
+    machines = sorted(range(len(o["machines"])), key=lambda i: LEVEL_PRIORITY.index(o["machines"][i]["key"]))
     for i in machines:
         if not o["machines"][i]["sold"] and run.cogs >= o["machines"][i]["price"]:
             run.buy("machine", i)

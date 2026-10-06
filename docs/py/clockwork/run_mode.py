@@ -28,9 +28,10 @@ ACTS = 3
 STOPS = 9                       # door choices before each boss
 # Enemies grow stronger through each act: HP and attacks are scaled by
 # ACT_SCALE[act] * (1 + GROWTH * stop / STOPS), so each boss gets the act's full growth.
-GROWTH = 0.30                   # tuned (v15) for one act; 0.318+ rounds the Clock Tower chime up to 15
-ACT_SCALE = [1.0, 1.35, 1.7]    # veteran strength per act (placeholder; tuned in v18)
+GROWTH = 0.20                   # v18 (3 acts; was 0.30 for one act); 0.318+ rounds the Clock Tower chime up to 15
+ACT_SCALE = [1.0, 1.3, 1.5]     # veteran strength per act (v18: casual clears acts ~94% / 75% / 50%)
 ACT_ARMOR = [0, 1, 2]           # veteran trait: armor on normal enemies and elites in acts 2 and 3
+ACT_BOSS_SCALE = [1.0, 1.3, 1.5]    # bosses use this instead of ACT_SCALE (times the act's full growth)
 ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_colossus"]]
 BETWEEN_ACTS_HEAL = 0.5         # share of the missing HP healed when an act ends (Acts-Design 2B)
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
@@ -56,7 +57,7 @@ ELITE_RARE_PART = 2
 ELITE_ATTACHMENTS = 3
 ELITE_RARE_WEIGHT = 3
 ELITE_COG_BONUS = 0
-ELITE_SCALE = 0.9               # elites' HP and attacks are multiplied by this (on top of growth)
+ELITE_SCALE = 1.05              # elites' HP and attacks are multiplied by this (on top of growth; v18: 0.9 -> 1.05)
 SCRAP_VALUE = 10
 REST_HEAL = 8                   # v16 (was 15): healing and tinkering within 5 points
 REPAIR = (15, 25)               # HP, price
@@ -142,7 +143,8 @@ class Run:
         return deck
 
     def enemy_scale(self) -> float:
-        return ACT_SCALE[min(self.act, len(ACT_SCALE) - 1)] * (1 + self.growth * min(self.stop, self.stops) / self.stops)
+        table = ACT_BOSS_SCALE if self.node == "boss" else ACT_SCALE
+        return table[min(self.act, len(table) - 1)] * (1 + self.growth * min(self.stop, self.stops) / self.stops)
 
     def enemy_spec(self):
         """The current enemy, grown for the act and how far into it the run is. In acts 2 and 3, normal
@@ -249,7 +251,7 @@ class Run:
         """Record the fight played with fight_deck()/rules()/fight_seed() against self.enemy."""
         self._need("fight")
         entry = {"act": self.act, "stop": self.stop, "node": self.node, "enemy": self.enemy, "result": result,
-                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns}
+                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns, "cogs_held": self.cogs}
         if actions is not None:
             entry["actions"] = actions
         self.history.append(entry)
