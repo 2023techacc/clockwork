@@ -41,7 +41,7 @@ class Mod(str, Enum):
     # rare
     GOVERNOR = "Governor"          # its triggers add no Heat
     OVERDRIVE = "Overdrive"        # its damage and Block x(1 + overdrive_bonus) (v18)
-    KICKBACK = "Kickback"          # after it triggers, the gear cranks once more, like a Spring (v18)
+    KICKBACK = "Kickback"          # after it triggers, the next part to come up triggers too (v18)
     # uncommon (was rare until v17)
     ECHO = "Echo"                  # the first time it triggers each turn, it triggers again
 

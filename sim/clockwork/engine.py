@@ -607,7 +607,10 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
             stack.append(("trigger", near, d, False, uid, 0))
     if Mod.KICKBACK in mods:
-        stack.append(("crank", direction, 0))   # the gear cranks once more, like a Spring
+        # The part that would come up next this turn triggers too; the gear doesn't turn.
+        nxt = (slot - 1) % n if direction == CW else (slot + 1) % n
+        if nxt != slot and s.gear[nxt] is not None:
+            stack.append(("trigger", nxt, direction, False, s.gear[nxt].uid, 0))
     if Mod.ECHO in mods and s.echoed.get(part.uid, 0) < r.echo_per_turn:
         s.echoed[part.uid] = s.echoed.get(part.uid, 0) + 1   # triggers again right away (before its follow-ups)
         stack.append(("trigger", slot, direction, from_coupler, part.uid, 0))

@@ -61,8 +61,8 @@ def mod_texts(rules=DEFAULT_RULES) -> dict:
                     "random ones, and the loaded parts trigger right away.",
         Mod.GOVERNOR: "Its triggers add no Heat.",
         Mod.OVERDRIVE: f"Its damage and Block +{_pct(rules.overdrive_bonus)} (adds to Amplifiers).",
-        Mod.KICKBACK: "After it triggers, the gear cranks once more in the same direction, like a Spring "
-                      "(no chain Heat).",
+        Mod.KICKBACK: "After it triggers, the part that would come up next this turn triggers too "
+                      "(the gear doesn't turn).",
         Mod.ECHO: ("The first time it triggers each turn, it triggers again." if rules.echo_per_turn == 1 else
                    f"The first time it triggers each turn, it triggers {rules.echo_per_turn} more times."),
     }

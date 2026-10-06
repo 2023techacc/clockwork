@@ -96,7 +96,7 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 | **Echo** | uncommon | any part | 55 | The first time it triggers each turn, it triggers again. | +3.0 (Striker) |
 | **Governor** | rare | any part | 90 | Its triggers add no Heat. | +6.5 (Hammer) |
 | **Overdrive** | rare | any part | 90 | Its damage and Block +50% (adds to Amplifiers). | +5.0 (Hammer) |
-| **Kickback** | rare | any part | 90 | After it triggers, the gear cranks once more in the same direction, like a Spring (no chain Heat). | +4.0 (Hammer) |
+| **Kickback** | rare | any part | 90 | After it triggers, the part that would come up next this turn triggers too (the gear doesn't turn). | +4.0 (Hammer) |
 
 ## Enemies
 
