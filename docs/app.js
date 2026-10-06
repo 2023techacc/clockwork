@@ -591,7 +591,8 @@ function renderResult() {
     ? `${(h.act || 0) + 1}-${h.stop >= r.stops ? "Boss" : h.stop + 1}. ${h.enemy}: ${h.result === "win" ? "won" : "lost"}, HP ${h.hp_start} → ${h.hp_end}` +
       (h.cogs ? `, +${h.cogs} cogs` : "") + (h.reward ? `, ${h.reward === "scrapped" ? "scrapped" : "took " + h.reward}` : "") +
       (h.attachment ? `, +${h.attachment}` : "") + (h.boss_reward ? `, boss reward ${v.machine_all[h.boss_reward].name}` : "")
-    : `${h.stop + 1}. ${h.node}${h.choice ? ": " + h.choice : ""}`).join("  ·  ") : "";
+    : h.node === "start" ? `Start: ${h.machine ? v.machine_all[h.machine].name : "no upgrade"}`
+    : `${(h.act || 0) + 1}-${h.stop + 1}. ${h.node}${h.choice ? ": " + h.choice : ""}`).join("  ·  ") : "";
   updateIssueLink();
 }
 
