@@ -176,7 +176,8 @@ def summarise(run):
             "fights": [(h["node"], h["enemy"], h["stop"], h["hp_start"], h["hp_end"], h["result"], h.get("cogs", 0),
                         h.get("act", 0)) for h in fights],
             "rests": [h["choice"] for h in run.history if h.get("node") == "rest"],
-            "shops": sum(h.get("node") == "workshop" for h in run.history)}
+            "shops": sum(h.get("node") == "workshop" for h in run.history),
+            "night_fights": sum(run.map == "day" and h["node"] != "boss" and run.is_night(h["hours"]) for h in fights)}
 
 
 def play_runs(pool, runs, agent, style=None, machine=None, rules=None, block=3, patch=None, boss=None, acts=None,

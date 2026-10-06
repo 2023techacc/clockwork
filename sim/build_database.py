@@ -135,6 +135,15 @@ def build() -> str:
                   ", ".join(f"{n} {t}s" for t, n in RM.DISTRICT_NODES.items()) + f"); {RM.HOURS} hours to midnight; "
                   "costs " + ", ".join(f"{t} {h}" for t, h in RM.HOUR_COST.items()) +
                   "; enter any node next to a visited one; the boss comes at midnight or when you wait"),
+        ("Day map (simulator only)", f"package 1 of Hours-Map-Ideas.md: {RM.DAY_HOURS} hours from "
+                  f"{RM.DAY_START:02d}:00, a {RM.DAY_DISTRICT[0]}×{RM.DAY_DISTRICT[1]} district (" +
+                  ", ".join(f"{n} {t}s" for t, n in RM.DAY_NODES.items()) + "); open: " +
+                  ", ".join(f"{t} {w}" for t, w in RM.DAY_OPEN.items()) +
+                  f"; night enemies ×{RM.DAY_NIGHT_SCALE} with ×{RM.DAY_NIGHT_COGS} cogs; daytime cogs "
+                  f"×{1 + RM.DAY_HURRY_COGS:g} at dawn falling to ×1 at dusk; sleep {RM.DAY_SLEEP_HEAL} HP per hour "
+                  f"(1 hour, {RM.DAY_SLEEP_HOURS} hours, or until dawn with a free tinker); an early boss loses "
+                  f"{RM.DAY_AMBUSH_PER_HOUR:.0%} HP per hour left (at most {RM.DAY_AMBUSH_MAX:.0%}); normal enemies "
+                  f"and elites ×{RM.DAY_ENEMY_SCALE} (a day holds more fights than a door act)"),
         ("After a win", f"heal {R.heal_between_fights} HP, loot cogs, pick 1 of 3 parts (or scrap for "
                         f"{RM.SCRAP_VALUE} cogs, or skip)"),
         ("Between acts", f"the boss's exclusive reward (1 of {RM.MACHINE_CHOICES} machine upgrades), then half of "

@@ -63,9 +63,10 @@ def boss_need(f, run, margin=BOSS_MARGIN, extra=BOSS_EXTRA):
     return min(f["boss"] * margin + extra, NEED_CAP * run.max_hp())
 
 
-def projected_boss_hp(run, option, fights_left, f=None, heal=None):
-    """HP when the boss arrives if `option` is taken now and then `fights_left` normal fights follow.
-    option: "fight" | "elite" | "rest" (heal) | "tinker" | "workshop" | "repair:<hp>"."""
+def projected_boss_hp(run, option, fights_left, f=None, heal=None, sleep_heal=0):
+    """HP when the boss arrives if `option` is taken now and then `fights_left` normal fights follow
+    (then `sleep_heal` HP of sleep, on the day map).
+    option: "fight" | "elite" | "rest" (heal) | "tinker" | "workshop" | "repair:<hp>" | "hp:<n>" (HP now)."""
     f = f or forecast(run)
     heal = run.base_rules.heal_between_fights if heal is None else heal
     from .run_mode import REST_HEAL
@@ -77,6 +78,8 @@ def projected_boss_hp(run, option, fights_left, f=None, heal=None):
         hp = min(top, hp + REST_HEAL)
     elif option.startswith("repair:"):
         hp = min(top, hp + int(option.split(":")[1]))
+    elif option.startswith("hp:"):
+        hp = min(top, int(option.split(":")[1]))
     for _ in range(max(0, fights_left)):
         hp = min(top, hp - f["fight"] + heal)
-    return hp
+    return min(top, hp + sleep_heal)

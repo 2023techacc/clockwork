@@ -108,3 +108,25 @@ Each idea lists **how it plays**, **why it's immersive**, and **what it does to 
 2. Should a day be 12 or 24 hours? 24 fits A1 and opening hours better; 12 fits a clock face (B1).
 3. Should midnight be a hard stop (the boss arrives) or overtime (F4)?
 4. Should acts keep the same length of day, or zoom (A2)?
+
+---
+
+## Decision (designer, 2026-10-06)
+
+- **Prototype: package 1, "A Day in the Brass Quarter"** (A1 day, C1 opening hours, C2 night shift, D1 sleep, E5 hurry bonus, F3 ambush). Likely to change after testing.
+- **Later: B2 (the sweeping hour hand) and B3 (the district turns like the gear)** are the designer's favourites, planned as later additions.
+
+### What was built (v20, simulator only: `Run(map="day")`)
+- **A day:** 24 hours from 06:00 to the next 06:00, when the boss strikes. Enemies grow with the hours spent.
+- **District:** 6 × 3 with the gate at the left middle; 8 fights, 3 elites, 3 inns, 3 Workshops; the gate's neighbours are fights. Enter any unvisited node next to a visited one. Fight 2 hours, elite 3, Workshop 1, inn 0 (plus the sleep).
+- **Opening hours:** Workshops 06–18; inns and elites 18–06; fights always. A **wait** door lets an hour pass. (Inns open all day, or for lunch 12–14, measured worse: players kept fighting.)
+- **Night shift:** normal enemies at night are ×1.15; night fights carry ×1.25 cogs. Elites (night only) don't get the extra strength: with it they cost 24–44 HP and caused most deaths.
+- **Hurry bonus:** daytime fights pay ×1.25 cogs at 06:00, falling to ×1 at 18:00 (×1.5 piled up unspent cogs).
+- **Sleep:** nap (1 hour), sleep (4 hours) or until dawn (the rest of the night, plus a free tinker); 3 HP per hour.
+- **Ambush:** going to the boss early takes 2% of its HP per hour left (at most 30%).
+- **Enemy strength:** normal enemies and elites are ×0.93 on the day map: a day holds more fights than a door act (about 7.5 vs 5.5), so the door map's strength was too high (15% casual clears at ×1).
+
+### How B2 and B3 could fit later
+- **B3 (the district turns):** works on any district grid. Every bell (e.g. every 3 hours) the outer ring of nodes rotates one notch, so a Workshop that was far away comes next to you. It combines with opening hours: plan which shop will be both open and close.
+- **B2 (the hour hand):** needs a clock-face district (a ring of sectors around the boss's tower). With a 24-hour day the hand can go around twice, or the dial can be a 24-hour dial with day sectors and night sectors. Nodes under the hand are struck (closed or patrolled); nodes behind it reset with fresh fights and loot.
+- Both can be added to the simulator as map options, so they can be compared with package 1 on the same numbers (clear rate, income, rests, night fights).
