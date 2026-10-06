@@ -414,6 +414,40 @@ class Attachments(unittest.TestCase):
         self.assertEqual((s.block, 999 - s.enemy_hp), (6, 4))
 
 
+
+class RareContent(unittest.TestCase):
+    """v18 elite-loot content: Overdrive, Kickback and the Boiler."""
+    def test_overdrive_multiplies_and_adds_to_amplifiers(self):
+        rules = mech(overdrive_bonus=0.5)
+        s, slot = setup([None, None], rules=rules)
+        s.gear[slot[1]] = Part(50, S, Mod.OVERDRIVE)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 9)           # 6 * 1.5
+        s, slot = setup([None, None, A], rules=rules)
+        s.gear[slot[1]] = Part(50, S, Mod.OVERDRIVE)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 12)          # 6 * (1 + 0.5 + 0.5)
+
+    def test_kickback_triggers_the_parts_coming_up_next(self):
+        s, slot = setup([None, None, P, S], rules=mech(kickback_triggers=1))
+        s.gear[slot[1]] = Part(50, S, Mod.KICKBACK)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block, s.triggers_turn), (6, 6, 2))
+        self.assertEqual(s.gear[s.top].uid, 50)         # the gear didn't turn past it
+        s, slot = setup([None, None, P, S], rules=mech(kickback_triggers=2))
+        s.gear[slot[1]] = Part(50, S, Mod.KICKBACK)
+        free_crank(s)
+        self.assertEqual((999 - s.enemy_hp, s.block, s.triggers_turn), (12, 6, 3))
+
+    def test_boiler_scales_with_heat(self):
+        rules = mech(part_overrides=(("Boiler", "damage", 3), ("Boiler", "heat_damage", 2),
+                                     ("Boiler", "extra_heat", 1)))
+        s, _ = setup([None, K.BOILER], rules=rules)
+        s.heat = 3
+        free_crank(s)
+        self.assertEqual(s.heat, 5)
+        self.assertEqual(999 - s.enemy_hp, 3 + 2 * 5)    # counts its own Heat
+
 class BalanceDefaults(unittest.TestCase):
     def test_clamp_triggers_one_pulled_part_by_default(self):
         s, slot = setup([None, None, None, S, None, P], rules=RulesConfig())
@@ -423,8 +457,14 @@ class BalanceDefaults(unittest.TestCase):
 
     def test_part_pass_v15(self):
         from clockwork.parts import SPECS
-        self.assertEqual((SPECS[K.HAMMER].damage, SPECS[K.HAMMER].extra_heat), (10, 3))
+        self.assertEqual((SPECS[K.HAMMER].damage, SPECS[K.HAMMER].extra_heat), (12, 1))   # v18 rare buff
         self.assertEqual((SPECS[K.SPRING].block, SPECS[K.LOADER].block), (3, 3))
+
+    def test_rare_content_v18(self):
+        from clockwork.parts import SPECS
+        b = SPECS[K.BOILER]
+        self.assertEqual((b.damage, b.heat_damage, b.extra_heat), (5, 2, 1))
+        self.assertEqual((RulesConfig().overdrive_bonus, RulesConfig().kickback_triggers), (0.75, 2))
 
     def test_default_numbers(self):
         s, _ = setup([None, S, A], rules=RulesConfig())

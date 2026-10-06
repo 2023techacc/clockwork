@@ -1,9 +1,17 @@
-"""Run logic for the playtest prototype (Run-Design.md, "Decisions").
+"""Run logic for the playtest prototype (Run-Design.md and Acts-Design.md, "Decisions").
 
-A district is a corridor of door choices (map option C), then the boss. Each door leads to a
-fight, an elite, a Workshop or a rest site. Cogs are looted from enemies; part rewards can be
-scrapped for cogs. Attachments are items with a rarity that sit in the inventory until attached
-to a part copy (permanent; up to rules.max_attachments per part, no duplicates).
+A run is ACTS acts. Each act is a corridor of door choices (map option C, the playtest map) and
+then the act's boss. Each door leads to a fight, an elite, a Workshop or a rest site. Cogs are
+looted from enemies; part rewards can be scrapped for cogs. Attachments are items with a rarity
+that sit in the inventory until attached to a part copy (permanent; up to rules.max_attachments per
+part, no duplicates).
+
+Machine upgrades (v18) are chosen, not bought: 1 of MACHINE_CHOICES at the start of the run and
+after every boss but the last (the boss's exclusive reward). Workshops sell level-ups for the
+upgrades you have. Between acts, half of the missing HP is healed.
+
+Acts 2 and 3 use "veteran" placeholder enemies: the act-1 enemies, scaled up and armored (Acts-Design
+option 3B) until themed districts are designed. Bosses are split by act (option 3D).
 
 Everything here is plain data so the playtest page (docs/play.py) and simulated runs share it.
 Fights themselves are played by the caller with engine.new_fight(run.fight_deck(), ...).
@@ -13,51 +21,62 @@ from dataclasses import replace
 
 from .config import DEFAULT_RULES, RulesConfig
 from .decks import DECKS, deck_list
-from .enemies import BOSSES, ELITES, ENEMIES, NORMAL, scaled
+from .enemies import ELITES, ENEMIES, NORMAL, scaled
 from .parts import MOD_RARITY, Kind, Mod, fits
 
-STOPS = 9                       # door choices before the boss
-# Enemies grow stronger through the district (players do too): HP and attacks are scaled by
-# 1 + GROWTH * stop / STOPS, so the boss gets the full 1 + GROWTH.
-GROWTH = 0.30                    # tuned (v15): casual player ~68%; 0.318+ rounds the Clock Tower chime up to 15
+ACTS = 3
+STOPS = 9                       # door choices before each boss
+# Enemies grow stronger through each act: HP and attacks are scaled by
+# ACT_SCALE[act] * (1 + GROWTH * stop / STOPS), so each boss gets the act's full growth.
+GROWTH = 0.20                   # v18 (3 acts; was 0.30 for one act); 0.318+ rounds the Clock Tower chime up to 15
+ACT_SCALE = [1.0, 1.3, 1.5]     # veteran strength per act (v18: casual clears acts ~94% / 75% / 50%)
+ACT_ARMOR = [0, 1, 2]           # veteran trait: armor on normal enemies and elites in acts 2 and 3
+ACT_BOSS_SCALE = [1.0, 1.3, 1.5]    # bosses use this instead of ACT_SCALE (times the act's full growth)
+ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_colossus"]]
+BETWEEN_ACTS_HEAL = 0.5         # share of the missing HP healed when an act ends (Acts-Design 2B)
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 
 PART_TIER = {
     Kind.SPRING: "common", Kind.COOLANT: "common", Kind.MIRROR: "common",
     Kind.AMPLIFIER: "uncommon", Kind.COUPLER: "uncommon", Kind.LOADER: "uncommon", Kind.MAGNET: "uncommon",
     Kind.SLIDER: "uncommon", Kind.PRIMER: "uncommon", Kind.ASSEMBLY: "uncommon",
-    Kind.HAMMER: "rare",
+    Kind.HAMMER: "rare", Kind.BOILER: "rare",
 }
-TIER_WEIGHT = {"common": 5, "uncommon": 4, "rare": 1}
+# Reward and Workshop part weights per act: rarer parts later (Acts-Design 3, rarity across acts).
+ACT_TIER_WEIGHT = [{"common": 5, "uncommon": 4, "rare": 1},
+                   {"common": 3, "uncommon": 4, "rare": 2},
+                   {"common": 2, "uncommon": 4, "rare": 3}]
+TIER_WEIGHT = ACT_TIER_WEIGHT[0]
 PART_PRICE = {"common": 30, "uncommon": 45, "rare": 65}
 MOD_PRICE = {"common": 30, "uncommon": 55, "rare": 90}
-# Elite rewards on top of the loot: a part (from these tiers) and attachments to choose from.
-# v12 (high risk, high return; roadmap Results v12): tuned so hunting elites pays about as well as
-# avoiding them, with more deaths on the way and a much stronger machine for the boss.
+# Elites: high risk, high return. No machine upgrades (v18); their loot leans rare instead: a part from
+# the uncommon/rare tiers (rare weight x ELITE_RARE_PART), and 1 of ELITE_ATTACHMENTS uncommon/rare
+# attachments (rare weight ELITE_RARE_WEIGHT against 3 for an uncommon).
 ELITE_PART_TIERS = ("uncommon", "rare")
-ELITE_ATTACHMENTS = 3           # uncommon/rare attachments offered; one is taken
-ELITE_RARE_WEIGHT = 3           # rare attachments' weight against 3 for an uncommon
-ELITE_COG_BONUS = 0             # extra cogs per elite
-ELITE_SCALE = 0.9               # elites' HP and attacks are multiplied by this (on top of growth)
-ELITE_SALVAGE = 0.5             # chance an elite also offers a free machine upgrade (salvaged from it)
+ELITE_RARE_PART = 2
+ELITE_ATTACHMENTS = 3
+ELITE_RARE_WEIGHT = 3
+ELITE_COG_BONUS = 0
+ELITE_SCALE = 1.05              # elites' HP and attacks are multiplied by this (on top of growth; v18: 0.9 -> 1.05)
 SCRAP_VALUE = 10
 REST_HEAL = 8                   # v16 (was 15): healing and tinkering within 5 points
 REPAIR = (15, 25)               # HP, price
 REMOVE_PRICE, REMOVE_STEP = 40, 15
-MACHINE = {
-    "flywheel": ("Flywheel", "+1 Crank Power per turn", 70),
-    "heat_housing": ("Heat Housing", "+2 Heat before Overheat", 85),
-    "extra_hands": ("Extra Hands", "+1 install per turn", 90),
-    "bigger_gear": ("Bigger Gear", "8 gear slots instead of 6, and +1 Crank Power to turn it", 75),
-}
-BOSS_POOL = list(BOSSES)        # bosses a run can roll
 
-# Candidate machine upgrades, testable with simulate_run(machine=[...]) but not sold.
-MACHINE_CANDIDATES = {
-    "frame": ("Reinforced Frame", "+10 max HP"),
-    "hopper": ("Wide Hopper", "4 parts offered each turn instead of 3"),
-    "plain_gear": ("Bigger Gear (old)", "8 gear slots instead of 6"),
+# Machine upgrades (v18): a pool with levels. Chosen at the start and after bosses; Workshops sell
+# level-ups. Prices are placeholders until the economy is tuned across all three acts.
+MACHINE = {
+    "flywheel": {"name": "Flywheel", "text": "+1 Crank Power per turn", "max": 2},
+    "heat_housing": {"name": "Heat Housing", "text": "+2 Heat before Overheat", "max": 2},
+    "extra_hands": {"name": "Extra Hands", "text": "+1 install per turn", "max": 2},
+    "bigger_gear": {"name": "Bigger Gear", "text": "8 gear slots instead of 6, and +1 Crank Power to turn it",
+                    "max": 1},
+    "frame": {"name": "Reinforced Frame", "text": "+8 max HP", "max": 3},
+    "hopper": {"name": "Wide Hopper", "text": "+1 part offered (and shown) each turn", "max": 2},
+    "cooling_fins": {"name": "Cooling Fins", "text": "1 Heat drains away at the start of each turn", "max": 2},
 }
+MACHINE_CHOICES = 3             # choose 1 of this many at the start and after a boss
+LEVEL_PRICE = {2: 90, 3: 130}   # Workshop price of a level-up, by the level it reaches
 
 
 class RunError(ValueError):
@@ -66,47 +85,55 @@ class RunError(ValueError):
 
 class Run:
     def __init__(self, deck="starter", seed=0, rules: RulesConfig = DEFAULT_RULES, stops=STOPS, growth=None,
-                 boss=None):
-        self.seed, self.base_rules, self.stops = int(seed), rules, stops
+                 boss=None, acts=ACTS):
+        self.seed, self.base_rules, self.stops, self.acts = int(seed), rules, stops, acts
         self.growth = GROWTH if growth is None else growth
         self.rng = random.Random(self.seed * 7919 + 17)
-        # The district's boss is picked (or given) up front and shown all run, so players can plan.
-        self.boss = boss or random.Random(self.seed * 31 + 5).choice(BOSS_POOL)
+        # Every act's boss is picked up front and shown, so players can plan; `boss` fixes act 1's.
+        boss_rng = random.Random(self.seed * 31 + 5)
+        self.bosses = [boss_rng.choice(ACT_BOSSES[min(a, len(ACT_BOSSES) - 1)]) for a in range(acts)]
+        if boss:
+            self.bosses[0] = boss
         self.deck_name = deck
         self.cards = [{"id": i, "kind": k, "mods": list(m)} for i, (k, m) in enumerate(deck_list(DECKS[deck]))]
         self.next_id = len(self.cards)
         self.inventory = []             # unattached attachments (Mod)
-        self.machine = []               # machine upgrade keys
+        self.machine = []               # machine upgrade keys; a key appears once per level
         self.hp = rules.player_hp
         self.cogs = 0
+        self.act = 0                    # 0-based
         self.stop = 0                   # index of the next door choice; == stops means the boss
-        self.phase = "doors"            # doors | fight | reward | rest | workshop | won | lost
         self.node = None                # current node type
         self.enemy = None
-        self.offer = {}                 # what the current phase offers
         self.removals = 0
         self.history = []
         self.seen_elites = []
-        self.doors = self._make_doors()
+        self.doors = []
+        # start | doors | fight | reward | rest | workshop | boss_reward | won | lost
+        self.phase = "start"
+        self.offer = {"machines": self._roll_machines()}
+
+    @property
+    def boss(self):
+        return self.bosses[self.act]
 
     # ------------------------------------------------------------------ derived
+    def level(self, key) -> int:
+        return self.machine.count(key)
+
     def rules(self) -> RulesConfig:
-        r = self.base_rules
-        if "flywheel" in self.machine:
-            r = replace(r, crank_power=r.crank_power + 1)
-        if "heat_housing" in self.machine:
-            r = replace(r, overheat_at=r.overheat_at + 2)
-        if "extra_hands" in self.machine:
-            r = replace(r, installs_per_turn=r.installs_per_turn + 1)
-        if "bigger_gear" in self.machine:
-            r = replace(r, gear_size=8, crank_power=r.crank_power + 1)
-        if "plain_gear" in self.machine:
-            r = replace(r, gear_size=8)
-        if "frame" in self.machine:
-            r = replace(r, player_hp=r.player_hp + 10)
-        if "hopper" in self.machine:
-            r = replace(r, offered_per_turn=r.offered_per_turn + 1, queue_visible=r.queue_visible + 1)
-        return r
+        r, lv = self.base_rules, self.level
+        return replace(
+            r,
+            crank_power=r.crank_power + lv("flywheel") + lv("bigger_gear"),
+            overheat_at=r.overheat_at + 2 * lv("heat_housing"),
+            installs_per_turn=r.installs_per_turn + lv("extra_hands"),
+            gear_size=8 if lv("bigger_gear") else r.gear_size,
+            player_hp=r.player_hp + 8 * lv("frame"),
+            offered_per_turn=r.offered_per_turn + lv("hopper"),
+            queue_visible=r.queue_visible + lv("hopper"),
+            heat_decay=r.heat_decay + lv("cooling_fins"),
+        )
 
     def fight_deck(self) -> dict:
         deck = {}
@@ -116,20 +143,59 @@ class Run:
         return deck
 
     def enemy_scale(self) -> float:
-        return 1 + self.growth * min(self.stop, self.stops) / self.stops
+        table = ACT_BOSS_SCALE if self.node == "boss" else ACT_SCALE
+        return table[min(self.act, len(table) - 1)] * (1 + self.growth * min(self.stop, self.stops) / self.stops)
 
     def enemy_spec(self):
-        """The current enemy, grown for how far into the district the run is."""
+        """The current enemy, grown for the act and how far into it the run is. In acts 2 and 3, normal
+        enemies and elites are veterans: scaled and armored."""
+        spec = ENEMIES[self.enemy]
         f = self.enemy_scale()
-        if ENEMIES[self.enemy].elite:
+        if spec.elite:
             f *= ELITE_SCALE
-        return ENEMIES[self.enemy] if f == 1 else scaled(ENEMIES[self.enemy], f)
+        if f != 1:
+            spec = scaled(spec, f)
+        armor = ACT_ARMOR[min(self.act, len(ACT_ARMOR) - 1)]
+        if armor and self.node != "boss":
+            spec = replace(spec, armor=spec.armor + armor)
+        return spec
 
     def fight_seed(self) -> int:
-        return self.seed * 100 + self.stop
+        return self.seed * 1000 + self.act * 100 + self.stop
 
     def max_hp(self) -> int:
         return self.rules().player_hp
+
+    # ------------------------------------------------------------------ machine upgrades
+    def _roll_machines(self):
+        free = [k for k in MACHINE if k not in self.machine]
+        return self.rng.sample(free, min(MACHINE_CHOICES, len(free)))
+
+    def choose_start(self, key: str = ""):
+        """Pick the starting machine upgrade (1 of the offered; '' takes none)."""
+        self._need("start")
+        if key:
+            self._check_offer("machines", key)
+            self._install_machine(key)
+        self.history.append({"act": self.act, "stop": -1, "node": "start", "machine": key or None})
+        self.offer = {}
+        self.phase = "doors"
+        self.doors = self._make_doors()
+        return self
+
+    def choose_boss_reward(self, key: str = ""):
+        """After a boss (not the last): the boss's exclusive reward, 1 of the offered machine upgrades
+        ('' takes none); then half of the missing HP heals and the next act begins."""
+        self._need("boss_reward")
+        if key:
+            self._check_offer("machines", key)
+            self._install_machine(key)
+        self.history[-1]["boss_reward"] = key or None
+        self.hp += int((self.max_hp() - self.hp) * BETWEEN_ACTS_HEAL)
+        self.act += 1
+        self.stop = -1
+        self._advance()
+        return self
 
     # ------------------------------------------------------------------ map
     def _make_doors(self):
@@ -184,8 +250,8 @@ class Run:
     def finish_fight(self, result: str, hp: int, turns: int = 0, actions=None):
         """Record the fight played with fight_deck()/rules()/fight_seed() against self.enemy."""
         self._need("fight")
-        entry = {"stop": self.stop, "node": self.node, "enemy": self.enemy, "result": result,
-                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns}
+        entry = {"act": self.act, "stop": self.stop, "node": self.node, "enemy": self.enemy, "result": result,
+                 "hp_start": self.hp, "hp_end": max(0, hp), "turns": turns, "cogs_held": self.cogs}
         if actions is not None:
             entry["actions"] = actions
         self.history.append(entry)
@@ -198,26 +264,27 @@ class Run:
         entry["cogs"] = loot
         if self.node == "boss":
             self.hp = max(0, hp)
-            self.phase = "won"
+            if self.act + 1 >= self.acts:
+                self.phase = "won"
+            else:
+                self.phase = "boss_reward"
+                self.offer = {"machines": self._roll_machines()}
             return self
         self.hp = min(self.max_hp(), max(0, hp) + self.base_rules.heal_between_fights)
         if self.node == "elite":
             self.cogs += ELITE_COG_BONUS
             entry["cogs"] = loot + ELITE_COG_BONUS
-            self.offer = {"parts": [k.value for k in self._roll_parts(3, ELITE_PART_TIERS)],
+            self.offer = {"parts": [k.value for k in self._roll_parts(3, ELITE_PART_TIERS, ELITE_RARE_PART)],
                           "attachments": [m.value for m in self._roll_mods(["uncommon", "rare"], ELITE_ATTACHMENTS,
                                                                            ELITE_RARE_WEIGHT)]}
-            free = [k for k in MACHINE if k not in self.machine]
-            if free and self.rng.random() < ELITE_SALVAGE:
-                self.offer["salvage"] = self.rng.sample(free, min(2, len(free)))   # choose 1 of 2
         else:
             self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
         self.phase = "reward"
         return self
 
-    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False, salvage: str = ""):
+    def take_reward(self, part: str = "", attachment: str = "", scrap: bool = False):
         """After a win: take one offered part (or scrap the reward for cogs, or skip); after an
-        elite, one offered attachment into the inventory and one of the salvaged machine upgrades."""
+        elite, one offered attachment into the inventory."""
         self._need("reward")
         entry = self.history[-1]
         if part:
@@ -231,10 +298,6 @@ class Run:
             self._check_offer("attachments", attachment)
             self.inventory.append(Mod(attachment))
             entry["attachment"] = attachment
-        if salvage:
-            self._check_offer("salvage", salvage)
-            self._install_machine(salvage)
-            entry["salvage"] = salvage
         self._advance()
         return self
 
@@ -249,7 +312,8 @@ class Run:
             self.inventory += [Mod(m) for m in self.offer["attachments"]]
         else:
             raise RunError(f"unknown rest choice {choice}")
-        self.history.append({"stop": self.stop, "node": "rest", "choice": choice, "attachment": attachment or None})
+        self.history.append({"act": self.act, "stop": self.stop, "node": "rest", "choice": choice,
+                             "attachment": attachment or None})
         self._advance()
         return self
 
@@ -258,29 +322,26 @@ class Run:
         parts = [{"kind": k.value, "price": PART_PRICE[PART_TIER[k]], "sold": False} for k in self._roll_parts(3)]
         mods = [{"mod": m.value, "price": MOD_PRICE[MOD_RARITY[m]], "sold": False}
                 for m in self._roll_mods(["uncommon", "rare"], 2)]
-        # Every machine upgrade you don't have is for sale, so players can plan and save for one.
-        machines = [{"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1], "price": MACHINE[k][2], "sold": False}
-                    for k in MACHINE if k not in self.machine]
+        # Level-ups for the machine upgrades you have (new upgrades only come from the start and bosses).
+        machines = []
+        for k in dict.fromkeys(self.machine):
+            lv = self.level(k)
+            if lv < MACHINE[k]["max"]:
+                machines.append({"key": k, "name": MACHINE[k]["name"], "text": MACHINE[k]["text"], "level": lv + 1,
+                                 "price": LEVEL_PRICE[lv + 1], "sold": False})
         return {"parts": parts, "attachments": mods, "machines": machines}
 
     def remove_price(self):
         return REMOVE_PRICE + REMOVE_STEP * self.removals
 
     def buy(self, what: str, index: int = 0):
-        """what: 'part', 'attachment', 'machine' or 'repair'."""
+        """what: 'part', 'attachment', 'machine' (a level-up) or 'repair'."""
         self._need("workshop")
         if what == "repair":
             self._pay(REPAIR[1])
             self.hp = min(self.max_hp(), self.hp + REPAIR[0])
             return self
-        if what == "machine":
-            item = self.offer["machines"][int(index)]
-            if item["sold"] or item["key"] in self.machine:
-                raise RunError("already installed")
-            self._pay(item["price"])
-            self._install_machine(item["key"])
-            return self
-        shelf = self.offer["parts" if what == "part" else "attachments"]
+        shelf = self.offer["parts" if what == "part" else "attachments" if what == "attachment" else "machines"]
         item = shelf[int(index)]
         if item["sold"]:
             raise RunError("already sold")
@@ -288,8 +349,10 @@ class Run:
         item["sold"] = True
         if what == "part":
             self._add_card(Kind(item["kind"]))
-        else:
+        elif what == "attachment":
             self.inventory.append(Mod(item["mod"]))
+        else:
+            self._install_machine(item["key"])
         return self
 
     def remove_card(self, card_id: int):
@@ -312,7 +375,7 @@ class Run:
 
     def leave_workshop(self):
         self._need("workshop")
-        self.history.append({"stop": self.stop, "node": "workshop", "cogs_left": self.cogs})
+        self.history.append({"act": self.act, "stop": self.stop, "node": "workshop", "cogs_left": self.cogs})
         self._advance()
         return self
 
@@ -334,11 +397,12 @@ class Run:
         return self
 
     # ------------------------------------------------------------------ helpers
-    def _roll_parts(self, n, tiers=None):
+    def _roll_parts(self, n, tiers=None, rare_bonus=1):
+        weight = ACT_TIER_WEIGHT[min(self.act, len(ACT_TIER_WEIGHT) - 1)]
         kinds = [k for k in PART_TIER if tiers is None or PART_TIER[k] in tiers]
-        weights = [TIER_WEIGHT[PART_TIER[k]] for k in kinds]
+        weights = [weight[PART_TIER[k]] * (rare_bonus if PART_TIER[k] == "rare" else 1) for k in kinds]
         out = []
-        while len(out) < n:
+        while len(out) < min(n, len(kinds)):
             k = self.rng.choices(kinds, weights)[0]
             if k not in out:
                 out.append(k)
@@ -355,12 +419,11 @@ class Run:
         return out
 
     def _install_machine(self, key):
+        if self.level(key) >= MACHINE[key]["max"]:
+            raise RunError(f"{MACHINE[key]['name']} is at its highest level")
         before = self.max_hp()
         self.machine.append(key)
         self.hp += self.max_hp() - before      # a max-HP upgrade also adds that much HP
-        for item in self.offer.get("machines", []):
-            if item["key"] == key:
-                item["sold"] = True
 
     def _add_card(self, kind):
         self.cards.append({"id": self.next_id, "kind": kind, "mods": []})
@@ -388,18 +451,20 @@ class Run:
     # ------------------------------------------------------------------ view
     def view(self) -> dict:
         return {
-            "deck_name": self.deck_name, "seed": self.seed, "boss": self.boss, "phase": self.phase, "stop": self.stop,
+            "deck_name": self.deck_name, "seed": self.seed, "boss": self.boss, "bosses": self.bosses,
+            "act": self.act, "acts": self.acts, "phase": self.phase, "stop": self.stop,
             "stops": self.stops, "doors": self.doors if self.phase == "doors" else [],
             "node": self.node, "enemy": self.enemy, "enemy_scale": round(self.enemy_scale(), 3),
             "hp": self.hp, "max_hp": self.max_hp(),
             "cogs": self.cogs, "offer": self.offer, "remove_price": self.remove_price(),
             "repair": {"hp": REPAIR[0], "price": REPAIR[1]}, "rest_heal": REST_HEAL, "scrap": SCRAP_VALUE,
-            "heal_after_fight": self.base_rules.heal_between_fights,
+            "heal_after_fight": self.base_rules.heal_between_fights, "between_acts_heal": BETWEEN_ACTS_HEAL,
             "cards": [{"id": c["id"], "kind": c["kind"].value, "mods": [m.value for m in c["mods"]]}
                       for c in self.cards],
             "inventory": [{"mod": m.value, "rarity": MOD_RARITY[m],
                            "fits": [c["id"] for c in self.cards if self.can_attach(m, c)]}
                           for m in self.inventory],
-            "machine": [{"key": k, "name": MACHINE[k][0], "text": MACHINE[k][1]} for k in self.machine],
+            "machine": [{"key": k, "name": MACHINE[k]["name"], "text": MACHINE[k]["text"], "level": self.level(k),
+                         "max": MACHINE[k]["max"]} for k in dict.fromkeys(self.machine)],
             "history": self.history,
         }

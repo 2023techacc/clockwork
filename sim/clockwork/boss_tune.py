@@ -18,34 +18,19 @@ from .engine import apply, legal_actions, new_fight
 from .enemies import BOSSES, ENEMIES, scaled
 from .run import make_agent
 from .run_mode import Run
-from .run_policy import DEFAULT_STYLE, attach_all, best_mod, choose_door, play_fight, shop, MACHINE_PRIORITY, PART_VALUE
-from .parts import Kind
+from .run_policy import DEFAULT_STYLE, attach_all, step
 
 
 def run_to_boss(args):
-    """Play run `seed` until the boss door; return the state there (or None if the run died)."""
+    """Play run `seed` (act 1) until the boss door; return the state there (or None if the run died)."""
     seed, agent = args
-    run = Run("starter", seed, rules=DEFAULT_RULES)
-    style = DEFAULT_STYLE
+    run = Run("starter", seed, rules=DEFAULT_RULES, acts=1)
     while run.phase not in ("won", "lost"):
-        attach_all(run)
-        if run.phase == "doors":
-            if run.doors == ["boss"]:
-                return {"seed": seed, "deck": run.fight_deck(), "rules": run.rules(), "hp": run.hp,
-                        "scale": run.enemy_scale()}
-            run.choose_door(choose_door(run, style))
-        elif run.phase == "fight":
-            play_fight(run, agent)
-        elif run.phase == "reward":
-            parts = sorted(run.offer["parts"], key=lambda p: -PART_VALUE.get(Kind(p), 0))
-            best = parts[0] if PART_VALUE.get(Kind(parts[0]), 0) > 0 else ""
-            salvage = sorted(run.offer.get("salvage", []), key=MACHINE_PRIORITY.index)
-            run.take_reward(part=best, attachment=best_mod(run, run.offer.get("attachments", [])),
-                            scrap=not best, salvage=salvage[0] if salvage else "")
-        elif run.phase == "rest":
-            run.rest("heal" if run.hp < 0.6 * run.max_hp() else "tinker")
-        elif run.phase == "workshop":
-            shop(run, style)
+        if run.phase == "doors" and run.doors == ["boss"]:
+            attach_all(run)
+            return {"seed": seed, "deck": run.fight_deck(), "rules": run.rules(), "hp": run.hp,
+                    "scale": run.enemy_scale()}
+        step(run, agent, DEFAULT_STYLE)
     return None
 
 

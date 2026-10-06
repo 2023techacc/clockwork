@@ -1,13 +1,20 @@
 import unittest
 
+from clockwork.enemies import ENEMIES
 from clockwork.parts import Kind, Mod
-from clockwork.run_mode import STOPS, Run, RunError
+from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, LEVEL_PRICE, MACHINE,
+                                MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
 from clockwork.run_policy import simulate_run
+
+
+def started(seed, **kw):
+    """A run past its starting machine-upgrade choice (none taken)."""
+    return Run("starter", seed, **kw).choose_start("")
 
 
 class RunMode(unittest.TestCase):
     def test_first_doors_are_fights_and_last_is_rest_or_workshop(self):
-        run = Run("starter", 1)
+        run = started(1)
         self.assertEqual(run.doors, ["fight"])
         run.stop = STOPS - 1
         self.assertEqual(run._make_doors(), ["rest", "workshop"])
@@ -15,7 +22,7 @@ class RunMode(unittest.TestCase):
         self.assertEqual(run._make_doors(), ["boss"])
 
     def test_win_gives_cogs_heal_and_rewards(self):
-        run = Run("starter", 2)
+        run = started(2)
         run.choose_door(0)
         self.assertEqual(run.phase, "fight")
         run.finish_fight("win", 30)
@@ -29,7 +36,7 @@ class RunMode(unittest.TestCase):
         self.assertEqual(run.phase, "doors")
 
     def test_scrap_and_loss(self):
-        run = Run("starter", 3)
+        run = started(3)
         run.choose_door(0)
         run.finish_fight("win", 50)
         cogs = run.cogs
@@ -40,11 +47,13 @@ class RunMode(unittest.TestCase):
         self.assertEqual(run.phase, "lost")
 
     def test_elite_offers_attachment_and_attach_rules(self):
-        run = Run("starter", 4)
+        run = started(4)
         run.phase, run.doors = "doors", ["elite"]
         run.choose_door(0)
         self.assertTrue(run.enemy in ("overclocker", "rust_golem", "pickpocket", "jammer_prime"))
         run.finish_fight("win", 40)
+        self.assertNotIn("salvage", run.offer)               # elites give no machine upgrades (v18)
+        self.assertEqual(len(run.offer["attachments"]), 3)
         mod = run.offer["attachments"][0]
         run.take_reward(attachment=mod)
         self.assertEqual([m.value for m in run.inventory], [mod])
@@ -60,8 +69,17 @@ class RunMode(unittest.TestCase):
             run.attach(1, striker["id"])
         self.assertIn(((Kind.STRIKER, (Mod.ECHO, Mod.SHARPENED))), run.fight_deck())
 
+    def test_elite_parts_are_uncommon_or_rare(self):
+        from clockwork.run_mode import PART_TIER
+        for seed in range(10):
+            run = started(seed)
+            run.phase, run.doors = "doors", ["elite"]
+            run.choose_door(0)
+            run.finish_fight("win", 40)
+            self.assertTrue(all(PART_TIER[Kind(p)] in ("uncommon", "rare") for p in run.offer["parts"]))
+
     def test_workshop_buy_sell_remove_repair(self):
-        run = Run("starter", 5)
+        run = started(5)
         run.phase, run.doors = "doors", ["workshop"]
         run.choose_door(0)
         run.cogs = 500
@@ -84,57 +102,12 @@ class RunMode(unittest.TestCase):
         run.leave_workshop()
         self.assertEqual(run.phase, "doors")
 
-    def test_workshop_sells_every_missing_machine_upgrade(self):
-        from clockwork.run_mode import MACHINE
-        run = Run("starter", 5)
-        run.machine = ["flywheel"]
-        run.phase, run.doors = "doors", ["workshop"]
-        run.choose_door(0)
-        self.assertEqual({m["key"] for m in run.offer["machines"]}, set(MACHINE) - {"flywheel"})
-        run.cogs = 500
-        i = next(i for i, m in enumerate(run.offer["machines"]) if m["key"] == "extra_hands")
-        run.buy("machine", i)
-        self.assertIn("extra_hands", run.machine)
-        with self.assertRaises(RunError):
-            run.buy("machine", i)
-
-    def test_salvage_is_a_choice_of_two(self):
-        from clockwork import run_mode
-        old, run_mode.ELITE_SALVAGE = run_mode.ELITE_SALVAGE, 1.0
-        try:
-            run = Run("starter", 4)
-            run.phase, run.doors = "doors", ["elite"]
-            run.choose_door(0)
-            run.finish_fight("win", 40)
-            offered = run.offer["salvage"]
-            self.assertEqual(len(offered), 2)
-            run.take_reward(salvage=offered[1])
-            self.assertEqual(run.machine, [offered[1]])
-        finally:
-            run_mode.ELITE_SALVAGE = old
-
-    def test_boss_is_known_from_the_start(self):
-        from clockwork.enemies import BOSSES
-        bosses = {Run("starter", seed).boss for seed in range(40)}
-        self.assertEqual(bosses, set(BOSSES))
-        run = Run("starter", 1, boss="pendulum")
-        run.stop, run.doors = run.stops, ["boss"]
-        run.choose_door(0)
-        self.assertEqual(run.enemy, "pendulum")
-
-    def test_machine_upgrades_change_rules(self):
-        run = Run("starter", 6)
-        run.machine = ["flywheel", "heat_housing", "extra_hands", "bigger_gear"]
-        r = run.rules()
-        self.assertEqual((r.crank_power, r.overheat_at, r.installs_per_turn, r.gear_size), (4, 12, 3, 8))
-
     def test_rest(self):
-        run = Run("starter", 7)
+        run = started(7)
         run.phase, run.doors = "doors", ["rest"]
         run.choose_door(0)
         run.hp = 20
         run.rest("heal")
-        from clockwork.run_mode import REST_HEAL
         self.assertEqual(run.hp, 20 + REST_HEAL)
 
     def test_simulated_runs_finish(self):
@@ -143,22 +116,103 @@ class RunMode(unittest.TestCase):
             self.assertIn(run.phase, ("won", "lost"))
 
 
+class MachineUpgrades(unittest.TestCase):
+    def test_start_offers_a_choice(self):
+        run = Run("starter", 3)
+        self.assertEqual(run.phase, "start")
+        offered = run.offer["machines"]
+        self.assertEqual(len(offered), MACHINE_CHOICES)
+        with self.assertRaises(RunError):
+            run.choose_start(next(k for k in MACHINE if k not in offered))
+        run.choose_start(offered[1])
+        self.assertEqual(run.machine, [offered[1]])
+        self.assertEqual(run.phase, "doors")
+
+    def test_workshop_sells_level_ups_only(self):
+        run = started(5)
+        run.machine = ["flywheel", "bigger_gear"]               # Bigger Gear has one level only
+        run.phase, run.doors = "doors", ["workshop"]
+        run.choose_door(0)
+        self.assertEqual([(m["key"], m["level"], m["price"]) for m in run.offer["machines"]],
+                         [("flywheel", 2, LEVEL_PRICE[2])])
+        run.cogs = 500
+        run.buy("machine", 0)
+        self.assertEqual(run.level("flywheel"), 2)
+        with self.assertRaises(RunError):
+            run.buy("machine", 0)
+
+    def test_levels_stack_in_the_rules(self):
+        run = started(6)
+        run.machine = ["flywheel", "flywheel", "heat_housing", "extra_hands", "bigger_gear", "frame", "frame",
+                       "hopper", "cooling_fins"]
+        r = run.rules()
+        self.assertEqual((r.crank_power, r.overheat_at, r.installs_per_turn, r.gear_size), (5, 12, 3, 8))
+        self.assertEqual((r.player_hp, r.offered_per_turn, r.heat_decay), (55 + 16, 4, 1))
+        with self.assertRaises(RunError):
+            run._install_machine("bigger_gear")
+
+
+class Acts(unittest.TestCase):
+    def test_bosses_by_act_known_from_the_start(self):
+        for seed in range(30):
+            run = Run("starter", seed)
+            self.assertEqual(len(run.bosses), 3)
+            for act, boss in enumerate(run.bosses):
+                self.assertIn(boss, ACT_BOSSES[act])
+        run = started(1, boss="pendulum")
+        run.stop, run.doors = run.stops, ["boss"]
+        run.choose_door(0)
+        self.assertEqual(run.enemy, "pendulum")
+
+    def test_boss_reward_heals_half_and_starts_the_next_act(self):
+        run = started(2)
+        run.stop, run.doors = run.stops, ["boss"]
+        run.choose_door(0)
+        run.finish_fight("win", 15)
+        self.assertEqual(run.phase, "boss_reward")
+        offered = run.offer["machines"]
+        self.assertEqual(len(offered), MACHINE_CHOICES)
+        run.choose_boss_reward("cooling_fins" if "cooling_fins" in offered else "")
+        self.assertEqual((run.act, run.stop, run.phase, run.doors), (1, 0, "doors", ["fight"]))
+        self.assertEqual(run.hp, 15 + int((run.max_hp() - 15) * BETWEEN_ACTS_HEAL))
+
+    def test_last_boss_wins_the_run(self):
+        run = started(3, acts=1)
+        run.stop, run.doors = run.stops, ["boss"]
+        run.choose_door(0)
+        run.finish_fight("win", 20)
+        self.assertEqual(run.phase, "won")
+
+    def test_veterans_in_later_acts(self):
+        run = started(4)
+        run.act = 1
+        run.choose_door(0)
+        spec = run.enemy_spec()
+        base = ENEMIES[run.enemy]
+        self.assertEqual(spec.armor, base.armor + ACT_ARMOR[1])
+        self.assertGreater(spec.hp, base.hp * ACT_SCALE[1] - 2)
+
+
 class Growth(unittest.TestCase):
     def test_play_styles_and_starting_machine(self):
         for style in ({"elites": "seek", "rest": "tinker"}, {"elites": "avoid", "parts": "none"},
                       {"remove_basics": True, "machine_first": True, "rest": "heal"}):
-            run = simulate_run("starter", 4, "greedy", style=style, machine=["flywheel"])
+            run = simulate_run("starter", 4, "greedy", style=style, machine=["flywheel"], acts=1)
             self.assertIn(run.phase, ("won", "lost"))
             self.assertIn("flywheel", run.machine)
-        run = simulate_run("starter", 4, "greedy", style={"elites": "avoid"})
+        run = simulate_run("starter", 4, "greedy", style={"elites": "avoid"}, acts=1)
         self.assertFalse(any(h.get("node") == "elite" for h in run.history))
 
     def test_enemies_grow_through_the_district(self):
-        run = Run("starter", 1, growth=0.5)
+        run = started(1, growth=0.5)
         run.choose_door(0)
         first = run.enemy_spec()
-        self.assertEqual(first.hp, __import__("clockwork.enemies", fromlist=["ENEMIES"]).ENEMIES[run.enemy].hp)
+        self.assertEqual(first.hp, ENEMIES[run.enemy].hp)
         run.stop = run.stops
-        run.enemy = "clock_tower"
+        run.node, run.enemy = "boss", "clock_tower"
         self.assertEqual(run.enemy_scale(), 1.5)
-        self.assertGreater(run.enemy_spec().hp, 98)
+        self.assertGreater(run.enemy_spec().hp, ENEMIES["clock_tower"].hp)
+
+
+if __name__ == "__main__":
+    unittest.main()

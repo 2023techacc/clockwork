@@ -100,35 +100,48 @@ def build() -> str:
     lines += [table(["Attachment", "Rarity", "Fits", "Price", "Effect", "Value"], rows), ""]
 
     lines += ["## Enemies", "",
-              f"In a run, enemies grow through the district: HP and attacks × (1 + {RM.GROWTH} × stop/{RM.STOPS}), "
-              f"so the boss is ×{1 + RM.GROWTH:.2f}. Elites are fought at ×{RM.ELITE_SCALE} on top. "
-              f"Each fight's HP also rolls ±{R.enemy_hp_jitter}. Cogs vary ±10%.", ""]
+              f"A run has {RM.ACTS} acts. Within an act, enemies grow: HP and attacks × act strength × "
+              f"(1 + {RM.GROWTH} × stop/{RM.STOPS}). Act strength: " +
+              ", ".join(f"act {i + 1} ×{x}" for i, x in enumerate(RM.ACT_SCALE)) +
+              ". In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts "
+              "exist): the act-1 enemies at that strength with extra armor (" +
+              ", ".join(f"act {i + 1} +{x}" for i, x in enumerate(RM.ACT_ARMOR)) +
+              "). Bosses have their own act strength: " +
+              ", ".join(f"act {i + 1} ×{x}" for i, x in enumerate(RM.ACT_BOSS_SCALE)) +
+              f", times the act's full growth. Elites are fought at ×{RM.ELITE_SCALE} on top. Each fight's HP also rolls "
+              f"±{R.enemy_hp_jitter}. Cogs vary ±10%.", ""]
     for group, title in (("normal", "Normal"), ("elite", "Elites"), ("boss", "Bosses")):
         rows = [(f"**{e['name']}**", e["hp"], e["cogs"], e["pattern"], e["note"])
                 for e in enemy_rows() if e["group"] == group]
         lines += [f"### {title}", "", table(["Enemy", "HP", "Cogs", "Pattern", "Tests"], rows), ""]
+    lines += ["Bosses by act: " + "; ".join(f"act {i + 1}: {' or '.join(b)}" for i, b in enumerate(RM.ACT_BOSSES))
+              + ".", ""]
 
     lines += ["## Machine upgrades", "",
-              "Permanent upgrades to the machine. Every Workshop sells all the ones you don't have; elites "
-              f"have a {round(RM.ELITE_SALVAGE * 100)}% chance to let you salvage 1 of 2 for free.", "",
-              table(["Upgrade", "Price", "Effect"], [(f"**{n}**", p, t) for n, t, p in RM.MACHINE.values()]), "",
-              "Candidates (simulator only, not sold): " +
-              "; ".join(f"{n}: {t}" for n, t in RM.MACHINE_CANDIDATES.values()) + ".", ""]
+              f"Permanent upgrades with levels. A run starts by choosing 1 of {RM.MACHINE_CHOICES}, and every boss "
+              f"but the last gives 1 of {RM.MACHINE_CHOICES} you don't have (its exclusive reward). Workshops sell "
+              "level-ups for the upgrades you have; nothing else gives new upgrades.", "",
+              table(["Upgrade", "Per level", "Max level"],
+                    [(f"**{m['name']}**", m["text"], m["max"]) for m in RM.MACHINE.values()]), "",
+              "Level-up prices: " + ", ".join(f"level {lv} {p} cogs" for lv, p in RM.LEVEL_PRICE.items()) +
+              " (placeholders until the economy is tuned across all acts).", ""]
 
     lines += ["## Run", "", table(["Rule", "Value"], [
-        ("Stops", f"{RM.STOPS} door choices, then the boss (picked at the start from: "
-                  f"{', '.join(RM.BOSS_POOL)})"),
+        ("Acts", f"{RM.ACTS}; each is {RM.STOPS} door choices, then the act's boss (all bosses shown at the start)"),
         ("Doors", "stops 1-2 are fights; then 3 doors weighted " +
                   ", ".join(f"{k} {v:g}" for k, v in RM.DOOR_WEIGHTS.items()) +
                   "; the last stop offers a rest site or a Workshop"),
         ("After a win", f"heal {R.heal_between_fights} HP, loot cogs, pick 1 of 3 parts (or scrap for "
                         f"{RM.SCRAP_VALUE} cogs, or skip)"),
-        ("Part reward tiers", ", ".join(f"{t} {w}" for t, w in RM.TIER_WEIGHT.items()) + " (weights)"),
-        ("Elite loot", f"a part from the {'/'.join(RM.ELITE_PART_TIERS)} tiers, 1 of {RM.ELITE_ATTACHMENTS} "
-                       f"uncommon/rare attachments, {round(RM.ELITE_SALVAGE * 100)}% chance of a free machine "
-                       "upgrade (1 of 2)"),
+        ("Between acts", f"the boss's exclusive reward (1 of {RM.MACHINE_CHOICES} machine upgrades), then half of "
+                         "the missing HP heals"),
+        ("Part reward tiers (weights)", "; ".join(
+            f"act {i + 1}: " + ", ".join(f"{t} {x}" for t, x in w.items()) for i, w in enumerate(RM.ACT_TIER_WEIGHT))),
+        ("Elite loot", f"a part from the {'/'.join(RM.ELITE_PART_TIERS)} tiers (rares ×{RM.ELITE_RARE_PART} as "
+                       f"likely), and 1 of {RM.ELITE_ATTACHMENTS} uncommon/rare attachments (rare weight "
+                       f"{RM.ELITE_RARE_WEIGHT} against 3 per uncommon); no machine upgrades"),
         ("Rest site", f"heal {RM.REST_HEAL}, or tinker: take both offered common attachments"),
-        ("Workshop", f"3 parts, 2 uncommon/rare attachments, every machine upgrade you lack; repair "
+        ("Workshop", f"3 parts, 2 uncommon/rare attachments, level-ups for your machine upgrades; repair "
                      f"{RM.REPAIR[0]} HP for {RM.REPAIR[1]}; remove a part for {RM.REMOVE_PRICE} "
                      f"(+{RM.REMOVE_STEP} each time)"),
     ]), ""]
