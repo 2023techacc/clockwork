@@ -14,7 +14,7 @@ from clockwork.engine import CCW, CW, apply, legal_actions, new_fight
 from clockwork.describe import ENEMY_NOTES, enemy_pattern_text, mod_fits_text, mod_texts, part_texts
 from clockwork.enemies import BOSSES
 from clockwork.parts import MOD_RARITY
-from clockwork.run_mode import MACHINE, STOPS, Run
+from clockwork.run_mode import ACT_BOSSES, ACTS, MACHINE, STOPS, Run
 
 MODE = None         # "fight" (single fight) or "run"
 RUN = None          # run_mode.Run in run mode
@@ -26,8 +26,8 @@ FIGHT_RECORDED = False
 
 NODE_TEXT = {
     "fight": "Fight: an ordinary enemy. Loot cogs, then pick a part.",
-    "elite": "Elite: a dangerous machine-wrecker. High risk, high return: more cogs, a better part, "
-             "1 of 3 attachments, and a 50% chance to salvage a free machine upgrade (1 of 2).",
+    "elite": "Elite: a dangerous machine-wrecker. High risk, high return: more cogs, a rarer part, "
+             "and 1 of 3 uncommon or rare attachments.",
     "workshop": "Workshop: buy parts, attachments and machine upgrades; remove parts; repair.",
     "rest": "Rest: heal, or tinker for two common attachments.",
     "boss": "Boss: the end of the district.",
@@ -48,7 +48,8 @@ def options():
                       "armor": e.armor, "swing": e.swing, "pattern": enemy_pattern_text(e),
                       "note": ENEMY_NOTES.get(name, "")}
                for name, e in ENEMIES.items()}
-    return json.dumps({"decks": decks, "enemies": enemies, "bosses": BOSSES, "parts": _describe_parts(),
+    return json.dumps({"decks": decks, "enemies": enemies, "bosses": BOSSES, "act_bosses": ACT_BOSSES,
+                       "acts": ACTS, "parts": _describe_parts(),
                        "nodes": NODE_TEXT,
                        "rarity": {m.value: r for m, r in MOD_RARITY.items()},
                        "rules": {"overheat_at": R.overheat_at, "crank_power": R.crank_power,
@@ -89,8 +90,18 @@ def choose_door(index):
     return view()
 
 
-def take_reward(part="", attachment="", scrap=False, salvage=""):
-    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap), salvage=salvage)
+def take_reward(part="", attachment="", scrap=False):
+    RUN.take_reward(part=part, attachment=attachment, scrap=bool(scrap))
+    return view()
+
+
+def choose_start(key=""):
+    RUN.choose_start(key)
+    return view()
+
+
+def choose_boss_reward(key=""):
+    RUN.choose_boss_reward(key)
     return view()
 
 
@@ -233,4 +244,4 @@ def view():
     else:
         screen = "fight"
     return json.dumps({"mode": MODE, "setup": SETUP, "screen": screen, "run": run, "fight": fight,
-                       "machine_all": {k: {"name": v[0], "text": v[1]} for k, v in MACHINE.items()}})
+                       "machine_all": MACHINE})

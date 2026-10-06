@@ -274,6 +274,7 @@ def _start_turn(s: State) -> None:
         _finish(s, "loss", "timeout")
         return
     s.block = 0
+    s.heat = max(0, s.heat - s.rules.heat_decay)
     s.crank_power = s.rules.crank_power
     s.installs_left = s.rules.installs_per_turn
     s.triggers_turn = s.damage_turn = s.reshuffles_turn = 0
@@ -535,6 +536,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         base += spec.per_install_damage * sum(1 for p in s.gear if p is not None and p.uid in s.installed)
     if spec.moved_bonus and part.uid in s.moved:
         base += spec.moved_bonus
+    if spec.heat_damage:
+        base += spec.heat_damage * s.heat          # Heat after this trigger's own Heat
     block = spec.block
     if Mod.SHARPENED in mods:
         base += SHARPENED_DAMAGE
@@ -549,6 +552,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     mult = 1 + r.amplifier_bonus * _adjacent_amplifiers(s, slot)
     if part.kind == Kind.MIRROR and Mod.POLISH in part.mods:
         mult += r.polish_bonus
+    if Mod.OVERDRIVE in mods:
+        mult += r.overdrive_bonus
     if base:
         dmg = _deal(s, int(base * mult))
         notes.append(f"{dmg} damage")
@@ -601,6 +606,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         # Clamp: each pulled part triggers, left side first (pushed last).
         for near, uid, d in reversed(pulled[:r.clamp_max_triggers]):
             stack.append(("trigger", near, d, False, uid, 0))
+    if Mod.KICKBACK in mods:
+        stack.append(("crank", direction, 0))   # the gear cranks once more, like a Spring
     if Mod.ECHO in mods and s.echoed.get(part.uid, 0) < r.echo_per_turn:
         s.echoed[part.uid] = s.echoed.get(part.uid, 0) + 1   # triggers again right away (before its follow-ups)
         stack.append(("trigger", slot, direction, from_coupler, part.uid, 0))

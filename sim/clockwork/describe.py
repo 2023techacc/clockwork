@@ -42,6 +42,8 @@ def part_texts(rules=DEFAULT_RULES) -> dict:
                        + f"{s[Kind.ASSEMBLY].per_install_damage} per part installed this turn.",
         Kind.SLIDER: f"Deal {s[Kind.SLIDER].damage} damage, +{s[Kind.SLIDER].moved_bonus} if a Magnet moved "
                      "it this turn.",
+        Kind.BOILER: f"Deal {s[Kind.BOILER].damage} damage, +{s[Kind.BOILER].heat_damage} per point of Heat "
+                     f"(after its own). +{s[Kind.BOILER].extra_heat} Heat.",
     }
 
 
@@ -58,6 +60,9 @@ def mod_texts(rules=DEFAULT_RULES) -> dict:
         Mod.FEEDER: f"Loads {rules.feeder_extra_loads} more part, into the next slots to come up instead of "
                     "random ones, and the loaded parts trigger right away.",
         Mod.GOVERNOR: "Its triggers add no Heat.",
+        Mod.OVERDRIVE: f"Its damage and Block +{_pct(rules.overdrive_bonus)} (adds to Amplifiers).",
+        Mod.KICKBACK: "After it triggers, the gear cranks once more in the same direction, like a Spring "
+                      "(no chain Heat).",
         Mod.ECHO: ("The first time it triggers each turn, it triggers again." if rules.echo_per_turn == 1 else
                    f"The first time it triggers each turn, it triggers {rules.echo_per_turn} more times."),
     }

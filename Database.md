@@ -77,6 +77,7 @@ Tier decides how often a part shows up as a reward and its Workshop price.
 | **Primer** | uncommon | 45 | 1 | Deal 2 damage, or 8 if it was installed this turn. |
 | **Assembly** | uncommon | 45 | 1 | Deal 1 damage, +3 per part installed this turn. |
 | **Slider** | uncommon | 45 | 1 | Deal 7 damage, +3 if a Magnet moved it this turn. |
+| **Boiler** | rare | 65 | 2 | Deal 3 damage, +2 per point of Heat (after its own). +1 Heat. |
 
 ## Attachments
 
@@ -94,10 +95,12 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 | **Feeder** | uncommon | Loader | 55 | Loads 1 more part, into the next slots to come up instead of random ones, and the loaded parts trigger right away. | +2.8 |
 | **Echo** | uncommon | any part | 55 | The first time it triggers each turn, it triggers again. | +3.0 (Striker) |
 | **Governor** | rare | any part | 90 | Its triggers add no Heat. | +6.5 (Hammer) |
+| **Overdrive** | rare | any part | 90 | Its damage and Block +50% (adds to Amplifiers). | +5.0 (Hammer) |
+| **Kickback** | rare | any part | 90 | After it triggers, the gear cranks once more in the same direction, like a Spring (no chain Heat). | +4.0 (Hammer) |
 
 ## Enemies
 
-In a run, enemies grow through the district: HP and attacks × (1 + 0.3 × stop/9), so the boss is ×1.30. Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength × (1 + 0.3 × stop/9). Act strength: act 1 ×1.0, act 2 ×1.35, act 3 ×1.7. In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts exist): the act-1 enemies at that strength with extra armor (act 1 +0, act 2 +1, act 3 +2). Elites are fought at ×0.9 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
 
 ### Normal
 
@@ -127,30 +130,36 @@ In a run, enemies grow through the district: HP and attacks × (1 + 0.3 × stop/
 | **iron_colossus** | 78 | 60 | Every turn: attack 6. Armor 3: every hit on it deals 3 less. | Armor on every hit: tests big single hits over many small ones. |
 | **pendulum** | 87 | 60 | Turn 1: attack 4. Turn 2: attack 10. Then repeats. Swing: odd turns must crank clockwise, even turns counter-clockwise. | Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts that work both ways. |
 
+Bosses by act: act 1: clock_tower or pendulum; act 2: furnace or dismantler; act 3: iron_colossus.
+
 ## Machine upgrades
 
-Permanent upgrades to the machine. Every Workshop sells all the ones you don't have; elites have a 50% chance to let you salvage 1 of 2 for free.
+Permanent upgrades with levels. A run starts by choosing 1 of 3, and every boss but the last gives 1 of 3 you don't have (its exclusive reward). Workshops sell level-ups for the upgrades you have; nothing else gives new upgrades.
 
-| Upgrade | Price | Effect |
+| Upgrade | Per level | Max level |
 |---|---|---|
-| **Flywheel** | 70 | +1 Crank Power per turn |
-| **Heat Housing** | 85 | +2 Heat before Overheat |
-| **Extra Hands** | 90 | +1 install per turn |
-| **Bigger Gear** | 75 | 8 gear slots instead of 6, and +1 Crank Power to turn it |
+| **Flywheel** | +1 Crank Power per turn | 2 |
+| **Heat Housing** | +2 Heat before Overheat | 2 |
+| **Extra Hands** | +1 install per turn | 2 |
+| **Bigger Gear** | 8 gear slots instead of 6, and +1 Crank Power to turn it | 1 |
+| **Reinforced Frame** | +8 max HP | 3 |
+| **Wide Hopper** | +1 part offered (and shown) each turn | 2 |
+| **Cooling Fins** | 1 Heat drains away at the start of each turn | 2 |
 
-Candidates (simulator only, not sold): Reinforced Frame: +10 max HP; Wide Hopper: 4 parts offered each turn instead of 3; Bigger Gear (old): 8 gear slots instead of 6.
+Level-up prices: level 2 90 cogs, level 3 130 cogs (placeholders until the economy is tuned across all acts).
 
 ## Run
 
 | Rule | Value |
 |---|---|
-| Stops | 9 door choices, then the boss (picked at the start from: clock_tower, furnace, dismantler, iron_colossus, pendulum) |
+| Acts | 3; each is 9 door choices, then the act's boss (all bosses shown at the start) |
 | Doors | stops 1-2 are fights; then 3 doors weighted fight 4, elite 2, workshop 1.5, rest 1.5; the last stop offers a rest site or a Workshop |
 | After a win | heal 7 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
-| Part reward tiers | common 5, uncommon 4, rare 1 (weights) |
-| Elite loot | a part from the uncommon/rare tiers, 1 of 3 uncommon/rare attachments, 50% chance of a free machine upgrade (1 of 2) |
+| Between acts | the boss's exclusive reward (1 of 3 machine upgrades), then half of the missing HP heals |
+| Part reward tiers (weights) | act 1: common 5, uncommon 4, rare 1; act 2: common 3, uncommon 4, rare 2; act 3: common 2, uncommon 4, rare 3 |
+| Elite loot | a part from the uncommon/rare tiers (rares ×2 as likely), and 1 of 3 uncommon/rare attachments (rare weight 3 against 3 per uncommon); no machine upgrades |
 | Rest site | heal 8, or tinker: take both offered common attachments |
-| Workshop | 3 parts, 2 uncommon/rare attachments, every machine upgrade you lack; repair 15 HP for 25; remove a part for 40 (+15 each time) |
+| Workshop | 3 parts, 2 uncommon/rare attachments, level-ups for your machine upgrades; repair 15 HP for 25; remove a part for 40 (+15 each time) |
 
 ## Test decks
 

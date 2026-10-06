@@ -147,13 +147,14 @@ def study_attachments(pool, args):
 # ---------------------------------------------------------------- runs
 
 def _runs(args):
-    seeds, agent, style, machine, rules, patch, boss = args
+    seeds, agent, style, machine, rules, patch, boss, acts = args
     from . import run_mode
     saved = {name: getattr(run_mode, name) for name in patch}
     for name, value in patch.items():        # module-level run constants, e.g. ELITE_COG_BONUS
         setattr(run_mode, name, value)
     try:
-        return [summarise(simulate_run("starter", seed, agent, rules=rules, style=style, machine=machine, boss=boss))
+        return [summarise(simulate_run("starter", seed, agent, rules=rules, style=style, machine=machine, boss=boss,
+                                       acts=acts))
                 for seed in seeds]
     finally:
         for name, value in saved.items():
@@ -168,15 +169,19 @@ def summarise(run):
             "attachments": sum(len(c["mods"]) for c in run.cards) + len(run.inventory),
             "machine": len(run.machine), "deck": len(run.cards),
             "boss_hp": next((h["hp_start"] for h in fights if h["node"] == "boss"), None),
+            "acts": run.acts, "acts_cleared": sum(h["node"] == "boss" and h["result"] == "win" for h in fights),
+            "boss_hps": [h["hp_start"] for h in fights if h["node"] == "boss"],
             "died_to": fights[-1]["enemy"] if run.phase == "lost" else None,
-            "fights": [(h["node"], h["enemy"], h["stop"], h["hp_start"], h["hp_end"], h["result"], h.get("cogs", 0))
-                       for h in fights],
+            "fights": [(h["node"], h["enemy"], h["stop"], h["hp_start"], h["hp_end"], h["result"], h.get("cogs", 0),
+                        h.get("act", 0)) for h in fights],
             "rests": [h["choice"] for h in run.history if h.get("node") == "rest"],
             "shops": sum(h.get("node") == "workshop" for h in run.history)}
 
 
-def play_runs(pool, runs, agent, style=None, machine=(), rules=None, block=3, patch=None, boss=None):
-    tasks = [(range(lo, min(lo + block, runs)), agent, style or {}, tuple(machine), rules, patch or {}, boss)
+def play_runs(pool, runs, agent, style=None, machine=None, rules=None, block=3, patch=None, boss=None, acts=None):
+    """`machine`: None lets the policy pick the starting upgrade; a list starts with exactly those."""
+    tasks = [(range(lo, min(lo + block, runs)), agent, style or {}, None if machine is None else tuple(machine),
+              rules, patch or {}, boss, acts)
              for lo in range(0, runs, block)]
     return [o for chunk in pool.map(_runs, tasks) for o in chunk]
 
@@ -192,7 +197,13 @@ def run_line(label, out, base=None):
         gain = sum(o["won"] and not b["won"] for o, b in zip(out, base))
         loss = sum(b["won"] and not o["won"] for o, b in zip(out, base))
         delta = f" | vs base +{gain}/-{loss}"
-    print(f"{label:30s} cleared {won / n:4.0%} ({lo:.0%}-{hi:.0%}) | boss reached {len(boss) / n:4.0%} "
+    acts = max(o.get("acts", 1) for o in out)
+    per_act = ""
+    if acts > 1:
+        per_act = " | acts " + " / ".join(
+            f"{sum(o['acts_cleared'] >= k for o in out) / max(1, sum(o['acts_cleared'] >= k - 1 for o in out)):.0%}"
+            for k in range(1, acts + 1))
+    print(f"{label:30s} cleared {won / n:4.0%} ({lo:.0%}-{hi:.0%}){per_act} | boss 1 reached {len(boss) / n:4.0%} "
           f"at {statistics.mean(boss) if boss else 0:4.1f} HP | elites {statistics.mean(o['elites'] for o in out):.2f} "
           f"| attach {statistics.mean(o['attachments'] for o in out):.1f} | machine "
           f"{statistics.mean(o['machine'] for o in out):.2f} | deck {statistics.mean(o['deck'] for o in out):.1f} "
@@ -213,13 +224,14 @@ def study_machine(pool, args):
             per = measure(pool, deck, args.agent, args.fights, rules=run.rules())
             w, h = overall(per)
             g, gb = groups(per), groups(base)
-            print(f"    {MACHINE[key][0]:14s} {(w - wb) * 100:+6.1f} win pts {h - hb:+6.1f} HP kept | "
+            print(f"    {MACHINE[key]['name']:16s} {(w - wb) * 100:+6.1f} win pts {h - hb:+6.1f} HP kept | "
                   + " ".join(f"{k} {(g[k] - gb[k]) * 100:+.0f}" for k in ("normal", "elite", "boss")), flush=True)
-    print(f"\nMachine upgrades, whole runs started with it ({args.agent}, {args.runs} runs, paired seeds):")
-    base = play_runs(pool, args.runs, args.agent)
-    run_line("no upgrade", base)
+    print(f"\nMachine upgrades, whole runs started with it instead of choosing ({args.agent}, {args.runs} runs, "
+          "paired seeds; boss rewards still chosen):")
+    base = play_runs(pool, args.runs, args.agent, machine=())
+    run_line("no starting upgrade", base)
     for key in MACHINE:
-        run_line(f"start with {MACHINE[key][0]}", play_runs(pool, args.runs, args.agent, machine=[key]), base)
+        run_line(f"start with {MACHINE[key]['name']}", play_runs(pool, args.runs, args.agent, machine=[key]), base)
 
 
 STYLES = [
@@ -245,21 +257,22 @@ def study_styles(pool, args):
 
 
 def hp_report(out):
-    """Where runs lose HP: per enemy and per node, from the base-policy runs."""
+    """Where runs lose HP: per enemy and per node (and act), from the base-policy runs."""
     per = {}
     for o in out:
-        for node, enemy, stop, start, end, result, cogs in o["fights"]:
-            d = per.setdefault((node, enemy), {"lost": [], "deaths": 0, "cogs": []})
+        for node, enemy, stop, start, end, result, cogs, act in o["fights"]:
+            d = per.setdefault((node, f"{enemy} (act {act + 1})" if o.get("acts", 1) > 1 else enemy),
+                               {"lost": [], "deaths": 0, "cogs": []})
             d["lost"].append(start - end)
             d["deaths"] += result != "win"
             d["cogs"].append(cogs)
     print("\nWhere the base-policy runs lose HP (HP lost per fight, counting a death as all remaining HP):")
-    print(f"  {'node':6s} {'enemy':13s} {'fights':>6s} {'mean HP lost':>12s} {'deaths':>6s} {'cogs':>5s} {'cogs/HP':>7s}")
+    print(f"  {'node':6s} {'enemy':21s} {'fights':>6s} {'mean HP lost':>12s} {'deaths':>6s} {'cogs':>5s} {'cogs/HP':>7s}")
     for (node, enemy), d in sorted(per.items(), key=lambda kv: ({"fight": 0, "elite": 1, "boss": 2}[kv[0][0]],
                                                                 -statistics.mean(kv[1]["lost"]))):
         lost = statistics.mean(d["lost"])
         cogs = statistics.mean(d["cogs"])
-        print(f"  {node:6s} {enemy:13s} {len(d['lost']):6d} {lost:12.1f} {d['deaths']:6d} {cogs:5.0f} "
+        print(f"  {node:6s} {enemy:21s} {len(d['lost']):6d} {lost:12.1f} {d['deaths']:6d} {cogs:5.0f} "
               f"{cogs / lost if lost else float('inf'):7.1f}")
 
 

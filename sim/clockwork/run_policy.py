@@ -28,10 +28,11 @@ from .run_mode import Run
 # Value of one copy: win-rate points over the starter in fights from 30 HP (part pass v15).
 PART_VALUE = {Kind.MAGNET: 9.5, Kind.SLIDER: 8.1, Kind.PRIMER: 7.7, Kind.ASSEMBLY: 6.7, Kind.AMPLIFIER: 5.5,
               Kind.COUPLER: 5.4, Kind.COOLANT: 4.4, Kind.HAMMER: 3.8, Kind.MIRROR: -1.7, Kind.LOADER: -2.8,
-              Kind.SPRING: -3.5}
+              Kind.SPRING: -3.5, Kind.BOILER: 5.0}       # Boiler (v18): first guess until measured
 # HP kept per fight on the best host (studies, Results v16), and the hosts in order of preference.
 MOD_VALUE = {Mod.GOVERNOR: 6.5, Mod.COIL: 3.5, Mod.HEAT_SINK: 3.6, Mod.BRACING: 3.5, Mod.COUNTERWEIGHT: 3.3,
-             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 3.4}
+             Mod.SHARPENED: 3.0, Mod.ECHO: 3.0, Mod.CLAMP: 2.8, Mod.FEEDER: 2.8, Mod.POLISH: 3.4,
+             Mod.OVERDRIVE: 5.0, Mod.KICKBACK: 4.0}   # v18 additions: first guesses until measured
 MOD_HOSTS = {
     Mod.GOVERNOR: [Kind.HAMMER, Kind.STRIKER, Kind.PRIMER],
     Mod.BRACING: [Kind.STRIKER, Kind.PLATE],
@@ -39,16 +40,17 @@ MOD_HOSTS = {
     Mod.SHARPENED: [Kind.PLATE, Kind.STRIKER, Kind.HAMMER],
     Mod.ECHO: [Kind.STRIKER, Kind.PLATE, Kind.PRIMER],
     Mod.HEAT_SINK: [Kind.STRIKER, Kind.HAMMER],
+    Mod.OVERDRIVE: [Kind.HAMMER, Kind.SLIDER, Kind.STRIKER, Kind.PLATE],
+    Mod.KICKBACK: [Kind.HAMMER, Kind.STRIKER, Kind.SLIDER],
 }
 # Runs started with each machine upgrade (Results v12): Extra Hands +16, Heat Housing +15,
 # Bigger Gear +8, Flywheel +7 points.
-MACHINE_PRIORITY = ["extra_hands", "heat_housing", "bigger_gear", "flywheel"]
-MACHINE_ORDERS = {"v12": MACHINE_PRIORITY,
-                  "v16": ["bigger_gear", "flywheel", "extra_hands", "heat_housing"]}   # Results v16
+# Order to pick machine upgrades in (at the start, as boss rewards, and level-ups in the Workshop).
+MACHINE_PRIORITY = ["bigger_gear", "flywheel", "extra_hands", "heat_housing", "frame", "cooling_fins", "hopper"]
 
 
 def machine_order(style=None):
-    return MACHINE_ORDERS[(style or DEFAULT_STYLE).get("machine_order", "v12")]
+    return MACHINE_PRIORITY
 CARD_PRIORITY = [Kind.HAMMER, Kind.PRIMER, Kind.STRIKER, Kind.ASSEMBLY, Kind.SLIDER, Kind.COUPLER,
                  Kind.PLATE, Kind.SPRING, Kind.MIRROR, Kind.MAGNET, Kind.LOADER, Kind.AMPLIFIER, Kind.COOLANT]
 
@@ -97,7 +99,6 @@ DEFAULT_STYLE = {
     "save_margin": 0,        # in a Workshop, skip other purchases if the best machine upgrade is
                              # at most this many cogs out of reach (save for it)
     "synergy": False,        # value parts by what the deck already holds (SYNERGY)
-    "machine_order": "v12",  # which machine upgrade to buy first (MACHINE_ORDERS)
 }
 
 # A part is worth more when its partner is already in the deck (or, for Spring, a Coil is held).
@@ -174,33 +175,49 @@ def shop(run, style=DEFAULT_STYLE):
     run.leave_workshop()
 
 
-def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=(), boss=None):
-    """Play a whole run. `style` overrides DEFAULT_STYLE keys; `machine` starts the run with
-    those machine upgrades already installed."""
+def pick_machine(run, style=None):
+    """The offered machine upgrade to choose (start or boss reward), by MACHINE_PRIORITY."""
+    offered = run.offer.get("machines", [])
+    return min(offered, key=machine_order(style).index) if offered else ""
+
+
+def step(run, agent_name, style):
+    """Make the run's next decision (or play its next fight)."""
+    attach_all(run)
+    if run.phase == "start":
+        run.choose_start(pick_machine(run, style))
+    elif run.phase == "boss_reward":
+        run.choose_boss_reward(pick_machine(run, style))
+    elif run.phase == "doors":
+        run.choose_door(choose_door(run, style))
+    elif run.phase == "fight":
+        play_fight(run, agent_name)
+    elif run.phase == "reward":
+        parts = sorted(run.offer["parts"], key=lambda p: -part_value(run, Kind(p), style))
+        best = parts[0] if part_value(run, Kind(parts[0]), style) > 0 or style["parts"] == "all" else ""
+        if style["parts"] == "none":
+            best = ""
+        run.take_reward(part=best, attachment=best_mod(run, run.offer.get("attachments", [])), scrap=not best)
+    elif run.phase == "rest":
+        heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < style["heal_below"] * run.max_hp())
+        run.rest("heal" if heal else "tinker")
+    elif run.phase == "workshop":
+        shop(run, style)
+
+
+def simulate_run(deck, seed, agent_name="mcts@50", rules=None, growth=None, style=None, machine=None, boss=None,
+                 acts=None):
+    """Play a whole run. `style` overrides DEFAULT_STYLE keys. `machine` replaces the starting choice
+    with these machine upgrades (a list; () for none). `acts` shortens or lengthens the run."""
     style = {**DEFAULT_STYLE, **(style or {})}
-    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth, boss=boss)
-    run.machine = list(machine)
-    run.hp = run.max_hp()
+    run = Run(deck, seed, rules=rules or DEFAULT_RULES, growth=growth, boss=boss,
+              **({} if acts is None else {"acts": acts}))
+    if machine is not None:
+        run.choose_start("")
+        run.machine = list(machine)
+        run.hp = run.max_hp()
     while run.phase not in ("won", "lost"):
-        attach_all(run)
-        if run.phase == "doors":
-            run.choose_door(choose_door(run, style))
-        elif run.phase == "fight":
-            play_fight(run, agent_name)
-        elif run.phase == "reward":
-            parts = sorted(run.offer["parts"], key=lambda p: -part_value(run, Kind(p), style))
-            best = parts[0] if part_value(run, Kind(parts[0]), style) > 0 or style["parts"] == "all" else ""
-            if style["parts"] == "none":
-                best = ""
-            mods = run.offer.get("attachments", [])
-            salvage = sorted(run.offer.get("salvage", []), key=machine_order(style).index)
-            run.take_reward(part=best, attachment=best_mod(run, mods), scrap=not best,
-                            salvage=salvage[0] if salvage else "")
-        elif run.phase == "rest":
-            heal = {"heal": True, "tinker": False}.get(style["rest"], run.hp < style["heal_below"] * run.max_hp())
-            run.rest("heal" if heal else "tinker")
-        elif run.phase == "workshop":
-            shop(run, style)
+        step(run, agent_name, style)
     return run
 
 

@@ -124,3 +124,25 @@ The playtest uses door choices (C in Run-Design.md); the real game is planned as
 - **Machine upgrades:** a pool of about 8 with 3 slots.
 - **Map:** doors for now; the hours map in the simulator next.
 - **Prices:** set last, from measured income across all three acts.
+
+---
+
+## Decisions (designer, 2026-10-06)
+
+1. **Difficulty targets:** A (rising curve) checked with D (skill targets). Starting numbers: casual act 1 ~90%, act 2 ~75%, act 3 ~55% (whole run ~35%); whole run careless ~10%, expert ~70%. The exact numbers can change.
+2. **Between acts:** B, heal half the missing HP, plus an **exclusive boss reward**. Later, ascension-style difficulty levels may change what carries over.
+3. **New content:** A (themed districts) for the final game. For testing, B (veteran placeholder enemies). D for bosses (split by act), with more bosses added later.
+4. **Deck growth:** A (no new rule), unless the simulator finds a problem.
+5. **Machine upgrades:** A (a bigger pool), plus levels (B) bought in the Workshop. New upgrades come **only from bosses and the start of the run** (choose 1 of n; n open), so a run gets few.
+6. **Map:** C ("twelve hours to midnight") is the final map. For now acts use door choices (A), and the hours map comes to the simulator next (D).
+
+**Elites (same decision round):** elites no longer give machine upgrades. They give rarer attachments and parts instead; their risk and return get re-tuned, and new rare content is added where needed.
+
+### What was built (v18)
+- **3 acts.** Bosses by act: act 1 Clock Tower or Pendulum, act 2 Furnace or Dismantler, act 3 Iron Colossus. All three are rolled and shown at the start.
+- **Veterans** in acts 2 and 3: the act-1 normal enemies and elites at act strength (×1.35, ×1.7 to start) with +1 / +2 armor.
+- **Between acts:** the boss's exclusive reward is 1 of 3 machine upgrades you don't have; then half the missing HP heals.
+- **Machine upgrades:** a pool of 7 with levels: Flywheel (2 levels), Heat Housing (2), Extra Hands (2), Bigger Gear (1), Reinforced Frame (+8 max HP, 3), Wide Hopper (+1 part offered, 2) and the new **Cooling Fins** (1 Heat drains each turn, 2). Start: choose 1 of 3. Workshops sell level-ups only (placeholder prices 90 / 130).
+- **Rarity across acts:** part reward weights common/uncommon/rare go 5/4/1, 3/4/2, 2/4/3.
+- **Elite loot:** a part from the uncommon/rare tiers with rares twice as likely, and 1 of 3 uncommon/rare attachments. No machine upgrades.
+- **New rare content:** **Overdrive** (attachment: damage and Block +50%), **Kickback** (attachment: after triggering, the gear cranks once more, like a Spring on any part) and **Boiler** (part: 3 damage, +2 per point of Heat, +1 Heat).

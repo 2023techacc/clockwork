@@ -19,6 +19,7 @@ class Kind(str, Enum):
     PRIMER = "Primer"
     ASSEMBLY = "Assembly"
     SLIDER = "Slider"
+    BOILER = "Boiler"        # rare (v18): damage grows with the machine's Heat
 
     def __str__(self) -> str:
         return self.value
@@ -39,6 +40,9 @@ class Mod(str, Enum):
     FEEDER = "Feeder"    # Loader: loads 1 more part, into the next slots to come up; loaded parts trigger
     # rare
     GOVERNOR = "Governor"          # its triggers add no Heat
+    OVERDRIVE = "Overdrive"        # its damage and Block x(1 + overdrive_bonus) (v18)
+    KICKBACK = "Kickback"          # after it triggers, the gear cranks once more, like a Spring (v18)
+    # uncommon (was rare until v17)
     ECHO = "Echo"                  # the first time it triggers each turn, it triggers again
 
     def __str__(self) -> str:
@@ -56,6 +60,7 @@ class PartSpec:
     per_part_damage: int = 0   # extra damage per occupied gear slot (itself included)
     per_install_damage: int = 0  # extra damage per part installed this turn (by hand or Loader)
     moved_bonus: int = 0       # extra damage if a Magnet moved it this turn
+    heat_damage: int = 0       # extra damage per point of Heat the machine has when it triggers
 
 
 SPECS = {
@@ -75,6 +80,7 @@ SPECS = {
     Kind.PRIMER: PartSpec(damage=2, fresh_damage=8),       # pairs with Loader (Feeder) / placement
     Kind.ASSEMBLY: PartSpec(damage=1, per_install_damage=3),  # pairs with Loader; +1 base damage (v15)
     Kind.SLIDER: PartSpec(damage=7, moved_bonus=3),        # pairs with Magnet (moved bonus was 6; damage 5 -> 7, v15)
+    Kind.BOILER: PartSpec(damage=3, heat_damage=2, extra_heat=1),   # rare (v18): pairs with Hammer, Coupler
 }
 
 MOD_FITS = {Mod.COIL: Kind.SPRING, Mod.POLISH: Kind.MIRROR, Mod.CLAMP: Kind.MAGNET, Mod.FEEDER: Kind.LOADER}
@@ -82,6 +88,7 @@ MOD_RARITY = {
     Mod.SHARPENED: "common", Mod.COUNTERWEIGHT: "common", Mod.BRACING: "common",
     Mod.HEAT_SINK: "uncommon", Mod.COIL: "uncommon", Mod.POLISH: "uncommon", Mod.CLAMP: "uncommon",
     Mod.FEEDER: "uncommon", Mod.GOVERNOR: "rare", Mod.ECHO: "uncommon",   # Echo rare -> uncommon (v17)
+    Mod.OVERDRIVE: "rare", Mod.KICKBACK: "rare",
 }
 SHARPENED_DAMAGE = 2
 COUNTERWEIGHT_BLOCK = 2

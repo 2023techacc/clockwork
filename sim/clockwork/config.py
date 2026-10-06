@@ -43,6 +43,8 @@ class RulesConfig:
     feeder_extra_loads: int = 1      # a Loader with Feeder installs this many more parts per trigger
     feeder_triggers: int = 3         # ... and the first this-many parts it loads trigger right away (v12)
     polish_bonus: float = 0.4        # Polish attachment, added to the Amplifier bonus (was 0.5, then 0.2; v17)
+    overdrive_bonus: float = 0.5     # Overdrive attachment: the part's damage and Block multiplier bonus (v18)
+    heat_decay: int = 0              # Heat removed at the start of each turn (Cooling Fins machine upgrade, v18)
     echo_per_turn: int = 1           # Echo: extra triggers on the part's first trigger each turn (2 tested in v17: too explosive)
     clamp_max_triggers: int = 1      # Clamp triggers at most this many pulled parts (was 2)
     loader_loads: int = 2            # parts a Loader installs per trigger (was 1)

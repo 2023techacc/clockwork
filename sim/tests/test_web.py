@@ -51,7 +51,7 @@ class RunMode(unittest.TestCase):
         screens = set()
         for seed in range(8):
             v = json.loads(play.start_run("big_hit", seed))
-            for _ in range(60):
+            for _ in range(200):
                 screen = v["screen"]
                 screens.add(screen)
                 run = v["run"]
@@ -60,7 +60,11 @@ class RunMode(unittest.TestCase):
                 if run["inventory"] and run["inventory"][0]["fits"]:
                     v = json.loads(play.attach(0, run["inventory"][0]["fits"][0]))
                     continue
-                if screen == "doors":
+                if screen == "start":
+                    v = json.loads(play.choose_start(run["offer"]["machines"][0]))
+                elif screen == "boss_reward":
+                    v = json.loads(play.choose_boss_reward(run["offer"]["machines"][-1]))
+                elif screen == "doors":
                     v = json.loads(play.choose_door(rng.randrange(len(run["doors"]))))
                 elif screen == "fight":
                     hp = run["hp"]
@@ -76,7 +80,7 @@ class RunMode(unittest.TestCase):
                         v = json.loads(play.buy("part", 0))
                     v = json.loads(play.leave_workshop())
             self.assertIn(v["screen"], ("won", "lost"))
-        self.assertTrue({"doors", "fight", "reward"} <= screens)
+        self.assertTrue({"start", "doors", "fight", "reward"} <= screens)
 
     def test_single_fight_mode(self):
         v = json.loads(play.start("starter", "dummy", 2))
