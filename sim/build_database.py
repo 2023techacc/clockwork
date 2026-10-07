@@ -139,9 +139,14 @@ def build() -> str:
                   f"{RM.DAY_START:02d}:00, a {RM.DAY_DISTRICT[0]}×{RM.DAY_DISTRICT[1]} district (" +
                   ", ".join(f"{n} {t}s" for t, n in RM.DAY_NODES.items()) + "); open: " +
                   ", ".join(f"{t} {w}" for t, w in RM.DAY_OPEN.items()) +
-                  f"; night enemies ×{RM.DAY_NIGHT_SCALE} with ×{RM.DAY_NIGHT_COGS} cogs; daytime cogs "
+                  f"; night: normal enemies ×{RM.DAY_NIGHT_SCALE}, each win also offers 1 of "
+                  f"{RM.DAY_NIGHT_ATTACHMENTS} common/uncommon attachments, and night markets sell "
+                  f"{RM.MARKET_STOCK['attachments']} uncommon/rare attachments and {RM.MARKET_STOCK['parts']} "
+                  f"uncommon/rare parts (no repairs); daytime cogs "
                   f"×{1 + RM.DAY_HURRY_COGS:g} at dawn falling to ×1 at dusk; sleep {RM.DAY_SLEEP_HEAL} HP per hour "
-                  f"(1 hour, {RM.DAY_SLEEP_HOURS} hours, or until dawn with a free tinker); an early boss loses "
+                  f"(1 hour, {RM.DAY_SLEEP_HOURS} hours, or a {RM.DAY_FULL_SLEEP}-hour full night's sleep with a free "
+                  f"tinker, once a night; beds cost " + "/".join(str(v) for v in RM.DAY_BED_PRICE.values()) +
+                  " cogs); an early boss loses "
                   f"{RM.DAY_AMBUSH_PER_HOUR:.0%} HP per hour left (at most {RM.DAY_AMBUSH_MAX:.0%}); normal enemies "
                   f"and elites ×{RM.DAY_ENEMY_SCALE} (a day holds more fights than a door act)"),
         ("After a win", f"heal {R.heal_between_fights} HP, loot cogs, pick 1 of 3 parts (or scrap for "

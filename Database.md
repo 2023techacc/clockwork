@@ -14,7 +14,9 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Runs | Careless player clears a run | about 10% | 14% | ✅ on target | v18 (200 runs) |
 | Runs | Casual player clears a run | about 35% | 41% | ❌ off target | v18 (150 runs) |
 | Runs | Expert player clears a run | about 70% (clearly above casual) | 73% | ✅ on target | v19 (60 runs; planned route, was 57% with the casual policy) |
-| Runs | Day map (simulator): careless / casual / expert clear a run | same as the door map (~10 / ~35 / ~70%) | 16% / 41% / 70% | ✅ on target | v20 (enemies ×0.93 on the day map) |
+| Runs | Day map (simulator): careless / casual / expert clear a run | same as the door map (~10 / ~35 / ~70%) | 16% / 39% / 70% | ✅ on target | v21 (night market, 6-hour sleep, beds cost cogs) |
+| Choices | Day map (simulator): a night out vs staying in | a night out at least as good (the night tempts) | 41% vs 38% | ✅ on target | v21 (100 runs each) |
+| Economy | Day map (simulator): cogs unspent at the first boss | under 40 | 47 | ❌ off target | v21 (was 110) |
 | Runs | HP when reaching each boss (casual) | about 35 | 37 / 36 / 37 | ✅ on target | v18 |
 | Fights | HP a normal fight costs (casual), act 1 / 2 / 3 | about 15, rising a little | 10.5 / 12.4 / 14.7 | ✅ on target | v18 |
 | Fights | HP an elite costs (casual), act 1 / 2 / 3 | about 25 (high risk), rising | 24.6 / 29.4 / 35.0 | ✅ on target | v18 (elites ×1.05, was ×0.9: 16 HP) |
@@ -162,7 +164,7 @@ Level-up prices: level 2 90 cogs, level 3 130 cogs (placeholders until the econo
 | Acts | 3; each is 9 door choices, then the act's boss (all bosses shown at the start) |
 | Doors | stops 1-2 are fights; then 3 doors weighted fight 4, elite 2, workshop 1.5, rest 1.5; the last stop offers a rest site or a Workshop |
 | Hours map (simulator only) | a 5×3 district per act (6 fights, 3 elites, 2 rests, 3 workshops); 12 hours to midnight; costs fight 2, elite 3, workshop 1, rest 2; enter any node next to a visited one; the boss comes at midnight or when you wait |
-| Day map (simulator only) | package 1 of Hours-Map-Ideas.md: 24 hours from 06:00, a 6×3 district (8 fights, 3 elites, 3 rests, 3 workshops); open: fight always, workshop day, rest night, elite night; night enemies ×1.15 with ×1.25 cogs; daytime cogs ×1.25 at dawn falling to ×1 at dusk; sleep 3 HP per hour (1 hour, 4 hours, or until dawn with a free tinker); an early boss loses 2% HP per hour left (at most 30%); normal enemies and elites ×0.93 (a day holds more fights than a door act) |
+| Day map (simulator only) | package 1 of Hours-Map-Ideas.md: 24 hours from 06:00, a 7×3 district (8 fights, 3 elites, 3 rests, 3 workshops, 2 markets); open: fight always, workshop day, rest night, elite night, market night; night: normal enemies ×1.05, each win also offers 1 of 2 common/uncommon attachments, and night markets sell 4 uncommon/rare attachments and 3 uncommon/rare parts (no repairs); daytime cogs ×1.1 at dawn falling to ×1 at dusk; sleep 3 HP per hour (1 hour, 4 hours, or a 6-hour full night's sleep with a free tinker, once a night; beds cost 0/10/20 cogs); an early boss loses 2% HP per hour left (at most 30%); normal enemies and elites ×0.93 (a day holds more fights than a door act) |
 | After a win | heal 7 HP, loot cogs, pick 1 of 3 parts (or scrap for 10 cogs, or skip) |
 | Between acts | the boss's exclusive reward (1 of 3 machine upgrades), then half of the missing HP heals |
 | Part reward tiers (weights) | act 1: common 5, uncommon 4, rare 1; act 2: common 3, uncommon 4, rare 2; act 3: common 2, uncommon 4, rare 3 |

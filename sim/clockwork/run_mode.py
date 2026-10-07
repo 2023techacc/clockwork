@@ -48,23 +48,30 @@ DISTRICT_NODES = {"fight": 6, "elite": 3, "rest": 2, "workshop": 3}   # 14 nodes
 # "A Day in the Brass Quarter" (Hours-Map-Ideas.md, package 1; simulator only, v20): the hours map as a
 # full day. The act starts at dawn (06:00) and the district's boss strikes at the next dawn.
 # - Opening hours: Workshops are open by day (06-18); inns (rest) and elites only at night (18-06).
-# - Night shift: at night, normal enemies are DAY_NIGHT_SCALE stronger; fights carry DAY_NIGHT_COGS more cogs.
+# - Night shift: at night, normal enemies are DAY_NIGHT_SCALE stronger; fights carry DAY_NIGHT_COGS more cogs
+#   and offer 1 of DAY_NIGHT_ATTACHMENTS common/uncommon attachments as well as a part (v21).
+# - Night market (v21): open 18-06, 1 hour; sells rarer goods than a Workshop (no repairs or level-ups).
 # - Hurry bonus: by day, a fight's cogs are x(1 + DAY_HURRY_COGS) at dawn, falling to x1 at dusk.
-# - Sleep: an inn costs no hours to enter; you sleep 1 hour (nap), DAY_SLEEP_HOURS, or until dawn
-#   (with a free tinker), healing DAY_SLEEP_HEAL HP per hour.
+# - Sleep: an inn costs no hours to enter; you sleep 1 hour (nap), DAY_SLEEP_HOURS, or a full night's sleep
+#   of DAY_FULL_SLEEP hours (with a free tinker; once a night, then only naps), healing DAY_SLEEP_HEAL HP
+#   per hour. (v20 slept until dawn, which made a night out a bad deal: 7% vs 61% clears.)
 # - Ambush: going to the boss before dawn takes DAY_AMBUSH_PER_HOUR of its HP off per hour left.
 DAY_HOURS = 24
 DAY_START = 6                   # clock hour when the act begins
-DAY_COST = {"fight": 2, "elite": 3, "workshop": 1, "rest": 0}
-DAY_DISTRICT = (6, 3)
-DAY_NODES = {"fight": 8, "elite": 3, "rest": 3, "workshop": 3}      # 17 nodes
-DAY_OPEN = {"fight": "always", "workshop": "day", "rest": "night", "elite": "night"}
+DAY_COST = {"fight": 2, "elite": 3, "workshop": 1, "rest": 0, "market": 1}
+DAY_DISTRICT = (7, 3)
+DAY_NODES = {"fight": 8, "elite": 3, "rest": 3, "workshop": 3, "market": 2}      # 19 nodes
+DAY_OPEN = {"fight": "always", "workshop": "day", "rest": "night", "elite": "night", "market": "night"}
+DAY_NIGHT_ATTACHMENTS = 2       # night fights: 1 of this many common/uncommon attachments (0: none)
+MARKET_STOCK = {"attachments": 4, "parts": 3, "rare_weight": 3}       # uncommon/rare only
 DAY_LUNCH = (12, 14)            # clock hours an inn opens by day when DAY_OPEN says "lunch+night"
-DAY_NIGHT_SCALE = 1.15
-DAY_NIGHT_COGS = 1.25
-DAY_HURRY_COGS = 0.25
+DAY_NIGHT_SCALE = 1.05           # v21 (was 1.15): with it, a night out lost to sleeping in
+DAY_NIGHT_COGS = 1.0            # v21: the night pays in goods (attachments, the market), not cogs (was 1.25)
+DAY_HURRY_COGS = 0.1             # v21 (was 0.25): money piled up
 DAY_SLEEP_HEAL = 3
 DAY_SLEEP_HOURS = 4
+DAY_BED_PRICE = {"nap": 0, "sleep": 10, "dawn": 20}  # cogs for a bed (v21 money sink; not offered if unaffordable)
+DAY_FULL_SLEEP = 6              # hours of a full night's sleep ('dawn' choice; None: until dawn), once a night (v21)
 DAY_AMBUSH_PER_HOUR = 0.02
 DAY_AMBUSH_MAX = 0.3
 DAY_ENEMY_SCALE = 0.93          # normal enemies and elites on the day map (the door map's strength is tuned separately)
@@ -124,6 +131,7 @@ class Run:
             raise ValueError(f"unknown map {map!r}")
         self.map = map
         self.hours_used, self.pending_hours = 0, 0     # hours map: spent before the current node, and its cost
+        self.rested = False             # day map: had this act's full night's sleep
         self.district, self.visited, self.door_nodes = {}, set(), []
         self.growth = GROWTH if growth is None else growth
         self.rng = random.Random(self.seed * 7919 + 17)
@@ -288,6 +296,7 @@ class Run:
         self.act += 1
         self.stop = -1
         self.hours_used = self.pending_hours = 0
+        self.rested = False
         self._new_district()
         self._advance()
         return self
@@ -366,6 +375,9 @@ class Run:
         elif node == "workshop":
             self.phase = "workshop"
             self.offer = self._stock()
+        elif node == "market":                # day map: the night market, a Workshop with rarer goods
+            self.phase = "workshop"
+            self.offer = self._market_stock()
         return self
 
     def _pick_enemy(self, node):
@@ -421,6 +433,9 @@ class Run:
                                                                            ELITE_RARE_WEIGHT)]}
         else:
             self.offer = {"parts": [k.value for k in self._roll_parts(3)]}
+            if self.map == "day" and self.is_night() and DAY_NIGHT_ATTACHMENTS:
+                self.offer["attachments"] = [m.value for m in self._roll_mods(["common", "uncommon"],
+                                                                              DAY_NIGHT_ATTACHMENTS)]
         self.phase = "reward"
         return self
 
@@ -447,8 +462,12 @@ class Run:
     def sleep_options(self) -> dict:
         """Day map: {choice: hours} for an inn: a nap, a sleep, or until dawn (which also tinkers)."""
         left = self.hours_left()
-        out = {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": left}
-        return {k: h for k, h in out.items() if 0 < h <= left and not (k == "sleep" and h >= left)}
+        if self.rested and DAY_FULL_SLEEP is not None:     # one full night's sleep per night; then naps only
+            return {"nap": 1}
+        full = left if DAY_FULL_SLEEP is None else min(DAY_FULL_SLEEP, left)
+        out = {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": full}
+        return {k: h for k, h in out.items() if 0 < h <= left and not (k == "sleep" and h >= full)
+                and DAY_BED_PRICE.get(k, 0) <= self.cogs}
 
     def rest(self, choice: str, attachment: str = ""):
         """choice 'heal' (+REST_HEAL HP) or 'tinker' (take both offered common attachments). Day map:
@@ -458,9 +477,11 @@ class Run:
             hours = self.sleep_options().get(choice)
             if hours is None:
                 raise RunError(f"can't {choice} now")
+            self._pay(DAY_BED_PRICE.get(choice, 0))
             self.hp = min(self.max_hp(), self.hp + DAY_SLEEP_HEAL * hours)
             self.pending_hours = hours
             if choice == "dawn":
+                self.rested = True
                 attachment = ", ".join(self.offer["attachments"])
                 self.inventory += [Mod(m) for m in self.offer["attachments"]]
         elif choice == "heal":
@@ -496,6 +517,8 @@ class Run:
         """what: 'part', 'attachment', 'machine' (a level-up) or 'repair'."""
         self._need("workshop")
         if what == "repair":
+            if self.offer.get("market"):
+                raise RunError("the night market doesn't repair")
             self._pay(REPAIR[1])
             self.hp = min(self.max_hp(), self.hp + REPAIR[0])
             return self
@@ -515,6 +538,8 @@ class Run:
 
     def remove_card(self, card_id: int):
         self._need("workshop")
+        if self.offer.get("market"):
+            raise RunError("the night market doesn't remove parts")
         card = self._card(card_id)
         if card["mods"]:
             raise RunError("can't remove a part with attachments")
@@ -531,9 +556,17 @@ class Run:
         self.cogs += MOD_PRICE[MOD_RARITY[mod]] // 2
         return self
 
+    def _market_stock(self):
+        n_mods, n_parts, rare = MARKET_STOCK["attachments"], MARKET_STOCK["parts"], MARKET_STOCK["rare_weight"]
+        return {"parts": [{"kind": k.value, "price": PART_PRICE[PART_TIER[k]], "sold": False}
+                          for k in self._roll_parts(n_parts, ("uncommon", "rare"), rare)],
+                "attachments": [{"mod": m.value, "price": MOD_PRICE[MOD_RARITY[m]], "sold": False}
+                                for m in self._roll_mods(["uncommon", "rare"], n_mods, rare)],
+                "machines": [], "market": True}
+
     def leave_workshop(self):
         self._need("workshop")
-        self.history.append({"act": self.act, "stop": self.stop, "hours": self.hours_used, "node": "workshop",
+        self.history.append({"act": self.act, "stop": self.stop, "hours": self.hours_used, "node": self.node,
                              "cogs_left": self.cogs})
         self._advance()
         return self

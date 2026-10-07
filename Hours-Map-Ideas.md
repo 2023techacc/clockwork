@@ -126,6 +126,15 @@ Each idea lists **how it plays**, **why it's immersive**, and **what it does to 
 - **Ambush:** going to the boss early takes 2% of its HP per hour left (at most 30%).
 - **Enemy strength:** normal enemies and elites are ×0.93 on the day map: a day holds more fights than a door act (about 7.5 vs 5.5), so the door map's strength was too high (15% casual clears at ×1).
 
+### Changes in v21 (money and a tempting night)
+- **Night market** (new node, 2 per district, so the district is 7 × 3): open 18–06, 1 hour. Sells 4 uncommon/rare attachments and 3 uncommon/rare parts; no repairs, level-ups or removal. Money has somewhere to go at night, when Workshops are closed.
+- **The night pays in goods, not cogs:** each night win also offers 1 of 2 common/uncommon attachments; night fights no longer carry extra cogs.
+- **A full night's sleep is 6 hours** (once a night, then only naps), not "until dawn". Sleeping until dawn met every boss at full HP, so a night out lost badly (7% vs 61% clears); with 6 hours there's time for a night out and then bed.
+- **Night enemies ×1.05** (was ×1.15), so a night out edges out staying in.
+- **Hurry bonus ×1.1** (was ×1.25), to cut income.
+- **Beds cost cogs:** a nap is free, 4 hours cost 10, a full night 20. A money sink that also makes staying in a choice, not a default.
+- Result: unspent cogs at the first boss 110 → 47 (doors 44); a night out then bed beats staying in (41% vs 38%); careless / casual / expert 16% / 39% / 70%.
+
 ### How B2 and B3 could fit later
 - **B3 (the district turns):** works on any district grid. Every bell (e.g. every 3 hours) the outer ring of nodes rotates one notch, so a Workshop that was far away comes next to you. It combines with opening hours: plan which shop will be both open and close.
 - **B2 (the hour hand):** needs a clock-face district (a ring of sectors around the boss's tower). With a 24-hour day the hand can go around twice, or the dial can be a 24-hour dial with day sectors and night sectors. Nodes under the hand are struck (closed or patrolled); nodes behind it reset with fresh fights and loot.

@@ -2,10 +2,11 @@ import unittest
 
 from clockwork.enemies import ENEMIES
 from clockwork.parts import Kind, Mod
-from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, DAY_AMBUSH_PER_HOUR, DAY_HOURS,
-                                DAY_HURRY_COGS, DAY_NIGHT_COGS, DAY_NIGHT_SCALE, DAY_NODES, DAY_SLEEP_HEAL,
-                                DAY_SLEEP_HOURS, DISTRICT_NODES, HOUR_COST, HOURS, LEVEL_PRICE, MACHINE,
-                                MACHINE_CHOICES, REST_HEAL, STOPS, Run, RunError)
+from clockwork.run_mode import (ACT_ARMOR, ACT_BOSSES, ACT_SCALE, BETWEEN_ACTS_HEAL, DAY_AMBUSH_PER_HOUR,
+                                DAY_BED_PRICE, DAY_FULL_SLEEP, DAY_HOURS, DAY_HURRY_COGS, DAY_NIGHT_ATTACHMENTS,
+                                DAY_NIGHT_COGS, DAY_NIGHT_SCALE, DAY_NODES, DAY_SLEEP_HEAL, DAY_SLEEP_HOURS,
+                                DISTRICT_NODES, HOUR_COST, HOURS, LEVEL_PRICE, MACHINE, MACHINE_CHOICES, MARKET_STOCK,
+                                MOD_RARITY, REST_HEAL, STOPS, Run, RunError)
 from clockwork.run_policy import simulate_run
 
 
@@ -286,16 +287,43 @@ class DayMap(unittest.TestCase):
         run = self.day()
         run.hours_used = 14                                                  # 20:00
         run.phase, run.node, run.offer = "rest", "rest", {"attachments": ["Sharpened", "Bracing"]}
-        self.assertEqual(run.sleep_options(), {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": DAY_HOURS - 14})
+        self.assertEqual(run.sleep_options(), {"nap": 1})                    # beds cost cogs; a nap is free
+        run.cogs = 100
+        self.assertEqual(run.sleep_options(), {"nap": 1, "sleep": DAY_SLEEP_HOURS, "dawn": DAY_FULL_SLEEP})
         run.hp = 20
         run.rest("sleep")
         self.assertEqual((run.hp, run.hours_used), (20 + DAY_SLEEP_HEAL * DAY_SLEEP_HOURS, 14 + DAY_SLEEP_HOURS))
+        self.assertEqual(run.cogs, 100 - DAY_BED_PRICE["sleep"])
         run.phase, run.offer = "rest", {"attachments": ["Sharpened", "Bracing"]}
-        run.rest("dawn")
+        run.rest("dawn")                                                     # what's left of the night
         self.assertEqual((run.hours_used, len(run.inventory), run.doors), (DAY_HOURS, 2, ["boss"]))
+        early = self.day(4)
+        early.hours_used, early.phase, early.offer, early.cogs = 12, "rest", {"attachments": ["Sharpened"]}, 50
+        early.rest("dawn")                                                   # a full night's sleep at 18:00...
+        self.assertEqual((early.hours_used, early.rested), (12 + DAY_FULL_SLEEP, True))
+        self.assertEqual(early.sleep_options(), {"nap": 1})                  # ...then only naps
         with self.assertRaises(RunError):
             run.phase = "rest"
             run.rest("heal")
+
+    def test_night_market_and_night_loot(self):
+        run = self.day()
+        run.hours_used = 13
+        self.assertTrue(run.is_open("market") and not run.is_open("market", 0))
+        run.node, run.phase = "market", "doors"
+        run.doors, run.door_nodes = ["market"], [(6, 0)]
+        run.choose_door(0)
+        self.assertTrue(run.offer["market"] and run.offer["machines"] == [])
+        self.assertEqual(len(run.offer["attachments"]), MARKET_STOCK["attachments"])
+        self.assertTrue(all(MOD_RARITY[Mod(a["mod"])] in ("uncommon", "rare") for a in run.offer["attachments"]))
+        run.cogs = 100
+        with self.assertRaises(RunError):
+            run.buy("repair")
+        run.leave_workshop()
+        self.assertEqual(run.history[-1]["node"], "market")
+        run.phase, run.node, run.enemy = "fight", "fight", "dummy"           # a night win: a part and an attachment
+        run.finish_fight("win", 30)
+        self.assertEqual(len(run.offer["attachments"]), DAY_NIGHT_ATTACHMENTS)
 
     def test_wait_and_ambush(self):
         run = self.day()
