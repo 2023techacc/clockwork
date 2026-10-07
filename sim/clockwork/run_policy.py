@@ -109,6 +109,8 @@ DEFAULT_STYLE = {
                              # at most this many cogs out of reach (save for it)
     "synergy": False,        # value parts by what the deck already holds (SYNERGY)
     "plan": False,           # expert: forecast fight costs and plan HP to the boss (clockwork.planner)
+    "night": "auto",         # day map: auto (as by day) | sleep (bed at nightfall, until dawn) |
+                             # prowl (fight, elites and markets at night; sleep only below 40% HP)
     "boss_margin": 1.5,      # plan: arrive with this many times the boss's forecast cost...
     "boss_extra": 5,         # ...plus this much HP
 }
@@ -140,14 +142,25 @@ def part_value(run, kind, style=None):
 def choose_door(run, style=DEFAULT_STYLE):
     doors = run.doors
     frac = run.hp / run.max_hp()
+    if run.map == "day" and run.is_night() and style["night"] != "auto":
+        if style["night"] == "sleep":
+            order = ["rest", "wait", "boss"]           # stays in for the night
+        else:                                  # a night out, then bed in time for a full sleep before dawn
+            from .run_mode import DAY_FULL_SLEEP
+            bedtime = run.hours_left() <= (DAY_FULL_SLEEP or 6) + 1
+            order = ["rest"] if frac < 0.4 or bedtime else []
+            order += (["elite"] if frac >= style["elite_hp"] else []) + ["market"] * (run.cogs >= 30)
+            order += ["fight", "rest", "market", "wait", "boss"]
+        return next((doors.index(t) for t in order if t in doors), 0)
     order = []
     if style["elites"] == "seek" and frac >= 0.4 or style["elites"] == "auto" and frac >= style["elite_hp"]:
         order.append("elite")
     if frac < style["rest_door_hp"]:
         order.append("rest")
     if run.cogs >= style["workshop_cogs"]:
-        order.append("workshop")
-    order += ["fight", "rest", "workshop"] + (["elite"] if style["elites"] != "avoid" else []) + ["wait", "boss"]
+        order += ["workshop", "market"]
+    order += ["fight", "rest", "workshop", "market"] + (["elite"] if style["elites"] != "avoid" else [])
+    order += ["wait", "boss"]
     for t in order:
         if t in doors:
             return doors.index(t)
@@ -156,15 +169,16 @@ def choose_door(run, style=DEFAULT_STYLE):
 
 def horizon(run, option="fight", after=None):
     """(normal fights, HP of sleep) the planner assumes before the boss once `option` is taken.
-    Day map: a fight for every fight's worth of daytime hours left, and sleep through the night hours left
+    Day map: a fight for every fight's worth of daytime hours left, and one full night's sleep if it fits
     (`after`: the act's hours spent by then, default now + the option's cost)."""
     if run.map != "day":
         return fights_left(run, option), 0
-    from .run_mode import DAY_SLEEP_HEAL
+    from .run_mode import DAY_FULL_SLEEP, DAY_SLEEP_HEAL
     after = run.hours_used + run.node_cost(option) if after is None else after
     hours = range(after, run.total_hours())
     night = sum(run.is_night(h) for h in hours)
-    return (len(hours) - night) // run.node_cost("fight"), DAY_SLEEP_HEAL * night
+    sleep = 0 if run.rested and DAY_FULL_SLEEP else min(night, DAY_FULL_SLEEP or night)   # one full sleep
+    return (len(hours) - night) // run.node_cost("fight"), DAY_SLEEP_HEAL * sleep
 
 
 def project(run, option, f, hp_option=None, after=None):
@@ -198,10 +212,11 @@ def choose_door_planned(run, style):
     ok = {
         "elite": run.hp > f["elite_worst"] + 3 and proj("elite") >= need,
         "workshop": run.cogs >= style["workshop_cogs"] and proj("workshop") >= need,
+        "market": run.cogs >= style["workshop_cogs"] and proj("workshop") >= need,
         "fight": run.hp > 2 * f["fight"] and proj("fight") >= need,
     }
-    order = [t for t in ("elite", "workshop", "fight") if ok[t]]
-    order += ["rest", "workshop", "wait", "fight", "elite", "boss"]    # day map: wait for an inn to open
+    order = [t for t in ("elite", "workshop", "market", "fight") if ok[t]]
+    order += ["rest", "workshop", "market", "wait", "fight", "elite", "boss"]    # day map: wait for an inn
     for t in order:
         if t in run.doors:
             return run.doors.index(t)
@@ -218,6 +233,13 @@ def sleep_choice(run, style):
     """Day map: how long to sleep at an inn."""
     from .run_mode import DAY_SLEEP_HEAL
     options = run.sleep_options()
+    if style["night"] == "sleep" and "dawn" in options:
+        return "dawn"
+    if style["night"] == "prowl":
+        from .run_mode import DAY_FULL_SLEEP
+        if "dawn" in options and run.hours_left() <= (DAY_FULL_SLEEP or 6) + 1:
+            return "dawn"
+        return "sleep" if "sleep" in options and run.hp < 0.4 * run.max_hp() else next(iter(options))
     if style.get("plan"):
         from . import planner
         f = planner.forecast(run)
@@ -239,14 +261,15 @@ def sleep_choice(run, style):
 
 def shop(run, style=DEFAULT_STYLE):
     o = run.offer
-    if style.get("plan"):
+    market = o.get("market")                  # day map: the night market sells goods only (no repairs)
+    if not market and style.get("plan"):
         from . import planner
         from .run_mode import REPAIR
         f = planner.forecast(run)
         while (run.cogs >= REPAIR[1] and run.hp < run.max_hp() - 10
                and project(run, "workshop", f) < boss_need(run, style, f)):
             run.buy("repair")
-    elif run.hp < 0.5 * run.max_hp():
+    elif not market and run.hp < 0.5 * run.max_hp():
         while run.cogs >= 25 and run.hp < run.max_hp() - 10:
             run.buy("repair")
     machines = sorted(range(len(o["machines"])), key=lambda i: LEVEL_PRIORITY.index(o["machines"][i]["key"]))
@@ -263,7 +286,7 @@ def shop(run, style=DEFAULT_STYLE):
         if (not item["sold"] and run.cogs - item["price"] >= reserve
                 and any(run.can_attach(Mod(item["mod"]), c) for c in run.cards)):
             run.buy("attachment", i)
-    if style["remove_basics"]:
+    if style["remove_basics"] and not market:
         for kind in (Kind.PLATE, Kind.STRIKER):
             card = next((c for c in run.cards if c["kind"] == kind and not c["mods"]), None)
             if card and len(run.cards) > 6 and run.cogs - run.remove_price() >= reserve:

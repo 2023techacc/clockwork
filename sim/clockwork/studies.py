@@ -177,6 +177,7 @@ def summarise(run):
                         h.get("act", 0)) for h in fights],
             "rests": [h["choice"] for h in run.history if h.get("node") == "rest"],
             "shops": sum(h.get("node") == "workshop" for h in run.history),
+            "markets": sum(h.get("node") == "market" for h in run.history),
             "night_fights": sum(run.map == "day" and h["node"] != "boss" and run.is_night(h["hours"]) for h in fights)}
 
 

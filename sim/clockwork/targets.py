@@ -16,7 +16,10 @@ TARGETS = [
     ("Runs", "Casual player clears a run", "about 35%", (30, 40), "41%", "v18 (150 runs)"),
     ("Runs", "Expert player clears a run", "about 70% (clearly above casual)", (65, 75), "73%", "v19 (60 runs; planned route, was 57% with the casual policy)"),
     ("Runs", "Day map (simulator): careless / casual / expert clear a run", "same as the door map (~10 / ~35 / ~70%)",
-     "on target", "16% / 41% / 70%", "v20 (enemies ×0.93 on the day map)"),
+     "on target", "16% / 39% / 70%", "v21 (night market, 6-hour sleep, beds cost cogs)"),
+    ("Choices", "Day map (simulator): a night out vs staying in", "a night out at least as good (the night tempts)",
+     "on target", "41% vs 38%", "v21 (100 runs each)"),
+    ("Economy", "Day map (simulator): cogs unspent at the first boss", "under 40", (0, 40), 47, "v21 (was 110)"),
     ("Runs", "HP when reaching each boss (casual)", "about 35", (32, 40), "37 / 36 / 37", "v18"),
     # Fights in a run
     ("Fights", "HP a normal fight costs (casual), act 1 / 2 / 3", "about 15, rising a little", (10, 17),

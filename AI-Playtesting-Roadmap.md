@@ -1007,3 +1007,42 @@ Casual details: act 1 earns 148 cogs from fights (doors 108) and reaches the fir
 - **Too much money:** 110 unspent at the first boss. Options: Workshops also sell repairs that take time (D3), commissions (E2), or lower day bonuses. Prices wait for the map that ships.
 - **Night is mostly for sleeping:** the casual player sleeps until dawn in about 2 of 3 acts. If the night shift should tempt more, it may need better loot rather than more cogs. (How many fights happen at night isn't measured yet.)
 - **Bosses are easy when reached** (89–94%) because players arrive after a night's sleep. Neither automated player tries the ambush (going early) on purpose, so its value is untested.
+
+## Results v21 (the day map: unspent money and a tempting night)
+
+v20's open points: about 110 cogs unspent at the first boss, and a night spent sleeping. Casual player (MCTS@50), 100 runs per row unless noted.
+
+**Step 1: the night market and night loot.** A new night-only node, the night market (1 hour; uncommon/rare attachments and parts, no repairs), 2 per district (7 × 3 grid). Night wins also offer 1 of 2 common/uncommon attachments, and night fights stop paying extra cogs.
+
+| Version | Runs | Unspent at boss 1 | Night fights / run | Markets / run |
+|---|---|---|---|---|
+| v20 | 41% | 110 | 4.0 | – |
+| + market, night attachments | 32% | 56 | 4.0 | 1.4 |
+
+The casual player's fixed rules don't respond to loot: it fights at night exactly as often as before. "Tempting" needs a test of the choice itself.
+
+**Step 2: is the night worth going out for?** Two play styles: the **sleeper** goes to bed at nightfall and stays in; the **night owl** fights, takes elites and visits markets at night.
+
+| Version | Sleeper | Night owl | Notes |
+|---|---|---|---|
+| v20 (sleep until dawn) | **61%** | 7% | the sleeper meets every boss at full HP (55) |
+| + market, night attachments | 55% | 7% | loot can't make up 27 HP at the boss |
+| Full night's sleep = 6 hours, once a night; owl: night out, then bed | 38% | 35% | a real choice; the owl ends with 8.9 attachments vs 5.0 |
+| + night enemies ×1.05 (was ×1.15) | 38% | **41%** | going out now edges out staying in |
+
+Sleeping until dawn was the problem: it turned every night into a full heal right before the boss. A 6-hour full sleep (then only naps) leaves about 6 night hours, and a night out followed by bed is now at least as good as staying in.
+
+**Step 3: money.** Hurry bonus ×1.1 (was ×1.25) and a bigger market (4 attachments, 3 parts):
+
+| Player | Runs | Acts 1 / 2 / 3 | Unspent at boss 1 | Night fights / run | Markets / run |
+|---|---|---|---|---|---|
+| Careless (greedy, 200 runs) | 16% | 76% / 50% / 43% | 51 | 3.4 | 1.5 |
+| Casual (MCTS@50, 100) | 37% | 95% / 65% / 60% | 55 | 4.7 | 1.9 |
+| Expert (MCTS@200 + plan, 40) | 70% | 100% / 90% / 78% | 49 | 5.4 | 2.2 |
+
+The smaller hurry bonus barely moved income (act 1: 133 → 128 cogs), so one more sink: **inns charge for a bed** (nap free, 4 hours 10 cogs, a full night 20). Casual: **39%** (acts 94% / 68% / 61%), **47 unspent** at the first boss, 4.8 night fights and 1.6 markets per run. (The careless and expert rows above were measured just before bed prices.)
+
+**Reading:**
+- **Money:** unspent cogs at the first boss went from 110 to 47, about the door map's 44. The "under 40" target waits for the price pass (prices are set once the run economy is final).
+- **The night:** staying in is no longer the obvious choice. A night out (then bed) now beats staying in (41% vs 38%), and every player fights at night 3–5 times per run and visits a night market about 2 times.
+- **Difficulty is unchanged:** careless 16%, casual 37–39%, expert 70% (targets ~10 / ~35 / ~70%).
