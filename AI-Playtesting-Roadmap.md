@@ -1076,7 +1076,7 @@ The playtest page has 3 acts on the door map (start machine upgrade, 9 door stop
 
 **Reading:**
 - **Act 1 deaths are almost all bosses;** acts 2–3 split between the boss and the act's normal fights.
-- **Dismantler is the deadliest act-2 boss** (10 vs 6 casual deaths on doors, 11 vs 4 on the day map, 20 vs 13 careless). Worth a small nerf, or a buff to the Furnace's partner role.
+- **Dismantler is the deadliest act-2 boss** (10 vs 6 casual deaths on doors, 11 vs 4 on the day map, 20 vs 13 careless). A candidate for a small nerf.
 - **Iron Colossus is the top killer overall** (the only act-3 boss; armor punishes small hits).
 - **The Dummy, the plain baseline attacker, kills more players than any other normal enemy in acts 2–3.** As a veteran it has no weakness to exploit: steady, scaled attacks plus armor. Veterans of a "plain" enemy may need less scaling, or acts 2–3 their own enemies (Acts-Design decision 3A).
 - **On doors, fatal normal fights start at 24–31 HP:** occasional big swings, not slow attrition. **On the day map they start under 20 HP:** players keep fighting through the day while low, since inns open only at night. A rule-following player there needs a "wait for the inn" habit; real players may stop earlier.
