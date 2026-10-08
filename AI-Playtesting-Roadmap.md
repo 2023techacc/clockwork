@@ -1046,3 +1046,38 @@ The smaller hurry bonus barely moved income (act 1: 133 → 128 cogs), so one mo
 - **Money:** unspent cogs at the first boss went from 110 to 47, about the door map's 44. The "under 40" target waits for the price pass (prices are set once the run economy is final).
 - **The night:** staying in is no longer the obvious choice. A night out (then bed) now beats staying in (41% vs 38%), and every player fights at night 3–5 times per run and visits a night market about 2 times.
 - **Difficulty is unchanged:** careless 16%, casual 37–39%, expert 70% (targets ~10 / ~35 / ~70%).
+
+## Results v21b (clear rates per act and causes of death)
+
+The playtest page has 3 acts on the door map (start machine upgrade, 9 door stops and a boss per act, boss rewards between acts). The day map is simulator-only. `studies.summarise` now records each run's death (act, node, enemy, HP going in, night).
+
+**Clear rate per act** (of runs that reach the act):
+
+| Player | Map | Runs | Act 1 | Act 2 | Act 3 | Whole run |
+|---|---|---|---|---|---|---|
+| Careless (greedy) | doors | 200 | 78% | 48% | 36% | 14% |
+| Careless | day | 200 | 72% | 42% | 43% | 13% |
+| Casual (MCTS@50) | doors | 150 | 93% | 76% | 58% | 41% |
+| Casual | day | 100 | 94% | 68% | 61% | 39% |
+| Expert (MCTS@200 + plan; v19 / v21) | doors / day | 60 / 40 | 100% / 100% | 93% / 90% | 79% / 78% | 73% / 70% |
+| Target (casual) | | | ~90% | ~75% | ~55% | ~35% |
+
+**Causes of death, casual player:**
+
+| | Doors (89 deaths) | Day (61 deaths) |
+|---|---|---|
+| Bosses | 48%: Clock Tower 5, Pendulum 4, Dismantler 10, Furnace 6, Iron Colossus 18 | 41%: Clock Tower 2, Pendulum 1, Dismantler 11, Furnace 4, Iron Colossus 7 |
+| Normal fights | 34%: Dummy 14, Enrager 6, Saboteur 6, Spiker 4 | 46%: Dummy 9, Saboteur 7, Spiker 6, Enrager 6, Pickpocket 2 |
+| Elites | 18%: Jammer Prime 8, Rust Golem 4 | 13% |
+| HP going into a fatal normal fight or elite | 24–31 on average | 15–19 on average; 27 of 36 under 20 HP |
+| At night | – | 16 of 61 |
+
+**Careless player:** the same pattern, plus the **Pendulum** is its biggest act-1 killer (23 of 44 deaths on doors, Clock Tower 11); the casual player handles both act-1 bosses about equally.
+
+**Reading:**
+- **Act 1 deaths are almost all bosses;** acts 2–3 split between the boss and the act's normal fights.
+- **Dismantler is the deadliest act-2 boss** (10 vs 6 casual deaths on doors, 11 vs 4 on the day map, 20 vs 13 careless). A candidate for a small nerf.
+- **Iron Colossus is the top killer overall** (the only act-3 boss; armor punishes small hits).
+- **The Dummy, the plain baseline attacker, kills more players than any other normal enemy in acts 2–3.** As a veteran it has no weakness to exploit: steady, scaled attacks plus armor. Veterans of a "plain" enemy may need less scaling, or acts 2–3 their own enemies (Acts-Design decision 3A).
+- **On doors, fatal normal fights start at 24–31 HP:** occasional big swings, not slow attrition. **On the day map they start under 20 HP:** players keep fighting through the day while low, since inns open only at night. A rule-following player there needs a "wait for the inn" habit; real players may stop earlier.
+- **The night isn't a death trap:** about a quarter of day-map deaths happen at night.

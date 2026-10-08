@@ -173,6 +173,10 @@ def summarise(run):
             "acts": run.acts, "acts_cleared": sum(h["node"] == "boss" and h["result"] == "win" for h in fights),
             "boss_hps": [h["hp_start"] for h in fights if h["node"] == "boss"],
             "died_to": fights[-1]["enemy"] if run.phase == "lost" else None,
+            "death": ({"act": fights[-1]["act"], "node": fights[-1]["node"], "enemy": fights[-1]["enemy"],
+                       "hp": fights[-1]["hp_start"], "stop": fights[-1]["stop"],
+                       "night": run.map == "day" and fights[-1]["node"] != "boss" and run.is_night(fights[-1]["hours"])}
+                      if run.phase == "lost" else None),
             "fights": [(h["node"], h["enemy"], h["stop"], h["hp_start"], h["hp_end"], h["result"], h.get("cogs", 0),
                         h.get("act", 0)) for h in fights],
             "rests": [h["choice"] for h in run.history if h.get("node") == "rest"],
