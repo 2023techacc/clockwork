@@ -62,8 +62,9 @@ ENEMIES = {
         (("overclock", 1), ("attack", 6)),
         (("overclock", 3), ("attack", 9)),
     ), cogs=60),
-    # Dismantler: takes your machine apart. Tests rebuilding and Bracing.
-    "dismantler": EnemySpec("dismantler", 85, (
+    # Dismantler: takes your machine apart. Tests rebuilding and Bracing. v21c: 85 -> 78 HP (the deadliest
+    # act-2 boss: beaten 76% vs the Furnace's 83% from the same states; 78 HP: 83%).
+    "dismantler": EnemySpec("dismantler", 78, (
         (("unscrew",), ("unscrew",), ("attack", 6)),
         (("rust", 2), ("attack", 8)),
     ), cogs=60),

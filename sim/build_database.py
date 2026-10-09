@@ -105,8 +105,9 @@ def build() -> str:
               ", ".join(f"act {i + 1} ×{x}" for i, x in enumerate(RM.ACT_SCALE)) +
               ". In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts "
               "exist): the act-1 enemies at that strength with extra armor (" +
-              ", ".join(f"act {i + 1} +{x}" for i, x in enumerate(RM.ACT_ARMOR)) +
-              "). Bosses have their own act strength: " +
+              ", ".join(f"act {i + 1} +{x}" for i, x in enumerate(RM.ACT_ARMOR)) + ")" +
+              "".join(f"; the {k.replace('_', ' ').title()} veteran is ×{v} of that" for k, v in RM.VETERAN_SCALE.items()) +
+              ". Bosses have their own act strength: " +
               ", ".join(f"act {i + 1} ×{x}" for i, x in enumerate(RM.ACT_BOSS_SCALE)) +
               f", times the act's full growth. Elites are fought at ×{RM.ELITE_SCALE} on top. Each fight's HP also rolls "
               f"±{R.enemy_hp_jitter}. Cogs vary ±10%.", ""]

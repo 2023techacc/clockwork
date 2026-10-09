@@ -1081,3 +1081,41 @@ The playtest page has 3 acts on the door map (start machine upgrade, 9 door stop
 - **The Dummy, the plain baseline attacker, kills more players than any other normal enemy in acts 2–3.** As a veteran it has no weakness to exploit: steady, scaled attacks plus armor. Veterans of a "plain" enemy may need less scaling, or acts 2–3 their own enemies (Acts-Design decision 3A).
 - **On doors, fatal normal fights start at 24–31 HP:** occasional big swings, not slow attrition. **On the day map they start under 20 HP:** players keep fighting through the day while low, since inns open only at night. A rule-following player there needs a "wait for the inn" habit; real players may stop earlier.
 - **The night isn't a death trap:** about a quarter of day-map deaths happen at night.
+
+## Results v21c (Dismantler nerf, weaker Dummy veteran)
+
+**Paired tests from real states:** 160 casual runs played to the act-2 boss door (129 got there); from each state, every variant was fought 3 times (MCTS@50).
+
+| Act-2 boss | Beaten |
+|---|---|
+| Furnace | 83% |
+| Dismantler (85 HP, attacks 6 / 8, two unscrews) | 76% |
+| **Dismantler 78 HP** | **83%** |
+| Dismantler with attacks 6 / 6 | 89% |
+| Dismantler with one unscrew | 83% |
+
+**78 HP chosen:** it matches the Furnace exactly and keeps the "takes your machine apart" turn.
+
+Normal enemies from the same states at veteran strength (full HP, mid-act; mean HP lost):
+
+| Veteran | Act-2 strength | Act-3 strength |
+|---|---|---|
+| Dummy (before) | 17.1 | 28.2 |
+| Spiker | 14.3 | 23.5 |
+| Saboteur | 14.8 | 23.7 |
+| Enrager | 7.3 | 22.3 |
+| Dummy ×0.95 | 16.4 | 23.8 |
+| **Dummy ×0.93** | **13.4** | **23.0** |
+| Dummy ×0.9 | 12.8 | 19.6 |
+
+**×0.93 chosen** (`VETERAN_SCALE`, acts 2–3 only; act 1's Dummy is unchanged): veteran Dummy 73 HP / attack 9 / armor 1 in act 2 (was 79 / 10), 84 / 11 / 2 in act 3 (was 91 / 12). Attack values round in steps, so the response is steep.
+
+**Whole runs after both changes** (same seeds as v21b):
+
+| Player | Map | Acts 1 / 2 / 3 | Runs | Dummy deaths | Dismantler / Furnace deaths |
+|---|---|---|---|---|---|
+| Careless | doors | 78% / 60% / 33% | 16% (was 14%) | 13 (was 22) | 11 / 14 (was 20 / 13) |
+| Casual | doors | 93% / 75% / 61% | 42% (was 41%) | 9 (was 14) | 9 / 6 (was 10 / 6) |
+| Casual | day | 94% / 71% / 54% | 36% (was 39%) | 8 (was 9) | 8 / 8 (was 11 / 4) |
+
+On doors the seeds draw the Dismantler 87 times and the Furnace 63 times, so 9 vs 6 casual deaths is about 12% vs 11% per encounter: even. The Iron Colossus remains the top killer (the only act-3 boss).

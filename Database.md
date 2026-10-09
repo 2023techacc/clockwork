@@ -20,7 +20,8 @@ What each number is tuned toward, and the latest measurement (from the roadmap r
 | Runs | HP when reaching each boss (casual) | about 35 | 37 / 36 / 37 | ✅ on target | v18 |
 | Fights | HP a normal fight costs (casual), act 1 / 2 / 3 | about 15, rising a little | 10.5 / 12.4 / 14.7 | ✅ on target | v18 |
 | Fights | HP an elite costs (casual), act 1 / 2 / 3 | about 25 (high risk), rising | 24.6 / 29.4 / 35.0 | ✅ on target | v18 (elites ×1.05, was ×0.9: 16 HP) |
-| Fights | Boss beaten when reached (casual) | act 1 ~93%, act 2 ~85%, act 3 ~75%; bosses of one act within ±5 | Clock Tower 93%, Pendulum 94% / Dismantler 85%, Furnace 89% / Iron Colossus 77% | ✅ on target | v18 (150 runs) |
+| Fights | Boss beaten when reached (casual) | act 1 ~93%, act 2 ~85%, act 3 ~75%; bosses of one act within ±5 | Clock Tower 93%, Pendulum 94% / Dismantler 85%, Furnace 89% / Iron Colossus 77% | ✅ on target | v18 (150 runs); v21c paired act-2 test: Dismantler 76% -> 83% at 78 HP, Furnace 83% |
+| Fights | Veteran normal enemies: HP per fight at act-2 / act-3 strength | no enemy far above the others | Dummy 13.4 / 23.0, Spiker 14.3 / 23.5, Saboteur 14.8 / 23.7, Enrager 7.3 / 22.3 | ✅ on target | v21c (Dummy veteran ×0.93; was 17.1 / 28.2) |
 | Choices | Fighting elites when healthy vs avoiding them | elites at least as good (high return) | 79% vs 70% (act 1) | ✅ on target | v18 |
 | Choices | Hunting elites at low HP (risk) | should cost runs (high risk) | elites from 50% HP: 64%, vs 79% from 70% (act 1) | ✅ on target | v18 |
 | Choices | Planning HP to the boss vs fixed HP thresholds (same casual fights) | planning clearly better (skill pays off in the route, not only in fights) | 57% vs 39% | ✅ on target | v19 (120 runs) |
@@ -109,7 +110,7 @@ Items with a rarity. Attached permanently to one part copy (up to 2 per part, no
 
 ## Enemies
 
-A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength × (1 + 0.2 × stop/9). Act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5. In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts exist): the act-1 enemies at that strength with extra armor (act 1 +0, act 2 +1, act 3 +2). Bosses have their own act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5, times the act's full growth. Elites are fought at ×1.05 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
+A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength × (1 + 0.2 × stop/9). Act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5. In acts 2 and 3 normal enemies and elites are **veterans** (placeholders until themed districts exist): the act-1 enemies at that strength with extra armor (act 1 +0, act 2 +1, act 3 +2); the Dummy veteran is ×0.93 of that. Bosses have their own act strength: act 1 ×1.0, act 2 ×1.3, act 3 ×1.5, times the act's full growth. Elites are fought at ×1.05 on top. Each fight's HP also rolls ±3. Cogs vary ±10%.
 
 ### Normal
 
@@ -135,7 +136,7 @@ A run has 3 acts. Within an act, enemies grow: HP and attacks × act strength ×
 |---|---|---|---|---|
 | **clock_tower** | 91 | 60 | No regular attacks. Strikes for 11 on every 4th crank (Springs count). | No attacks; strikes on every 4th crank of the fight, after the part that comes up. Tests doing more with fewer cranks. |
 | **furnace** | 66 | 60 | Turn 1: +1 Heat to your machine, attack 6. Turn 2: +1 Heat to your machine, attack 6. Turn 3: +3 Heat to your machine, attack 9. Then repeats. | Heats your machine every turn, a big stoke every 3rd: tests Heat management. |
-| **dismantler** | 85 | 60 | Turn 1: unscrew a part, unscrew a part, attack 6. Turn 2: rust the top part (-2 damage/Block this fight), attack 8. Then repeats. | Takes your machine apart: tests rebuilding and Bracing. |
+| **dismantler** | 78 | 60 | Turn 1: unscrew a part, unscrew a part, attack 6. Turn 2: rust the top part (-2 damage/Block this fight), attack 8. Then repeats. | Takes your machine apart: tests rebuilding and Bracing. |
 | **iron_colossus** | 78 | 60 | Every turn: attack 6. Armor 3: every hit on it deals 3 less. | Armor on every hit: tests big single hits over many small ones. |
 | **pendulum** | 87 | 60 | Turn 1: attack 4. Turn 2: attack 10. Then repeats. Swing: odd turns must crank clockwise, even turns counter-clockwise. | Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts that work both ways. |
 

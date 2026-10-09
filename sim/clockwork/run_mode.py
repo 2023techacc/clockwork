@@ -31,6 +31,10 @@ STOPS = 9                       # door choices before each boss
 GROWTH = 0.20                   # v18 (3 acts; was 0.30 for one act); 0.318+ rounds the Clock Tower chime up to 15
 ACT_SCALE = [1.0, 1.3, 1.5]     # veteran strength per act (v18: casual clears acts ~94% / 75% / 50%)
 ACT_ARMOR = [0, 1, 2]           # veteran trait: armor on normal enemies and elites in acts 2 and 3
+# Per-enemy multiplier on veteran strength in acts 2-3. v21c: the plain Dummy was the top normal-enemy
+# killer (17.1 / 28.2 HP per fight at act-2 / act-3 strength vs about 14.5 / 23.5 for the Spiker and
+# Saboteur); x0.93 brings it to 13.4 / 23.0.
+VETERAN_SCALE = {"dummy": 0.93}
 ACT_BOSS_SCALE = [1.0, 1.3, 1.5]    # bosses use this instead of ACT_SCALE (times the act's full growth)
 ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_colossus"]]
 BETWEEN_ACTS_HEAL = 0.5         # share of the missing HP healed when an act ends (Acts-Design 2B)
@@ -235,6 +239,8 @@ class Run:
         f = self.enemy_scale(node, progress)
         if spec.elite:
             f *= ELITE_SCALE
+        if self.act > 0 and node != "boss":
+            f *= VETERAN_SCALE.get(spec.name, 1.0)
         if self.map == "day" and node != "boss":
             f *= DAY_ENEMY_SCALE
             if node == "fight" and self.is_night():                    # elites are the night's danger already
