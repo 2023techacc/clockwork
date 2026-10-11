@@ -4,7 +4,7 @@ Plays whole runs (clockwork.run_policy) up to the boss door and keeps each run's
 (deck with attachments, machine upgrades, HP). Every boss is then fought from those same
 states, and each boss's scale is bisected until its win rate matches the reference boss's.
 
-    python -m clockwork.boss_tune --runs 150 --bosses furnace dismantler iron_colossus pendulum
+    python -m clockwork.boss_tune --runs 150 --bosses furnace dismantler iron_colossus pendulum escapement
 
 Print the scaled base values and set them in enemies.py. Attacks are rounded again when a run scales
 the boss, so after a "both" pass, fix the attacks and finish with --knob hp.

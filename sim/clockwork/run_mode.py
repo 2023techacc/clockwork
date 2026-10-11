@@ -36,7 +36,7 @@ ACT_ARMOR = [0, 1, 2]           # veteran trait: armor on normal enemies and eli
 # Saboteur); x0.93 brings it to 13.4 / 23.0.
 VETERAN_SCALE = {"dummy": 0.93}
 ACT_BOSS_SCALE = [1.0, 1.3, 1.5]    # bosses use this instead of ACT_SCALE (times the act's full growth)
-ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_colossus"]]
+ACT_BOSSES = [["clock_tower", "pendulum"], ["furnace", "dismantler"], ["iron_colossus", "escapement"]]
 BETWEEN_ACTS_HEAL = 0.5         # share of the missing HP healed when an act ends (Acts-Design 2B)
 DOOR_WEIGHTS = {"fight": 4.0, "elite": 2.0, "workshop": 1.5, "rest": 1.5}
 

@@ -729,6 +729,16 @@ class NewBosses(unittest.TestCase):
         free_crank(s)
         self.assertEqual(999 - s.enemy_hp, 3)            # 6 - 3
 
+    def test_max_hit_caps_every_hit(self):
+        capped = EnemySpec("escapement", 999, ((("attack", 1),),), max_hit=4)
+        s, _ = setup([None, S, H], enemy=capped)
+        free_crank(s)
+        self.assertEqual(999 - s.enemy_hp, 4)            # Striker 6 -> 4
+        apply(s, ("crank",))
+        self.assertEqual(999 - s.enemy_hp, 8)            # Hammer 12 -> 4: big hits are wasted
+        from clockwork.enemies import ENEMIES, scaled
+        self.assertEqual(scaled(ENEMIES["escapement"], 1.5).max_hit, ENEMIES["escapement"].max_hit)
+
     def test_swing_forces_turn_direction(self):
         s = new_fight(DECKS["starter"], EnemySpec("swinger", 99, ((("attack", 1),),), swing=True), seed=0)
         ends = [a for a in legal_actions(s) if a[0] == "end_install"]
