@@ -28,7 +28,8 @@ TARGETS = [
      "24.6 / 29.4 / 35.0", "v18 (elites ×1.05, was ×0.9: 16 HP)"),
     ("Fights", "Boss beaten when reached (casual)", "act 1 ~93%, act 2 ~85%, act 3 ~75%; bosses of one act "
      "within ±5", "on target", "Clock Tower 93%, Pendulum 94% / Dismantler 85%, Furnace 89% / Iron Colossus 77%",
-     "v18 (150 runs); v21c paired act-2 test: Dismantler 76% -> 83% at 78 HP, Furnace 83%"),
+     "v18 (150 runs); paired tests: act 2 Dismantler 83%, Furnace 83% (v21c); act 3 Iron Colossus 76%, "
+     "Escapement 77% (v22)"),
     ("Fights", "Veteran normal enemies: HP per fight at act-2 / act-3 strength", "no enemy far above the others",
      "on target", "Dummy 13.4 / 23.0, Spiker 14.3 / 23.5, Saboteur 14.8 / 23.7, Enrager 7.3 / 22.3",
      "v21c (Dummy veteran ×0.93; was 17.1 / 28.2)"),

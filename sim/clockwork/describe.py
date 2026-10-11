@@ -85,6 +85,8 @@ ENEMY_NOTES = {
     "furnace": "Heats your machine every turn, a big stoke every 3rd: tests Heat management.",
     "dismantler": "Takes your machine apart: tests rebuilding and Bracing.",
     "iron_colossus": "Armor on every hit: tests big single hits over many small ones.",
+    "escapement": "Every hit on it is capped: tests many triggers (chains, Couplers, Echo) over big single hits. "
+                  "The Iron Colossus's mirror.",
     "pendulum": "Forces the turn direction (odd turns clockwise, even counter-clockwise): tests layouts "
                 "that work both ways.",
     "overclocker": "Adds Heat to your machine.",
@@ -128,6 +130,8 @@ def enemy_pattern_text(spec: EnemySpec) -> str:
         extras.append(f"{spec.crank_limit} cranks in the whole fight")
     if spec.armor:
         extras.append(f"Armor {spec.armor}: every hit on it deals {spec.armor} less")
+    if spec.max_hit:
+        extras.append(f"Escapement: every hit on it deals at most {spec.max_hit}")
     if spec.swing:
         extras.append("Swing: odd turns must crank clockwise, even turns counter-clockwise")
     return text + "".join(f" {e}." for e in extras)

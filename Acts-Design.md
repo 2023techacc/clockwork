@@ -139,7 +139,7 @@ The playtest uses door choices (C in Run-Design.md); the real game is planned as
 **Elites (same decision round):** elites no longer give machine upgrades. They give rarer attachments and parts instead; their risk and return get re-tuned, and new rare content is added where needed.
 
 ### What was built (v18)
-- **3 acts.** Bosses by act: act 1 Clock Tower or Pendulum, act 2 Furnace or Dismantler, act 3 Iron Colossus. All three are rolled and shown at the start.
+- **3 acts.** Bosses by act: act 1 Clock Tower or Pendulum, act 2 Furnace or Dismantler, act 3 Iron Colossus or the Escapement (added in v22). All three are rolled and shown at the start.
 - **Veterans** in acts 2 and 3: the act-1 normal enemies and elites at act strength (×1.3, ×1.5; tuned in v18) with +1 / +2 armor. Bosses have their own act strength table (same values for now). Enemies grow 20% within each act.
 - **Between acts:** the boss's exclusive reward is 1 of 3 machine upgrades you don't have; then half the missing HP heals.
 - **Machine upgrades:** a pool of 7 with levels: Flywheel (2 levels), Heat Housing (2), Extra Hands (2), Bigger Gear (1), Reinforced Frame (+8 max HP, 3), Wide Hopper (+1 part offered, 2) and the new **Cooling Fins** (1 Heat drains each turn, 2). Start: choose 1 of 3. Workshops sell level-ups only (placeholder prices 90 / 130).
@@ -151,3 +151,8 @@ The playtest uses door choices (C in Run-Design.md); the real game is planned as
 ### What was built (v19)
 - **Expert run planning:** the expert forecasts fight costs and keeps enough HP for the act's boss (`sim/clockwork/planner.py`). The expert clears 73% (target ~70%).
 - **Hours map in the simulator** (decision 6, step D): `Run(map="hours")`, rules in Run-Design.md. With today's enemies it is much harder than doors (casual 9–15% vs 38%), mainly from fewer rests; results and options are in AI-Playtesting-Roadmap.md, Results v19.
+
+### Act 3's second boss (v22)
+- **The Escapement:** named after the clock part that releases energy one tick at a time. **Every hit on it deals at most 6.** 90 HP; attacks 6, 6, then winds your gear back with an attack of 4.
+- It is the Iron Colossus's mirror. Armor punishes many small hits and the Escapement punishes one big hit, so act 3 can ask for either kind of machine and players see which at the start of the run.
+- Tuned from the same act-3 boss states as the Colossus (Results v22).

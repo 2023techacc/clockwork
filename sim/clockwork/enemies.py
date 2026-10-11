@@ -31,6 +31,7 @@ class EnemySpec:
     elite: bool = False
     armor: int = 0                            # every hit on it deals this much less (min 0)
     swing: bool = False                       # forces the turn direction: odd turns clockwise, even counter-clockwise
+    max_hit: int = 0                          # every hit on it deals at most this much (0: no limit)
 
 
 # Tuned v7 for runs where HP carries over (clockwork.tune; MCTS@50 = casual player stand-in):
@@ -70,6 +71,13 @@ ENEMIES = {
     ), cogs=60),
     # Iron Colossus: armor 3 on every hit, slow heavy attacks. Tests big single hits.
     "iron_colossus": EnemySpec("iron_colossus", 78, ((("attack", 6),),), armor=3, cogs=60),
+    # Escapement (v22, act 3): lets energy through one tick at a time: every hit on it deals at most
+    # max_hit. The Iron Colossus's mirror: tests many triggers (chains, Couplers, Echo) over big hits.
+    "escapement": EnemySpec("escapement", 90, (
+        (("attack", 6),),
+        (("attack", 6),),
+        (("wind_back",), ("attack", 4)),
+    ), max_hit=6, cogs=60),
     # Pendulum: forces the turn direction (odd turns clockwise, even counter-clockwise); a light
     # swing then a heavy one. Tests layouts that work both ways.
     "pendulum": EnemySpec("pendulum", 87, ((("attack", 4),), (("attack", 10),)), swing=True, cogs=60),
@@ -90,7 +98,7 @@ ENEMIES = {
 }
 NORMAL = ["dummy", "spiker", "enrager", "saboteur"]
 ELITES = ["overclocker", "rust_golem", "pickpocket", "jammer_prime"]
-BOSSES = ["clock_tower", "furnace", "dismantler", "iron_colossus", "pendulum"]
+BOSSES = ["clock_tower", "furnace", "dismantler", "iron_colossus", "pendulum", "escapement"]
 
 
 def reveal_intent(spec: EnemySpec, turn: int, gear, rng) -> Intent:
@@ -129,4 +137,4 @@ def scaled(spec: EnemySpec, f: float, attack_f: Optional[float] = None) -> Enemy
                      attack_growth=round(spec.attack_growth * a), crank_limit=spec.crank_limit,
                      chime_every=spec.chime_every, chime_damage=max(1, round(spec.chime_damage * a))
                      if spec.chime_damage else 0, cogs=spec.cogs, elite=spec.elite,
-                     armor=spec.armor, swing=spec.swing)
+                     armor=spec.armor, swing=spec.swing, max_hit=spec.max_hit)

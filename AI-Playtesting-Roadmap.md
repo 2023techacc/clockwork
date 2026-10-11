@@ -1119,3 +1119,31 @@ Normal enemies from the same states at veteran strength (full HP, mid-act; mean 
 | Casual | day | 94% / 71% / 54% | 36% (was 39%) | 8 (was 9) | 8 / 8 (was 11 / 4) |
 
 On doors the seeds draw the Dismantler 87 times and the Furnace 63 times, so 9 vs 6 casual deaths is about 12% vs 11% per encounter: even. The Iron Colossus remains the top killer (the only act-3 boss).
+
+## Results v22 (a second act-3 boss: the Escapement)
+
+**The Escapement** (act 3, with the Iron Colossus): every hit on it deals at most 6 (new `max_hit`, unscaled like armor). 90 HP; attacks 6, 6, then a wind-back with an attack of 4. It mirrors the Colossus: armor punishes many small hits, the cap punishes single big ones.
+
+**Paired tuning:** 200 casual runs played to the act-3 boss door (104 got there); every variant fought 3 times from each state (MCTS@50).
+
+| Act-3 boss | Beaten | HP left | Turns |
+|---|---|---|---|
+| Iron Colossus | 76% | 14 | 7.9 |
+| **Escapement 90 HP, cap 6** | **77%** | 15 | 8.3 |
+| Escapement 80 HP, cap 6 | 83% | 16 | 7.6 |
+| Escapement 100 HP, cap 6 | 71% | 14 | 8.9 |
+| Escapement 90 HP, cap 5 | 75% | 14 | 9.6 |
+| Escapement 90 HP, cap 7 | 80% | 14 | 7.7 |
+
+The first draft matched the Colossus and was kept.
+
+**Do they ask for different machines?** Only mildly. From the same 104 states, 52 beat both bosses 3 of 3; 5 states did clearly better against the Escapement and 2 against the Colossus. States that did better against the Colossus held more big hitters (2.4 vs 1.7 Hammers, Boilers and Amplifiers); states that did better against the Escapement held more chain pieces (9.4 vs 8.5 Couplers, Springs, Loaders and attachments). A lower cap with less HP would sharpen the difference.
+
+**Whole runs** (doors, same seeds as v21c; the seeds draw the Escapement 79 times and the Colossus 71):
+
+| Player | Runs | Act 3 | Act-3 boss deaths |
+|---|---|---|---|
+| Casual (150) | 39% (was 42%) | 57% (was 61%) | Escapement 13, Colossus 11 (was Colossus 20) |
+| Careless (200) | 13% (was 16%) | 28% (was 33%) | Escapement 17, Colossus 11 (was Colossus 23) |
+
+For the casual player both bosses are equally deadly per encounter. The careless player, which doesn't build chains, finds the Escapement harder. Whole-run rates stay inside the targets (careless ~10%, casual ~35%).

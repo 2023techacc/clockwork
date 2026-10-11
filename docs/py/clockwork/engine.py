@@ -191,8 +191,10 @@ def swing_direction(s: State):
 
 
 def _deal(s: State, dmg: int) -> int:
-    """Damage the enemy (armor reduces every hit). Returns the damage dealt."""
+    """Damage the enemy (armor reduces every hit; max_hit caps it). Returns the damage dealt."""
     dmg = max(0, dmg - s.enemy.armor)
+    if s.enemy.max_hit:
+        dmg = min(dmg, s.enemy.max_hit)
     s.enemy_hp -= dmg
     s.damage_turn += dmg
     return dmg
