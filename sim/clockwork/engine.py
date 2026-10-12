@@ -168,7 +168,7 @@ def legal_actions(s: State) -> List[tuple]:
                     continue
                 seen.add((part.kind, part.mods))
                 acts.extend(("install", i, slot) for slot in range(len(s.gear)))
-        if s.rules.crank_direction_lock and not s.dead_turn:
+        if s.rules.crank_direction_lock and not _no_cranks(s):
             forced = swing_direction(s)
             acts += [("end_install", d) for d in (CW, CCW) if forced in (None, d)]
         else:
@@ -212,10 +212,12 @@ def apply(s: State, action: tuple) -> None:
         direction = action[1] if len(action) > 1 else CW
         _require(direction in (CW, CCW), action)
         _require(direction == CW or s.rules.crank_direction_lock, action)
-        _require(s.dead_turn or swing_direction(s) in (None, direction), action)
+        _require(_no_cranks(s) or swing_direction(s) in (None, direction), action)
         s.phase = "crank"
         s.turn_direction = direction
-        if s.dead_turn:
+        if s.dead_turn and s.rules.overheat_penalty == "no_free":
+            _log(s, "overheated: no free crank this turn (paid cranks allowed)")
+        elif s.dead_turn:
             s.locked = True
             _log(s, "overheated: no cranks this turn")
         else:
@@ -332,8 +334,13 @@ def _install(s: State, hand_index: int, slot: int) -> None:
     _log(s, f"install {part} at slot {slot} (+{pos})" + (f", replacing {old}" if old else ""))
 
 
+def _no_cranks(s: State) -> bool:
+    """A dead turn after an Overheat (with overheat_penalty "no_free" only the free crank is lost)."""
+    return s.dead_turn and s.rules.overheat_penalty == "dead"
+
+
 def _can_crank(s: State) -> bool:
-    if s.locked or s.dead_turn or s.crank_power < 1:
+    if s.locked or _no_cranks(s) or s.crank_power < 1:
         return False
     limit = s.enemy.crank_limit
     return limit is None or s.cranks_used < limit
@@ -588,7 +595,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         _close_turn_stats(s)
         _finish(s, "win", "enemy hp")
         return False
-    if _check_overheat(s):
+    if _check_overheat(s, slot):
         s.stats.overheats_by[kind.value] = s.stats.overheats_by.get(kind.value, 0) + 1
         return False
 
@@ -620,15 +627,34 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
     return True
 
 
-def _check_overheat(s: State) -> bool:
+def _check_overheat(s: State, slot: Optional[int] = None) -> bool:
     if s.heat < s.rules.overheat_at:
         return False
+    r = s.rules
     s.stats.overheats += 1
-    s.stats.heat_overflow += s.heat - s.rules.overheat_at
+    s.stats.heat_overflow += s.heat - r.overheat_at
     s.heat = 0
     s.locked = True
-    s.overheat_pending = True
-    _log(s, "  OVERHEAT: turn stops, Heat -> 0, next turn is dead")
+    if r.overheat_penalty in ("dead", "no_free"):
+        s.overheat_pending = True
+        _log(s, "  OVERHEAT: turn stops, Heat -> 0, " +
+             ("next turn is dead" if r.overheat_penalty == "dead" else "next turn has no free crank"))
+    elif r.overheat_penalty == "burn":
+        s.hp -= r.overheat_burn
+        s.stats.damage_taken += r.overheat_burn
+        _log(s, f"  OVERHEAT: turn stops, Heat -> 0, the machine burns you for {r.overheat_burn}")
+        if s.hp <= 0:
+            _finish(s, "loss", "overheat")
+    elif r.overheat_penalty == "jam":
+        n = len(s.gear)
+        hot = s.top if slot is None else slot
+        turns = 2 if s.phase == "crank" else 1          # jams count down at the enemy's turn
+        for k in range(-r.overheat_jam, r.overheat_jam + 1):
+            j = (hot + k) % n
+            s.jams[j] = max(s.jams.get(j, 0), turns)
+        _log(s, "  OVERHEAT: turn stops, Heat -> 0, the hot part and its neighbours seize up next turn")
+    else:
+        raise ValueError(f"unknown overheat_penalty {r.overheat_penalty!r}")
     return True
 
 

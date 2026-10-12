@@ -106,6 +106,27 @@ class HeatAndExample(unittest.TestCase):
         apply(s, ("end_turn",))
         self.assertFalse(s.dead_turn)
 
+    def test_overheat_penalty_variants(self):
+        # No free crank (paid cranks still allowed)
+        s, _ = setup([None, SP, SP, SP, P, S], rules=mech(overheat_penalty="no_free"))
+        free_crank(s)
+        apply(s, ("end_turn",))
+        top_before = s.top
+        free_crank(s, engine.CW)
+        self.assertEqual(s.top, top_before)             # the free crank is lost...
+        self.assertIn(("crank",), legal_actions(s))     # ...but paid cranks work
+        # Burn: the turn stops, you take damage, the next turn is normal
+        s, _ = setup([None, SP, SP, SP, P, S], rules=mech(overheat_penalty="burn", overheat_burn=7))
+        hp = s.hp
+        free_crank(s)
+        self.assertEqual((s.hp, s.heat, s.overheat_pending), (hp - 7, 0, False))
+        # Jam: the hot part and its neighbours seize up for the next turn
+        s, slot = setup([None, SP, SP, SP, P, S], rules=mech(overheat_penalty="jam", overheat_jam=1))
+        free_crank(s)
+        hot = slot[4]                                   # the Plate tipped it over
+        self.assertEqual(set(s.jams), {(hot - 1) % 6, hot, (hot + 1) % 6})
+        self.assertFalse(s.overheat_pending)
+
     def test_chain_resets_per_player_crank(self):
         s, _ = setup([None, SP, None, SP])
         free_crank(s)                                   # Spring (2), cranks onto empty

@@ -22,7 +22,13 @@ class RulesConfig:
     crank_direction_lock: bool = True
 
     # --- Heat (Rules.md §3, §8b #3) ---
-    overheat_at: int = 10            # reaching this stops the turn, resets Heat to 0, next turn is dead
+    overheat_at: int = 10            # reaching this stops the turn and resets Heat to 0, then:
+    # overheat_penalty: "dead" (next turn: no cranks at all) | "no_free" (next turn: no free crank, paid
+    # cranks allowed) | "burn" (take overheat_burn damage, no dead turn) | "jam" (the hot part and
+    # overheat_jam neighbours each side jam for the next turn, no dead turn)
+    overheat_penalty: str = "dead"
+    overheat_burn: int = 5
+    overheat_jam: int = 1
     heat_per_trigger: int = 1        # every trigger, before part-specific extras
     # Extra Heat for the n-th Spring in one chain is n * spring_heat_step (1st +1, 2nd +2, 3rd +3...).
     spring_heat_step: int = 1
