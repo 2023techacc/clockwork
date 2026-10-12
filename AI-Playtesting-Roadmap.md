@@ -1147,3 +1147,24 @@ The first draft matched the Colossus and was kept.
 | Careless (200) | 13% (was 16%) | 28% (was 33%) | Escapement 17, Colossus 11 (was Colossus 23) |
 
 For the casual player both bosses are equally deadly per encounter. The careless player, which doesn't build chains, finds the Escapement harder. Whole-run rates stay inside the targets (careless ~10%, casual ~35%).
+
+## Results v22b (Overheat: is the dead turn needed?)
+
+Designer feedback: a dead turn after an Overheat ("I can do nothing") isn't fun. Measured first: in casual runs **13% of turns are dead and 68% of fights have at least one**. Most Overheats are tipped by a Striker or Slider, not Springs or enemies: the player pushes Heat to the limit on purpose and eats the dead turn.
+
+New rule setting `overheat_penalty` (default still `dead`): `no_free` (next turn: no free crank, paid cranks allowed), `burn` (take `overheat_burn` damage, no dead turn), `jam` (the hot part and `overheat_jam` neighbours each side jam for the next turn, no dead turn). Casual player, 60 three-act runs each (door map; ±12 points):
+
+| Overheat penalty | Runs cleared | Turns after an Overheat | Fights with one |
+|---|---|---|---|
+| **Dead turn (now)** | **32%** | 13% | 68% |
+| No free crank | 90% | 17% | 72% |
+| Burn 5 HP | 78% | 18% | 73% |
+| Burn 8 HP | 52% | 18% | 76% |
+| Burn 12 HP | 20% | 15% | 72% |
+| Jam the hot part ± 1 (3 slots) | 93% | 19% | 78% |
+| Jam the hot part ± 2 (5 slots) | 65% | 16% | 74% |
+
+**Reading:**
+- The dead turn carries a large share of the game's difficulty. Every softer penalty makes runs much easier, and players overheat more often, because the Overheat becomes a cheap "dump everything" button.
+- Only **burn around 10 HP** keeps today's difficulty; it turns a turn of no agency into an HP cost (HP carries over, so it's a real run-level price). Jamming even 5 of 6 slots stays far easier.
+- Whatever replaces the dead turn, Overheats will stay common (15–18% of turns) unless the penalty is steep; the design question is whether that's acceptable as a deliberate tool.
