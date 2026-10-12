@@ -115,6 +115,15 @@ class HeatAndExample(unittest.TestCase):
         free_crank(s, engine.CW)
         self.assertEqual(s.top, top_before)             # the free crank is lost...
         self.assertIn(("crank",), legal_actions(s))     # ...but paid cranks work
+        # Free crank only: the next turn's free crank happens (and adds Heat), paid cranks don't
+        s, _ = setup([None, SP, SP, SP, P, S, S, S], rules=mech(overheat_penalty="free_only", gear_size=8))
+        free_crank(s)
+        apply(s, ("end_turn",))
+        top_before = s.top
+        free_crank(s, engine.CW)
+        self.assertNotEqual(s.top, top_before)          # the free crank turned the gear...
+        self.assertEqual(s.heat, 1)                     # ...and its trigger added Heat
+        self.assertNotIn(("crank",), legal_actions(s))  # but no paid cranks
         # Burn: the turn stops, you take damage, the next turn is normal
         s, _ = setup([None, SP, SP, SP, P, S], rules=mech(overheat_penalty="burn", overheat_burn=7))
         hp = s.hp

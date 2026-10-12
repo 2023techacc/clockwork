@@ -217,6 +217,10 @@ def apply(s: State, action: tuple) -> None:
         s.turn_direction = direction
         if s.dead_turn and s.rules.overheat_penalty == "no_free":
             _log(s, "overheated: no free crank this turn (paid cranks allowed)")
+        elif s.dead_turn and s.rules.overheat_penalty == "free_only":
+            s.crank_power = 0
+            _log(s, "overheated: the free crank only this turn (no paid cranks)")
+            _player_crank(s, s.turn_direction, free=True)
         elif s.dead_turn:
             s.locked = True
             _log(s, "overheated: no cranks this turn")
@@ -635,10 +639,10 @@ def _check_overheat(s: State, slot: Optional[int] = None) -> bool:
     s.stats.heat_overflow += s.heat - r.overheat_at
     s.heat = 0
     s.locked = True
-    if r.overheat_penalty in ("dead", "no_free"):
+    if r.overheat_penalty in ("dead", "no_free", "free_only"):
         s.overheat_pending = True
-        _log(s, "  OVERHEAT: turn stops, Heat -> 0, " +
-             ("next turn is dead" if r.overheat_penalty == "dead" else "next turn has no free crank"))
+        what = {"dead": "is dead", "no_free": "has no free crank", "free_only": "has only the free crank"}
+        _log(s, "  OVERHEAT: turn stops, Heat -> 0, next turn " + what[r.overheat_penalty])
     elif r.overheat_penalty == "burn":
         s.hp -= r.overheat_burn
         s.stats.damage_taken += r.overheat_burn
