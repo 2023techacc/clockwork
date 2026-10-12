@@ -23,9 +23,12 @@ class RulesConfig:
 
     # --- Heat (Rules.md §3, §8b #3) ---
     overheat_at: int = 10            # reaching this stops the turn and resets Heat to 0, then:
-    # overheat_penalty: "dead" (next turn: no cranks at all) | "no_free" (next turn: no free crank, paid
-    # cranks allowed) | "burn" (take overheat_burn damage, no dead turn) | "jam" (the hot part and
-    # overheat_jam neighbours each side jam for the next turn, no dead turn)
+    # overheat_penalty, what the next turn is like after an Overheat:
+    #   "dead"      no cranks at all (the original rule)
+    #   "no_free"   no free crank; paid cranks allowed
+    #   "free_only" the free crank only, no paid cranks; Heat adds up as usual
+    #   "burn"      a normal turn, but the Overheat costs overheat_burn HP
+    #   "jam"       a normal turn, but the hot part and overheat_jam neighbours each side are jammed
     overheat_penalty: str = "dead"
     overheat_burn: int = 5
     overheat_jam: int = 1

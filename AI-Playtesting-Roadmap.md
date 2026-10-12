@@ -1158,6 +1158,7 @@ New rule setting `overheat_penalty` (default still `dead`): `no_free` (next turn
 |---|---|---|---|
 | **Dead turn (now)** | **32%** | 13% | 68% |
 | No free crank | 90% | 17% | 72% |
+| Free crank only (no paid cranks; Heat adds up as usual) | 77% | 14% | 66% |
 | Burn 5 HP | 78% | 18% | 73% |
 | Burn 8 HP | 52% | 18% | 76% |
 | Burn 12 HP | 20% | 15% | 72% |
@@ -1166,5 +1167,6 @@ New rule setting `overheat_penalty` (default still `dead`): `no_free` (next turn
 
 **Reading:**
 - The dead turn carries a large share of the game's difficulty. Every softer penalty makes runs much easier, and players overheat more often, because the Overheat becomes a cheap "dump everything" button.
+- **Free crank only** (asked for by the designer) keeps you acting every turn, but stays much easier (77%): the free crank and the chains it sets off are most of a good machine's turn.
 - Only **burn around 10 HP** keeps today's difficulty; it turns a turn of no agency into an HP cost (HP carries over, so it's a real run-level price). Jamming even 5 of 6 slots stays far easier.
 - Whatever replaces the dead turn, Overheats will stay common (15–18% of turns) unless the penalty is steep; the design question is whether that's acceptable as a deliberate tool.
