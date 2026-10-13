@@ -30,6 +30,13 @@ class RulesConfig:
     #   "burn"      a normal turn, but the Overheat costs overheat_burn HP
     #   "jam"       a normal turn, but the hot part and overheat_jam neighbours each side are jammed
     overheat_penalty: str = "dead"
+    # overheat_extra, a second cost with "free_only", during the cooldown turn after an Overheat:
+    #   "double_heat" triggers add double Heat | "enemy_double" the enemy's attacks deal double damage |
+    #   "half_damage" your hits deal half damage | "half_block" your Block gains are halved |
+    #   "hot_start" Heat resets to overheat_hot instead of 0 | "burn" the Overheat also costs overheat_burn HP
+    overheat_extra: str = ""
+    overheat_hot: int = 5
+    overheat_enemy_mult: float = 2.0  # "enemy_double": the cooldown turn's enemy attacks are multiplied by this
     overheat_burn: int = 5
     overheat_jam: int = 1
     heat_per_trigger: int = 1        # every trigger, before part-specific extras
