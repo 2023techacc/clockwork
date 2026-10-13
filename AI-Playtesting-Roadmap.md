@@ -1170,3 +1170,21 @@ New rule setting `overheat_penalty` (default still `dead`): `no_free` (next turn
 - **Free crank only** (asked for by the designer) keeps you acting every turn, but stays much easier (77%): the free crank and the chains it sets off are most of a good machine's turn.
 - Only **burn around 10 HP** keeps today's difficulty; it turns a turn of no agency into an HP cost (HP carries over, so it's a real run-level price). Jamming even 5 of 6 slots stays far easier.
 - Whatever replaces the dead turn, Overheats will stay common (15–18% of turns) unless the penalty is steep; the design question is whether that's acceptable as a deliberate tool.
+
+**Second costs with "free crank only"** (`overheat_extra`, during the cooldown turn; 60 casual runs each, ±12 points):
+
+| Free crank only, plus… | Runs cleared | Turns after an Overheat | Fights with one |
+|---|---|---|---|
+| nothing | 77% | 14% | 66% |
+| double Heat from triggers | 73% | 16% | 70% |
+| your hits deal half damage | 90% | 15% | 69% |
+| your Block gains halved | 67% | 15% | 69% |
+| 5 HP burn | 60% | 12% | 62% |
+| enemy attacks ×1.5 | 62% | 14% | 69% |
+| enemy attacks ×2 | 25% | 14% | 70% |
+| Heat restarts at 5 | 52% | 10% | 48% |
+| **Heat restarts at 7** | **28%** | **10%** | **39%** |
+| *(dead turn)* | *32%* | *13%* | *68%* |
+
+**Reading:** doubling Heat barely matters (Heat was just reset to 0), and half damage or half Block are easy to play around. Two levers work: **enemy attacks on the cooldown turn** (×1.5 too soft, ×2 slightly harder than today) and **a hot restart**. Restarting at 7 Heat keeps today's difficulty, keeps the player acting every turn, and is the only cost that makes Overheats rarer (39% of fights instead of 68%): the next turn begins near the limit, so Heat has to be managed rather than dumped.
+

@@ -136,6 +136,40 @@ class HeatAndExample(unittest.TestCase):
         self.assertEqual(set(s.jams), {(hot - 1) % 6, hot, (hot + 1) % 6})
         self.assertFalse(s.overheat_pending)
 
+    def test_overheat_second_costs(self):
+        def cooldown(extra, **kw):
+            """Overheat on turn 1 (the Plate tips it), then the cooldown turn's free crank triggers a Striker."""
+            s, _ = setup([None, SP, SP, SP, P, S, S, S],
+                         rules=mech(overheat_penalty="free_only", overheat_extra=extra, gear_size=8, **kw))
+            free_crank(s)
+            after_overheat = (s.heat, s.hp)
+            apply(s, ("end_turn",))
+            hp, enemy = s.hp, s.enemy_hp
+            free_crank(s, engine.CW)
+            return s, after_overheat, hp, enemy
+        s, _, _, enemy = cooldown("")
+        self.assertEqual((s.heat, enemy - s.enemy_hp), (1, 6))
+        s, _, _, enemy = cooldown("double_heat")
+        self.assertEqual(s.heat, 2)
+        s, _, _, enemy = cooldown("half_damage")
+        self.assertEqual(enemy - s.enemy_hp, 3)
+        s, (heat, _), _, _ = cooldown("hot_start", overheat_hot=5)
+        self.assertEqual((heat, s.heat), (5, 6))
+        s, (_, hp), _, _ = cooldown("burn", overheat_burn=4)
+        self.assertEqual(hp, s.rules.player_hp - 4)
+        s, _ = setup([None, SP, SP, SP, P, P, S, S], rules=mech(overheat_penalty="free_only",
+                                                                 overheat_extra="half_block", gear_size=8))
+        free_crank(s)
+        apply(s, ("end_turn",))
+        s.block = 0
+        free_crank(s, engine.CW)
+        self.assertEqual(s.block, 3)                    # the second Plate's 6 Block, halved
+        for extra, factor in (("", 1), ("enemy_double", 2)):
+            s, _, hp, _ = cooldown(extra)
+            s.block = 0
+            apply(s, ("end_turn",))
+            self.assertEqual(hp - s.hp, factor * ENEMIES["dummy"].pattern[0][0][1])
+
     def test_chain_resets_per_player_crank(self):
         s, _ = setup([None, SP, None, SP])
         free_crank(s)                                   # Spring (2), cranks onto empty

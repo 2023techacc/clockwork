@@ -195,6 +195,8 @@ def _deal(s: State, dmg: int) -> int:
     dmg = max(0, dmg - s.enemy.armor)
     if s.enemy.max_hit:
         dmg = min(dmg, s.enemy.max_hit)
+    if _cooling(s, "half_damage"):
+        dmg //= 2
     s.enemy_hp -= dmg
     s.damage_turn += dmg
     return dmg
@@ -338,6 +340,11 @@ def _install(s: State, hand_index: int, slot: int) -> None:
     _log(s, f"install {part} at slot {slot} (+{pos})" + (f", replacing {old}" if old else ""))
 
 
+def _cooling(s: State, extra: str) -> bool:
+    """The cooldown turn after an Overheat (overheat_penalty "free_only") with this second cost."""
+    return s.dead_turn and s.rules.overheat_penalty == "free_only" and s.rules.overheat_extra == extra
+
+
 def _no_cranks(s: State) -> bool:
     """A dead turn after an Overheat (with overheat_penalty "no_free" only the free crank is lost)."""
     return s.dead_turn and s.rules.overheat_penalty == "dead"
@@ -362,10 +369,11 @@ def _end_turn(s: State) -> None:
     n = len(s.gear)
     for act in s.intent:
         if act[0] == "attack":
-            absorbed = min(s.block, act[1])
+            hit = round(act[1] * s.rules.overheat_enemy_mult) if _cooling(s, "enemy_double") else act[1]
+            absorbed = min(s.block, hit)
             s.block -= absorbed
-            s.hp -= act[1] - absorbed
-            s.stats.damage_taken += act[1] - absorbed
+            s.hp -= hit - absorbed
+            s.stats.damage_taken += hit - absorbed
         elif act[0] == "jam":
             s.jams[act[1]] = max(s.jams.get(act[1], 0), act[2])
         elif act[0] == "wind_back":
@@ -536,6 +544,8 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         heat = 0
     elif Mod.HEAT_SINK in mods:
         heat = max(0, heat - 1)
+    if _cooling(s, "double_heat"):
+        heat *= 2
     s.heat += heat
     label = str(part) if part.kind == kind else f"{part} as {kind}"
     notes = [f"+{heat} Heat"]
@@ -571,7 +581,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         dmg = _deal(s, int(base * mult))
         notes.append(f"{dmg} damage")
     if block:
-        blk = int(block * mult)
+        blk = int(block * mult) // (2 if _cooling(s, "half_block") else 1)
         s.block += blk
         notes.append(f"{blk} Block")
     if spec.cooling:
@@ -588,7 +598,7 @@ def _trigger(s: State, slot: int, direction: str, from_coupler: bool, stack: lis
         note, pulled = _magnet(s, slot)
         notes.append(note)
         if pulled and r.magnet_block_per_pull:
-            blk = int(r.magnet_block_per_pull * len(pulled) * mult)
+            blk = int(r.magnet_block_per_pull * len(pulled) * mult) // (2 if _cooling(s, "half_block") else 1)
             s.block += blk
             notes.append(f"{blk} Block")
         if pulled and r.magnet_damage_per_pull:
@@ -637,8 +647,14 @@ def _check_overheat(s: State, slot: Optional[int] = None) -> bool:
     r = s.rules
     s.stats.overheats += 1
     s.stats.heat_overflow += s.heat - r.overheat_at
-    s.heat = 0
+    free_only = r.overheat_penalty == "free_only"
+    s.heat = r.overheat_hot if free_only and r.overheat_extra == "hot_start" else 0
     s.locked = True
+    if free_only and r.overheat_extra == "burn":
+        s.hp -= r.overheat_burn
+        s.stats.damage_taken += r.overheat_burn
+        if s.hp <= 0:
+            _finish(s, "loss", "overheat")
     if r.overheat_penalty in ("dead", "no_free", "free_only"):
         s.overheat_pending = True
         what = {"dead": "is dead", "no_free": "has no free crank", "free_only": "has only the free crank"}
